@@ -39,6 +39,8 @@ This is a test deployment: the blank Payload template with its two starter colle
 
 The Postgres database lives in the `payload_db-data` Docker volume on the VPS, named after the repository. It is not backed up yet. Renaming the repository starts the app on a new, empty volume.
 
+Every record's id is a version 7 UUID, not a counter, so an id stored by another system (training-tools, Jira) means the same record in every copy of the database.
+
 Uploads live in two Cloudflare R2 buckets:
 
 | Collection      | Bucket            | Who can read a file                                                         |

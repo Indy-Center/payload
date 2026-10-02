@@ -1,17 +1,30 @@
 import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
+  // Added by hand; everything below it is generated.
+  // This migration replaces the two the first deployment ran, which gave every table a counter for
+  // an id. Counters can't be converted to UUIDs in place, and that database held nothing but a test
+  // account, so a database still on the old layout is emptied and rebuilt here. A new database has
+  // no users table and skips this.
+  const { rows } = await db.execute(sql`
+    SELECT data_type FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'id'`)
+  if (rows[0]?.data_type === 'integer') {
+    payload.logger.warn('Database uses counter ids: dropping every table to rebuild it with UUIDs')
+    await db.execute(sql`DROP SCHEMA public CASCADE; CREATE SCHEMA public;`)
+  }
+
   await db.execute(sql`
    CREATE TABLE "users_sessions" (
   	"_order" integer NOT NULL,
-  	"_parent_id" integer NOT NULL,
+  	"_parent_id" uuid NOT NULL,
   	"id" varchar PRIMARY KEY NOT NULL,
   	"created_at" timestamp(3) with time zone,
   	"expires_at" timestamp(3) with time zone NOT NULL
   );
   
   CREATE TABLE "users" (
-  	"id" serial PRIMARY KEY NOT NULL,
+  	"id" uuid PRIMARY KEY NOT NULL,
   	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
   	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
   	"email" varchar NOT NULL,
@@ -25,8 +38,27 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   );
   
   CREATE TABLE "media" (
-  	"id" serial PRIMARY KEY NOT NULL,
+  	"id" uuid PRIMARY KEY NOT NULL,
   	"alt" varchar NOT NULL,
+  	"prefix" varchar DEFAULT '',
+  	"_objectkey" varchar,
+  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+  	"url" varchar,
+  	"thumbnail_u_r_l" varchar,
+  	"filename" varchar,
+  	"mime_type" varchar,
+  	"filesize" numeric,
+  	"width" numeric,
+  	"height" numeric,
+  	"focal_x" numeric,
+  	"focal_y" numeric
+  );
+  
+  CREATE TABLE "private_media" (
+  	"id" uuid PRIMARY KEY NOT NULL,
+  	"prefix" varchar DEFAULT '',
+  	"_objectkey" varchar,
   	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
   	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
   	"url" varchar,
@@ -41,13 +73,13 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   );
   
   CREATE TABLE "payload_kv" (
-  	"id" serial PRIMARY KEY NOT NULL,
+  	"id" uuid PRIMARY KEY NOT NULL,
   	"key" varchar NOT NULL,
   	"data" jsonb NOT NULL
   );
   
   CREATE TABLE "payload_locked_documents" (
-  	"id" serial PRIMARY KEY NOT NULL,
+  	"id" uuid PRIMARY KEY NOT NULL,
   	"global_slug" varchar,
   	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
   	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
@@ -56,14 +88,15 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TABLE "payload_locked_documents_rels" (
   	"id" serial PRIMARY KEY NOT NULL,
   	"order" integer,
-  	"parent_id" integer NOT NULL,
+  	"parent_id" uuid NOT NULL,
   	"path" varchar NOT NULL,
-  	"users_id" integer,
-  	"media_id" integer
+  	"users_id" uuid,
+  	"media_id" uuid,
+  	"private_media_id" uuid
   );
   
   CREATE TABLE "payload_preferences" (
-  	"id" serial PRIMARY KEY NOT NULL,
+  	"id" uuid PRIMARY KEY NOT NULL,
   	"key" varchar,
   	"value" jsonb,
   	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
@@ -73,13 +106,13 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TABLE "payload_preferences_rels" (
   	"id" serial PRIMARY KEY NOT NULL,
   	"order" integer,
-  	"parent_id" integer NOT NULL,
+  	"parent_id" uuid NOT NULL,
   	"path" varchar NOT NULL,
-  	"users_id" integer
+  	"users_id" uuid
   );
   
   CREATE TABLE "payload_migrations" (
-  	"id" serial PRIMARY KEY NOT NULL,
+  	"id" uuid PRIMARY KEY NOT NULL,
   	"name" varchar,
   	"batch" numeric,
   	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
@@ -90,6 +123,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."payload_locked_documents"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_users_fk" FOREIGN KEY ("users_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_media_fk" FOREIGN KEY ("media_id") REFERENCES "public"."media"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_private_media_fk" FOREIGN KEY ("private_media_id") REFERENCES "public"."private_media"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_preferences_rels" ADD CONSTRAINT "payload_preferences_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."payload_preferences"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_preferences_rels" ADD CONSTRAINT "payload_preferences_rels_users_fk" FOREIGN KEY ("users_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
   CREATE INDEX "users_sessions_order_idx" ON "users_sessions" USING btree ("_order");
@@ -100,6 +134,9 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "media_updated_at_idx" ON "media" USING btree ("updated_at");
   CREATE INDEX "media_created_at_idx" ON "media" USING btree ("created_at");
   CREATE UNIQUE INDEX "media_filename_idx" ON "media" USING btree ("filename");
+  CREATE INDEX "private_media_updated_at_idx" ON "private_media" USING btree ("updated_at");
+  CREATE INDEX "private_media_created_at_idx" ON "private_media" USING btree ("created_at");
+  CREATE UNIQUE INDEX "private_media_filename_idx" ON "private_media" USING btree ("filename");
   CREATE UNIQUE INDEX "payload_kv_key_idx" ON "payload_kv" USING btree ("key");
   CREATE INDEX "payload_locked_documents_global_slug_idx" ON "payload_locked_documents" USING btree ("global_slug");
   CREATE INDEX "payload_locked_documents_updated_at_idx" ON "payload_locked_documents" USING btree ("updated_at");
@@ -109,6 +146,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "payload_locked_documents_rels_path_idx" ON "payload_locked_documents_rels" USING btree ("path");
   CREATE INDEX "payload_locked_documents_rels_users_id_idx" ON "payload_locked_documents_rels" USING btree ("users_id");
   CREATE INDEX "payload_locked_documents_rels_media_id_idx" ON "payload_locked_documents_rels" USING btree ("media_id");
+  CREATE INDEX "payload_locked_documents_rels_private_media_id_idx" ON "payload_locked_documents_rels" USING btree ("private_media_id");
   CREATE INDEX "payload_preferences_key_idx" ON "payload_preferences" USING btree ("key");
   CREATE INDEX "payload_preferences_updated_at_idx" ON "payload_preferences" USING btree ("updated_at");
   CREATE INDEX "payload_preferences_created_at_idx" ON "payload_preferences" USING btree ("created_at");
@@ -125,6 +163,7 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
    DROP TABLE "users_sessions" CASCADE;
   DROP TABLE "users" CASCADE;
   DROP TABLE "media" CASCADE;
+  DROP TABLE "private_media" CASCADE;
   DROP TABLE "payload_kv" CASCADE;
   DROP TABLE "payload_locked_documents" CASCADE;
   DROP TABLE "payload_locked_documents_rels" CASCADE;
