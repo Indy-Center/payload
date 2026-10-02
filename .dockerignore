@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.gitignore
+.gitattributes
+.github
+.vscode
+.env
+.env.example
+*.md
+Dockerfile
+.dockerignore
+deploy
+tests
+media
