@@ -77,6 +77,12 @@ jobs:
           # GitHub flags workflows that hand every secret to a step that talks to another host.
           ENV_PAYLOAD_SECRET: ${{ secrets.ENV_PAYLOAD_SECRET }}
           ENV_POSTGRES_PASSWORD: ${{ secrets.ENV_POSTGRES_PASSWORD }}
+          ENV_R2_ACCESS_KEY_ID: ${{ secrets.ENV_R2_ACCESS_KEY_ID }}
+          ENV_R2_SECRET_ACCESS_KEY: ${{ secrets.ENV_R2_SECRET_ACCESS_KEY }}
+          ENV_R2_ENDPOINT: ${{ vars.ENV_R2_ENDPOINT }}
+          ENV_R2_PUBLIC_BUCKET: ${{ vars.ENV_R2_PUBLIC_BUCKET }}
+          ENV_R2_PUBLIC_URL: ${{ vars.ENV_R2_PUBLIC_URL }}
+          ENV_R2_PRIVATE_BUCKET: ${{ vars.ENV_R2_PRIVATE_BUCKET }}
         run: |
           # Values are single-quoted so Compose takes them literally, $ and # included. So a value can't
           # contain a single quote or a newline; if one does, this fails before anything reaches the box.

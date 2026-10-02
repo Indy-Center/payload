@@ -29,9 +29,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs \
  && adduser --system --uid 1001 nextjs
 
-# .next holds the prerender cache. media holds uploads; compose mounts a named volume there, and a
-# new volume takes this directory's owner, so the server can write to it.
-RUN mkdir .next media && chown nextjs:nodejs .next media
+# .next holds the prerender cache. media and private-media hold uploads when the R2 buckets aren't
+# configured; compose mounts a named volume on each, and a new volume takes the directory's owner,
+# so the server can write to it.
+RUN mkdir .next media private-media && chown nextjs:nodejs .next media private-media
 
 # https://nextjs.org/docs/app/api-reference/config/next-config-js/output
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./

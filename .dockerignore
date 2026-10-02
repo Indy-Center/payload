@@ -13,3 +13,4 @@ Dockerfile
 deploy
 tests
 media
+private-media

@@ -19,8 +19,11 @@ services:
       PAYLOAD_SECRET: ${PAYLOAD_SECRET:?PAYLOAD_SECRET must be set (repo secret ENV_PAYLOAD_SECRET)}
       DATABASE_URL: postgres://payload:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set (repo secret ENV_POSTGRES_PASSWORD)}@db:5432/payload
     volumes:
-      # Uploads. Named volume: the deploy rsyncs with --delete, so they can't live under deploy/.
+      # Uploads, when the R2 buckets aren't configured (the R2_* settings in .env.example); with
+      # them, uploads go to R2 and these stay empty. Named volumes: the deploy rsyncs with --delete,
+      # so they can't live under deploy/.
       - media:/app/media
+      - private-media:/app/private-media
     networks:
       - traefik-shared # reachable by Traefik
       - internal # reaches the database
@@ -69,3 +72,4 @@ networks:
 volumes:
   db-data:
   media:
+  private-media:

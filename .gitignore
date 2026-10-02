@@ -25,6 +25,7 @@ npm-debug.log*
 
 # Uploads in local development; on the VPS they live in the media volume
 /media
+/private-media
 
 # AI assistant files
 .ai/
