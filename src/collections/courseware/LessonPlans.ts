@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { lexicalEditor, UploadFeature } from '@payloadcms/richtext-lexical'
 import { coursewareAccess } from '@/courseware/access'
+import { expandTaskRows, pickableTask } from '@/courseware/task-rows'
 
 export const LessonPlans: CollectionConfig = {
   slug: 'lesson-plans',
@@ -10,6 +11,20 @@ export const LessonPlans: CollectionConfig = {
     group: 'Courseware',
   },
   access: coursewareAccess,
+  hooks: {
+    beforeChange: [
+      async ({ data, originalDoc, req }) => {
+        data.theoryItems = await expandTaskRows(
+          req,
+          data.theoryItems,
+          originalDoc?.theoryItems,
+          'theoryItems',
+          { teacherNotes: '' },
+        )
+        return data
+      },
+    ],
+  },
   fields: [
     {
       name: 'courseVersion',
@@ -34,5 +49,27 @@ export const LessonPlans: CollectionConfig = {
     },
     { name: 'time', type: 'number', min: 0, admin: { description: 'Minutes.' } },
     { name: 'isExam', label: 'Exam', type: 'checkbox', defaultValue: false },
+    {
+      name: 'theoryItems',
+      type: 'array',
+      admin: {
+        description:
+          'Adding a task that has tasks beneath it adds a row for each of them when you save.',
+      },
+      fields: [
+        {
+          name: 'task',
+          type: 'relationship',
+          relationTo: 'tasks',
+          required: true,
+          filterOptions: pickableTask,
+        },
+        {
+          name: 'teacherNotes',
+          type: 'textarea',
+          admin: { description: 'Shown only to teachers: the prompt to ask.' },
+        },
+      ],
+    },
   ],
 }

@@ -2,13 +2,9 @@ import type { PayloadRequest } from 'payload'
 import { convertLexicalToHTML } from '@payloadcms/richtext-lexical/html'
 import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
 import type { CourseVersion, LessonPlan as LessonPlanRecord } from '@/payload-types'
-import type { CourseVersionDocument, LessonPlan } from './document'
-
-/** The id of a relationship, whether it came back populated or not. */
-export function idOf(value: string | { id: string } | null | undefined): string | null {
-  if (!value) return null
-  return typeof value === 'string' ? value : value.id
-}
+import type { CourseList, CourseVersionDocument, LessonPlan, TaskRef } from './document'
+import { idOf } from './ids'
+import { loadTaskTree, type TaskTree } from './task-tree'
 
 /**
  * The version of a course that "current" or "draft" names, or null. Current is whichever version
@@ -46,6 +42,38 @@ export async function findCourseVersion(
   return draft ? { courseId: course.id, versionId: draft.id } : null
 }
 
+/** Every course, by code, with its current version and its newest draft. */
+export async function buildCourseList(req: PayloadRequest): Promise<CourseList> {
+  const [courses, versions] = await Promise.all([
+    req.payload.find({ collection: 'courses', sort: 'code', pagination: false, depth: 0, req }),
+    req.payload.find({
+      collection: 'course-versions',
+      pagination: false,
+      depth: 0,
+      select: { course: true, number: true, status: true },
+      req,
+    }),
+  ])
+
+  return {
+    courses: courses.docs.map((course) => {
+      const currentId = idOf(course.currentVersion)
+      const current = versions.docs.find((version) => version.id === currentId)
+      const draft = versions.docs
+        .filter((version) => idOf(version.course) === course.id && version.status === 'draft')
+        .sort((a, b) => b.number - a.number)[0]
+      return {
+        id: course.id,
+        code: course.code,
+        title: course.title,
+        authors: course.authors ?? [],
+        currentVersion: current ? { id: current.id, number: current.number } : null,
+        draftVersion: draft ? { id: draft.id, number: draft.number } : null,
+      }
+    }),
+  }
+}
+
 /** One whole course version, resolved, in the shape `document.ts` promises. */
 export async function buildCourseVersionDocument(
   req: PayloadRequest,
@@ -74,6 +102,7 @@ export async function buildCourseVersionDocument(
     req,
   })
   const plansById = new Map(plans.docs.map((plan) => [plan.id, plan]))
+  const tree = await loadTaskTree(req)
 
   return {
     course: {
@@ -100,12 +129,17 @@ export async function buildCourseVersionDocument(
       lessonPlans: (module.lessonPlans ?? [])
         .map((plan) => plansById.get(idOf(plan) ?? ''))
         .filter((plan): plan is LessonPlanRecord => plan !== undefined)
-        .map(lessonPlan),
+        .map((plan) => lessonPlan(plan, tree)),
     })),
   }
 }
 
-function lessonPlan(plan: LessonPlanRecord): LessonPlan {
+function taskRef(tree: TaskTree, task: string | { id: string }): TaskRef {
+  const id = idOf(task)!
+  return { id, number: tree.number(id), name: tree.get(id)?.name ?? '' }
+}
+
+function lessonPlan(plan: LessonPlanRecord, tree: TaskTree): LessonPlan {
   return {
     id: plan.id,
     code: plan.code ?? '',
@@ -117,7 +151,11 @@ function lessonPlan(plan: LessonPlanRecord): LessonPlan {
     time: plan.time ?? null,
     isExam: plan.isExam ?? false,
     minimum: null,
-    theoryItems: [],
+    theoryItems: (plan.theoryItems ?? []).map((item) => ({
+      id: item.id ?? '',
+      task: taskRef(tree, item.task),
+      teacherNotes: item.teacherNotes ?? '',
+    })),
     scenarios: [],
   }
 }

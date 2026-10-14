@@ -1,6 +1,11 @@
 import { timingSafeEqual } from 'node:crypto'
 import type { Endpoint, PayloadRequest } from 'payload'
-import { buildCourseVersionDocument, findCourseVersion } from './course-version-document'
+import { buildCatalogue } from './catalogue'
+import {
+  buildCourseList,
+  buildCourseVersionDocument,
+  findCourseVersion,
+} from './course-version-document'
 
 /**
  * Whether the request carries the library's server credential, `LIBRARY_API_TOKEN`, as a bearer
@@ -20,6 +25,22 @@ const unauthorized = () => Response.json({ error: 'Unauthorized' }, { status: 40
 const notFound = () => Response.json({ error: 'Not found' }, { status: 404 })
 
 export const coursewareEndpoints: Endpoint[] = [
+  {
+    path: '/courseware/catalogue',
+    method: 'get',
+    handler: async (req) => {
+      if (!fromLibrary(req)) return unauthorized()
+      return Response.json(await buildCatalogue(req))
+    },
+  },
+  {
+    path: '/courseware/courses',
+    method: 'get',
+    handler: async (req) => {
+      if (!fromLibrary(req)) return unauthorized()
+      return Response.json(await buildCourseList(req))
+    },
+  },
   {
     path: '/courseware/courses/:code/:which',
     method: 'get',

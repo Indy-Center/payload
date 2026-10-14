@@ -30,7 +30,12 @@ export async function resetCourseware(payload: Payload): Promise<void> {
 export async function callEndpoint(
   payload: Payload,
   path: string,
-  options: { token?: string | null; method?: string } = {},
+  options: {
+    token?: string | null
+    method?: string
+    body?: unknown
+    user?: Awaited<ReturnType<Payload['create']>>
+  } = {},
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- tests read the JSON freely
 ): Promise<{ status: number; body: any }> {
   const method = options.method ?? 'get'
@@ -44,6 +49,8 @@ export async function callEndpoint(
   const token = options.token === undefined ? TOKEN : options.token
   if (token !== null) headers.set('authorization', `Bearer ${token}`)
   req.headers = headers
+  if (options.user) req.user = { ...options.user, collection: 'users' } as typeof req.user
+  if (options.body !== undefined) req.json = async () => options.body
   req.routeParams = matchPath(endpoint.path, path) ?? {}
 
   const response = await endpoint.handler(req)

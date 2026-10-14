@@ -150,6 +150,47 @@ describe('the one-document course version', () => {
   })
 })
 
+describe('the course list', () => {
+  it('lists every course with its current version and newest draft', async () => {
+    const { course, version } = await courseWithVersion('published')
+    const next = await payload.create({
+      collection: 'course-versions',
+      data: { course: course.id, number: 2, status: 'draft' },
+    })
+    const other = await payload.create({
+      collection: 'courses',
+      data: { code: 'X-APP', title: 'Example Approach' },
+    })
+
+    const { status, body } = await callEndpoint(payload, '/courseware/courses')
+
+    expect(status).toBe(200)
+    expect(body.courses).toEqual([
+      {
+        id: other.id,
+        code: 'X-APP',
+        title: 'Example Approach',
+        authors: [],
+        currentVersion: null,
+        draftVersion: null,
+      },
+      {
+        id: course.id,
+        code: 'X-TWR',
+        title: 'Example Tower',
+        authors: ['1000001'],
+        currentVersion: { id: version.id, number: 1 },
+        draftVersion: { id: next.id, number: 2 },
+      },
+    ])
+  })
+
+  it('refuses a request without the library credential', async () => {
+    const { status } = await callEndpoint(payload, '/courseware/courses', { token: null })
+    expect(status).toBe(401)
+  })
+})
+
 describe('retire, never delete', () => {
   it('refuses to delete any courseware record, even for a signed-in user', async () => {
     const { course, version, first } = await courseWithVersion()

@@ -70,6 +70,7 @@ export interface Config {
     users: User;
     media: Media;
     'private-media': PrivateMedia;
+    tasks: Task;
     courses: Course;
     'course-versions': CourseVersion;
     'lesson-plans': LessonPlan;
@@ -78,11 +79,16 @@ export interface Config {
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    tasks: {
+      children: 'tasks';
+    };
+  };
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'private-media': PrivateMediaSelect<false> | PrivateMediaSelect<true>;
+    tasks: TasksSelect<false> | TasksSelect<true>;
     courses: CoursesSelect<false> | CoursesSelect<true>;
     'course-versions': CourseVersionsSelect<false> | CourseVersionsSelect<true>;
     'lesson-plans': LessonPlansSelect<false> | LessonPlansSelect<true>;
@@ -194,6 +200,28 @@ export interface PrivateMedia {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tasks".
+ */
+export interface Task {
+  id: string;
+  _order?: string | null;
+  name: string;
+  description?: string | null;
+  parent?: (string | null) | Task;
+  children?: {
+    docs?: (string | Task)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  /**
+   * Retired tasks stay where they are used but are not offered for new use.
+   */
+  retired?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "courses".
  */
 export interface Course {
@@ -274,6 +302,19 @@ export interface LessonPlan {
    */
   time?: number | null;
   isExam?: boolean | null;
+  /**
+   * Adding a task that has tasks beneath it adds a row for each of them when you save.
+   */
+  theoryItems?:
+    | {
+        task: string | Task;
+        /**
+         * Shown only to teachers: the prompt to ask.
+         */
+        teacherNotes?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -312,6 +353,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'private-media';
         value: string | PrivateMedia;
+      } | null)
+    | ({
+        relationTo: 'tasks';
+        value: string | Task;
       } | null)
     | ({
         relationTo: 'courses';
@@ -431,6 +476,20 @@ export interface PrivateMediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tasks_select".
+ */
+export interface TasksSelect<T extends boolean = true> {
+  _order?: T;
+  name?: T;
+  description?: T;
+  parent?: T;
+  children?: T;
+  retired?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "courses_select".
  */
 export interface CoursesSelect<T extends boolean = true> {
@@ -476,6 +535,13 @@ export interface LessonPlansSelect<T extends boolean = true> {
   body?: T;
   time?: T;
   isExam?: T;
+  theoryItems?:
+    | T
+    | {
+        task?: T;
+        teacherNotes?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
