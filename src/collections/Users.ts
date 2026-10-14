@@ -21,7 +21,7 @@ export const Users: CollectionConfig = {
       type: 'text',
       index: true,
       access: { create: trainingAdminField, update: trainingAdminField },
-      admin: { description: 'Matches course authors named on a course.' },
+      admin: { className: 'cid', description: 'Matches course authors named on a course.' },
     },
     {
       name: 'roles',

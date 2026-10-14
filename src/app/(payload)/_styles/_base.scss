@@ -1,0 +1,77 @@
+// What both themes share: font, corners, and the status colours Payload flips for dark itself.
+
+// Payload has a step every 50; Tailwind skips 150, 250 … 850. Those take the midpoint.
+@mixin scale($payload, $tailwind) {
+  @for $i from 1 through 19 {
+    $n: $i * 50;
+    @if $n == 50 or $n == 950 or $n % 100 == 0 {
+      --color-#{$payload}-#{$n}: var(--tw-#{$tailwind}-#{$n});
+    } @else {
+      --color-#{$payload}-#{$n}: color-mix(
+        in oklab,
+        var(--tw-#{$tailwind}-#{$n - 50}),
+        var(--tw-#{$tailwind}-#{$n + 50})
+      );
+    }
+  }
+}
+
+:root {
+  // Tailwind 4's default sans and mono stacks
+  --font-body:
+    ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+  // Payload sets rich text in serif; the other apps use sans throughout.
+  --font-serif: var(--font-body);
+
+  // rounded-lg
+  --style-radius-s: 0.5rem;
+  --style-radius-m: 0.5rem;
+  --style-radius-l: 0.5rem;
+
+  // Payload's "success" is its blue: focus rings, selection and success toasts.
+  @include scale(success, sky);
+  @include scale(error, red);
+  @include scale(warning, amber);
+}
+
+// The account page's settings rules run edge to edge. Payload sizes them past the right edge,
+// which on a phone makes the page scroll sideways.
+.payload-settings::before,
+.payload-settings::after {
+  right: calc(var(--gutter-h) * -1);
+  width: auto;
+}
+
+// The account's sign-in box is drawn as a card, like the dashboard's.
+.auth-fields {
+  border: 1px solid var(--theme-border-color);
+  border-radius: var(--style-radius-m);
+}
+
+// Payload colours every link as its surrounding text. Its text links have no class, and take the
+// accent each theme sets as `--indy-link`. Nav links (_nav.scss), buttons and other controls
+// drawn as links carry a class, and keep their own colours.
+a:not([class]),
+.LexicalEditorTheme__link,
+.step-nav a {
+  color: var(--indy-link);
+}
+
+// Fields given `admin.className: 'cid'` hold VATSIM CIDs.
+.cid {
+  input,
+  .rs__value-container,
+  .multi-value-label__text {
+    font-family: var(--font-mono);
+  }
+}
+
+// Their list columns, which Payload classes by field name.
+.cell-cid,
+.collection-list--courses .cell-authors {
+  font-family: var(--font-mono);
+}

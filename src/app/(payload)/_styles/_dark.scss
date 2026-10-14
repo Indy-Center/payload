@@ -1,0 +1,64 @@
+// The dark theme, as the other Indy Center apps draw it: gray-900 page, translucent slate-800
+// surfaces with slate-700 borders, slate-700 inputs, white/gray-300/gray-400 text, sky-600
+// buttons and sky-400 links. Payload picks it from the user's setting or the system theme.
+
+html[data-theme='dark'] {
+  --theme-bg: var(--tw-gray-900);
+  --theme-input-bg: var(--tw-slate-700);
+  --theme-text: white;
+  --indy-link: var(--tw-sky-400);
+
+  // The other apps' cards are slate-800/60 with slate-700/60 borders, over the gray-900 page.
+  // Payload needs opaque colours, so these are those layers blended as the browser draws them.
+  --indy-surface: color-mix(in srgb, var(--tw-slate-800) 60%, var(--tw-gray-900));
+  --theme-elevation-0: var(--tw-gray-900);
+  --theme-elevation-50: var(--indy-surface); // surfaces: cards, collapsible headers
+  // Hover: the other apps' slate-700/30.
+  --theme-elevation-100: color-mix(in srgb, var(--tw-slate-700) 30%, var(--indy-surface));
+  // Borders.
+  --theme-elevation-150: color-mix(in srgb, var(--tw-slate-700) 60%, var(--indy-surface));
+  --theme-elevation-200: var(--tw-slate-600); // input borders
+  --theme-elevation-250: color-mix(in oklab, var(--tw-slate-600), var(--tw-slate-500));
+  --theme-elevation-300: var(--tw-slate-500);
+  --theme-elevation-350: color-mix(in oklab, var(--tw-slate-500), var(--tw-gray-400));
+  // Muted text. Payload's dark scale has no 500; gray-500 here would fail AA.
+  --theme-elevation-400: var(--tw-gray-400);
+  --theme-elevation-450: var(--tw-gray-400);
+  --theme-elevation-500: var(--tw-gray-400);
+  --theme-elevation-550: var(--tw-gray-300);
+  --theme-elevation-600: var(--tw-gray-300);
+  --theme-elevation-650: var(--tw-gray-300);
+  --theme-elevation-700: var(--tw-gray-300);
+  --theme-elevation-750: var(--tw-gray-100);
+  --theme-elevation-800: white;
+  --theme-elevation-850: white;
+  --theme-elevation-900: white;
+  --theme-elevation-950: white;
+  --theme-elevation-1000: white;
+
+  // Inputs draw their border in the shared border colour; the other apps give them slate-600.
+  input,
+  textarea,
+  .rs__control {
+    --theme-elevation-150: var(--tw-slate-600);
+  }
+
+  // Tables are a shade fainter: slate-800/50 rows with slate-700/50 borders.
+  .table {
+    --indy-surface: color-mix(in srgb, var(--tw-slate-800) 50%, var(--tw-gray-900));
+    --theme-elevation-50: var(--indy-surface);
+    --theme-elevation-150: color-mix(in srgb, var(--tw-slate-700) 50%, var(--indy-surface));
+  }
+
+  // A field's required mark. Payload's red-500 falls short of AA on the card surface.
+  .field-label .required {
+    color: var(--tw-red-400);
+  }
+
+  .btn--style-primary:not(.btn--disabled) {
+    --bg-color: var(--tw-sky-600);
+    --color: white;
+    --hover-bg: var(--tw-sky-700);
+    --hover-color: white;
+  }
+}

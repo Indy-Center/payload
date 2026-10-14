@@ -1,0 +1,6 @@
+// The Indy Center look, set through Payload's own theme variables. One partial per concern.
+@use './_styles/palette';
+@use './_styles/base';
+@use './_styles/light';
+@use './_styles/dark';
+@use './_styles/nav';

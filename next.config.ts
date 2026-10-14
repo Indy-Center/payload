@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // The CMS has no frontend of its own. Temporary, so browsers do not cache it.
+  async redirects() {
+    return [{ source: '/', destination: '/admin', permanent: false }]
+  },
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {
       '.cjs': ['.cts', '.cjs'],
