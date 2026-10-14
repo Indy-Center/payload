@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { coursewareAccess } from '@/courseware/access'
+import { courseVersionAccess, staffOnlyField } from '@/courseware/access'
 import { idOf } from '@/courseware/ids'
 import { refuseUnpublishable, refuseVersionShapeChange } from '@/courseware/publishing'
 
@@ -10,7 +10,7 @@ export const CourseVersions: CollectionConfig = {
     defaultColumns: ['title', 'status', 'updatedAt'],
     group: 'Courseware',
   },
-  access: coursewareAccess,
+  access: courseVersionAccess,
   hooks: {
     beforeChange: [
       async ({ data, originalDoc, req }) => {
@@ -69,6 +69,8 @@ export const CourseVersions: CollectionConfig = {
         { label: 'Published', value: 'published' },
       ],
       index: true,
+      // Publishing is for the Training Admin and leads.
+      access: { create: staffOnlyField, update: staffOnlyField },
       admin: {
         position: 'sidebar',
         description:

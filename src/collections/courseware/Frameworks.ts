@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { coursewareAccess } from '@/courseware/access'
+import { staffAccess } from '@/courseware/access'
 
 /**
  * One edition of a framework, such as VATUSA's (USA) or VATSIM's GCAP. A revised framework is a
@@ -8,7 +8,7 @@ import { coursewareAccess } from '@/courseware/access'
 export const Frameworks: CollectionConfig = {
   slug: 'frameworks',
   admin: { useAsTitle: 'label', defaultColumns: ['name', 'edition'], group: 'Courseware' },
-  access: coursewareAccess,
+  access: staffAccess,
   indexes: [{ fields: ['name', 'edition'], unique: true }],
   fields: [
     { name: 'name', type: 'text', required: true, admin: { description: 'Such as USA or GCAP.' } },

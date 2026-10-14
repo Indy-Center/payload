@@ -1,5 +1,5 @@
 import { ValidationError, type CollectionConfig } from 'payload'
-import { coursewareAccess } from '@/courseware/access'
+import { staffAccess } from '@/courseware/access'
 
 /**
  * The grades a teacher chooses from, lowest first, configured rather than fixed (decision 0028).
@@ -9,7 +9,7 @@ import { coursewareAccess } from '@/courseware/access'
 export const GradingScales: CollectionConfig = {
   slug: 'grading-scales',
   admin: { useAsTitle: 'name', group: 'Courseware' },
-  access: coursewareAccess,
+  access: staffAccess,
   hooks: {
     beforeChange: [
       async ({ data, operation, originalDoc, req }) => {

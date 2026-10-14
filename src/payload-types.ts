@@ -147,6 +147,14 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: string;
+  /**
+   * Matches course authors named on a course.
+   */
+  cid?: string | null;
+  /**
+   * training:admin is the Training Admin; training:lead a lead instructor.
+   */
+  roles?: ('training:admin' | 'training:lead')[] | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -608,6 +616,8 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  cid?: T;
+  roles?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;

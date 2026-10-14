@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { coursewareAccess } from '@/courseware/access'
+import { staffAccess } from '@/courseware/access'
 
 export const Courses: CollectionConfig = {
   slug: 'courses',
@@ -8,7 +8,7 @@ export const Courses: CollectionConfig = {
     defaultColumns: ['code', 'title', 'currentVersion'],
     group: 'Courseware',
   },
-  access: coursewareAccess,
+  access: staffAccess,
   fields: [
     {
       name: 'code',

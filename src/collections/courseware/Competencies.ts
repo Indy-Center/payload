@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { coursewareAccess } from '@/courseware/access'
+import { staffAccess } from '@/courseware/access'
 
 /**
  * One standard in one framework edition, as its source words it. A heading has no text and cannot
@@ -13,7 +13,7 @@ export const Competencies: CollectionConfig = {
     defaultColumns: ['sourceId', 'title', 'framework'],
     group: 'Courseware',
   },
-  access: coursewareAccess,
+  access: staffAccess,
   indexes: [{ fields: ['framework', 'sourceId'], unique: true }],
   fields: [
     { name: 'framework', type: 'relationship', relationTo: 'frameworks', required: true },

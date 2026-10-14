@@ -1,11 +1,11 @@
 import type { CollectionConfig } from 'payload'
-import { coursewareAccess } from '@/courseware/access'
+import { staffAccess } from '@/courseware/access'
 
 /** A document tasks cite, such as the 7110.65. A reissue is fixed here once (decision 0014). */
 export const References: CollectionConfig = {
   slug: 'references',
   admin: { useAsTitle: 'name', defaultColumns: ['name', 'edition'], group: 'Courseware' },
-  access: coursewareAccess,
+  access: staffAccess,
   fields: [
     { name: 'name', type: 'text', required: true },
     { name: 'edition', type: 'text' },

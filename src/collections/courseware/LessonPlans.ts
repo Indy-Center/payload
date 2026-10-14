@@ -1,6 +1,6 @@
 import type { CollectionConfig, FilterOptions, Where } from 'payload'
 import { lexicalEditor, UploadFeature } from '@payloadcms/richtext-lexical'
-import { coursewareAccess } from '@/courseware/access'
+import { lessonPlanAccess } from '@/courseware/access'
 import { idOf } from '@/courseware/ids'
 import { refuseLessonPlanShapeChange } from '@/courseware/publishing'
 import { expandTaskRows, pickableTask } from '@/courseware/task-rows'
@@ -37,7 +37,7 @@ export const LessonPlans: CollectionConfig = {
     defaultColumns: ['code', 'title', 'courseVersion'],
     group: 'Courseware',
   },
-  access: coursewareAccess,
+  access: lessonPlanAccess,
   hooks: {
     beforeChange: [
       async ({ data, operation, originalDoc, req }) => {

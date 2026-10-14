@@ -67,7 +67,7 @@ describe('the task tree', () => {
   it('renumbers later siblings when a task is moved in between, with no other edit', async () => {
     const user = await payload.create({
       collection: 'users',
-      data: { email: 'lead@example.com', password: 'example-password' },
+      data: { email: 'lead@example.com', password: 'example-password', roles: ['training:lead'] },
     })
     const radio = await task('Radio')
     const first = await task('Readbacks', radio.id)
@@ -97,7 +97,7 @@ describe('the task tree', () => {
   it('retires tasks rather than deleting them', async () => {
     const user = await payload.create({
       collection: 'users',
-      data: { email: 'lead@example.com', password: 'example-password' },
+      data: { email: 'lead@example.com', password: 'example-password', roles: ['training:lead'] },
     })
     const radio = await task('Radio')
 

@@ -1,10 +1,11 @@
 /**
  * What the CMS serves to the library (and, in release 2, training-tools): the contract.
  *
- * Two documents, both read with the server credential in `LIBRARY_API_TOKEN`:
+ * Three reads, each with the server credential in `LIBRARY_API_TOKEN` as a bearer token:
  *
  * - `GET /api/courseware/courses` lists every course with the version numbers it has.
- * - `GET /api/courseware/courses/:code/current` or `/draft` is one whole course version.
+ * - `GET /api/courseware/courses/:code/current` or `/draft` is one whole course version, or a 404
+ *   when the course has none.
  * - `GET /api/courseware/catalogue` is the task tree, frameworks, competencies and references,
  *   for task and competency pages.
  *

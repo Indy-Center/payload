@@ -1,5 +1,5 @@
 import type { CollectionConfig, FieldHook } from 'payload'
-import { coursewareAccess } from '@/courseware/access'
+import { staffAccess } from '@/courseware/access'
 import { hideRetiredUnlessAsked } from '@/courseware/retired'
 
 /** The GCAP code VATUSA pairs a mapped USA competency with, read fresh from the competency. */
@@ -30,7 +30,7 @@ export const Tasks: CollectionConfig = {
     group: 'Courseware',
     baseFilter: hideRetiredUnlessAsked,
   },
-  access: coursewareAccess,
+  access: staffAccess,
   fields: [
     { name: 'name', type: 'text', required: true },
     { name: 'description', type: 'textarea' },
