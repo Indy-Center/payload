@@ -1,0 +1,11 @@
+USA ID,GCAP ID,7110.65/Other FAA,Domain,Standard
+S1 Competencies
+1.1,,,Example Heading
+1.1.1,A.2.a.i,1-1-1,Example Standard,"Does the first example thing.
+Does a second example thing."
+1.1.1a,http://a.2.a.ii,1-1-2,Example Detail,Does the detailed example thing.
+S2 Competencies
+4.3.3,A.3.b.i,40943.0,Example Coordination,Coordinates in the example way.
+4.5,,,S1 Competencies,Meets all established standards for S1.
+S3 Competencies
+5.2,a.4.d.i,,Example Radar,Uses the example radar.
