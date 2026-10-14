@@ -30,6 +30,29 @@
   background: var(--indy-nav-active-edge);
 }
 
+// The arrow on the Indy Center app links, which open in a new tab.
+.nav__link-new-tab {
+  display: inline-flex;
+  margin-inline-start: 0.375em;
+  color: var(--theme-elevation-400);
+
+  // In em, to follow the label, which Payload enlarges on a phone.
+  svg {
+    width: 0.75em;
+    height: 0.75em;
+  }
+}
+
+// Read out, not shown.
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .nav-footer {
   margin-top: var(--base);
   font-size: 0.75rem;

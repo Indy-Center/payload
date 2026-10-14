@@ -42,6 +42,12 @@ export const IndyCenterLinks = async (props: Props) => (
     {apps.map(({ name, href }) => (
       <a key={href} className="nav__link" href={href} target="_blank" rel="noopener noreferrer">
         <span className="nav__link-label">{name}</span>
+        <span className="nav__link-new-tab">
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path d="M6 3h7v7M13 3 4 12" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+          <span className="visually-hidden"> (opens in a new tab)</span>
+        </span>
       </a>
     ))}
   </NavGroup>
