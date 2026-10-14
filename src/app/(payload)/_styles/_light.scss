@@ -1,0 +1,50 @@
+// The light theme (decision 0003): gray-50 page, white surfaces with slate-200 borders,
+// slate-900/slate-600 text, sky-600 buttons and sky-700 links.
+
+html[data-theme='light'] {
+  --theme-bg: var(--tw-gray-50);
+  --theme-input-bg: white;
+
+  --theme-elevation-0: white;
+  --theme-elevation-50: var(--tw-slate-50);
+  --theme-elevation-100: var(--tw-slate-100);
+  --theme-elevation-150: var(--tw-slate-200); // borders
+  --theme-elevation-200: var(--tw-slate-300);
+  --theme-elevation-250: color-mix(in oklab, var(--tw-slate-300), var(--tw-slate-400));
+  --theme-elevation-300: var(--tw-slate-400);
+  --theme-elevation-350: color-mix(in oklab, var(--tw-slate-400), var(--tw-slate-500));
+  // Muted labels. Payload's stock grey here fails AA; slate-500 passes on white and gray-50.
+  --theme-elevation-400: var(--tw-slate-500);
+  --theme-elevation-450: var(--tw-slate-500);
+  --theme-elevation-500: var(--tw-slate-600);
+  --theme-elevation-550: var(--tw-slate-600);
+  --theme-elevation-600: var(--tw-slate-600);
+  --theme-elevation-650: var(--tw-slate-700);
+  --theme-elevation-700: var(--tw-slate-700);
+  --theme-elevation-750: var(--tw-slate-800);
+  --theme-elevation-800: var(--tw-slate-900); // body text
+  --theme-elevation-850: var(--tw-slate-900);
+  --theme-elevation-900: var(--tw-slate-950);
+  --theme-elevation-950: var(--tw-slate-950);
+  --theme-elevation-1000: var(--tw-slate-950);
+
+  // Stock primary buttons are near-black; ours take the accent.
+  .btn--style-primary:not(.btn--disabled) {
+    --bg-color: var(--tw-sky-600);
+    --color: white;
+    --hover-bg: var(--tw-sky-700);
+    --hover-color: white;
+  }
+
+  // Cards read as white surfaces, not grey ones.
+  .card {
+    background: var(--theme-elevation-0);
+  }
+
+  // Payload colours every link as its surrounding text, so only content links take the accent.
+  .LexicalEditorTheme__link,
+  .table td a,
+  .step-nav a {
+    color: var(--tw-sky-700);
+  }
+}
