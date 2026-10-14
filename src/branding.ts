@@ -33,6 +33,15 @@ export const branding: Plugin = (config) => ({
         Logo: '/components/admin/Logo#Logo',
         Icon: '/components/admin/Icon#Icon',
       },
+      // Links to the other apps, and their footer at the bottom of the sidebar.
+      afterNavLinks: [
+        ...(config.admin?.components?.afterNavLinks ?? []),
+        '/components/admin/IndyCenterLinks#IndyCenterLinks',
+      ],
+      afterNav: [
+        ...(config.admin?.components?.afterNav ?? []),
+        '/components/admin/NavFooter#NavFooter',
+      ],
     },
     meta: {
       ...config.admin?.meta,

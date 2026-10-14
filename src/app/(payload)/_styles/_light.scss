@@ -28,6 +28,10 @@ html[data-theme='light'] {
   --theme-elevation-950: var(--tw-slate-950);
   --theme-elevation-1000: var(--tw-slate-950);
 
+  // The sidebar's current link (see _nav.scss); sky-400 is too faint an edge on white.
+  --indy-nav-active-tint: color-mix(in oklab, var(--tw-sky-600) 12%, transparent);
+  --indy-nav-active-edge: var(--tw-sky-600);
+
   // Stock primary buttons are near-black; ours take the accent.
   .btn--style-primary:not(.btn--disabled) {
     --bg-color: var(--tw-sky-600);
