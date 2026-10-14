@@ -10,7 +10,7 @@ It holds Indy Center's **courseware**: courses, their versions, modules and less
 ## HTTP surface
 
 - `GET /admin` — the admin panel. On an empty database it asks whoever opens it to create the first admin account.
-- `/api/<collection>` — Payload's REST API for each collection (`users`, `media`, `private-media`): `GET` to list, `POST` to create, `GET`, `PATCH` and `DELETE` on `/api/<collection>/<id>`.
+- `/api/<collection>` — Payload's REST API for each collection (`users`, `media`, `private-media`, and the courseware collections `frameworks`, `competencies`, `references`, `tasks`, `grading-scales`, `courses`, `course-versions`, `lesson-plans`, `scenarios`): `GET` to list, `POST` to create, `GET`, `PATCH` and `DELETE` on `/api/<collection>/<id>`. Courseware refuses `DELETE`.
 - `GET /api/users/init` — whether the first admin account exists. The deploy calls it to check the app can reach its database.
 - `POST /api/users/login`, `POST /api/users/logout`, `GET /api/users/me` — sign in, sign out, and the signed-in user.
 - `GET /api/private-media/file/<filename>` — a private file, for signed-in users only.
