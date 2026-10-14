@@ -18,27 +18,18 @@ const meta = {
 }
 
 /**
- * Payload builds its not-found page's metadata without `admin.meta`, so it carries Payload's
- * title, favicon and share text. The admin's page and not-found routes pass theirs through this.
+ * Brands an admin page's metadata. The admin's page and not-found routes pass theirs through
+ * this, so every admin page, list, document and not-found alike, carries the Indy Center title,
+ * favicon and share text rather than Payload's or the collection's.
  */
 export const withBranding = async (metadata: Promise<Metadata>): Promise<Metadata> => {
   const page = await metadata
-  return {
-    ...page,
-    title,
-    description,
-    keywords: meta.keywords,
-    icons: meta.icons,
-    openGraph: { ...page.openGraph, ...meta.openGraph },
-  }
+  return { ...page, ...meta, openGraph: { ...page.openGraph, ...meta.openGraph } }
 }
 
 /**
- * Presents the admin as an Indy Center app rather than as Payload.
- *
- * Listed last among the plugins, so that it sees every collection. Payload titles its list and
- * document pages after the collection ("Lesson Plans", "Editing - Course"), and only the
- * collection's own `admin.meta` can override that, so the meta is set on each one as well.
+ * Presents the admin as an Indy Center app rather than as Payload: its logo, sidebar links and
+ * wording. Page metadata is branded by `withBranding`.
  */
 export const branding: Plugin = (config) => ({
   ...config,
@@ -62,8 +53,6 @@ export const branding: Plugin = (config) => ({
     },
     meta: {
       ...config.admin?.meta,
-      ...meta,
-      titleSuffix: '',
       // Payload's share image carries its logo.
       defaultOGImageType: 'off',
     },
@@ -74,11 +63,4 @@ export const branding: Plugin = (config) => ({
     ...config.i18n,
     translations: { en: { general: { payloadSettings: 'Settings' } } },
   },
-  collections: config.collections?.map((collection) => ({
-    ...collection,
-    admin: {
-      ...collection.admin,
-      meta: { ...collection.admin?.meta, ...meta },
-    },
-  })),
 })

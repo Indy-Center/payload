@@ -4,6 +4,7 @@
 html[data-theme='light'] {
   --theme-bg: var(--tw-gray-50);
   --theme-input-bg: white;
+  --indy-link: var(--tw-sky-700);
 
   --theme-elevation-0: white;
   --theme-elevation-50: var(--tw-slate-50);
@@ -32,6 +33,11 @@ html[data-theme='light'] {
   --indy-nav-active-tint: color-mix(in oklab, var(--tw-sky-600) 12%, transparent);
   --indy-nav-active-edge: var(--tw-sky-600);
 
+  // A field's required mark. Payload's red-500 falls short of AA on white and gray-50.
+  .field-label .required {
+    color: var(--tw-red-600);
+  }
+
   // Stock primary buttons are near-black; ours take the accent.
   .btn--style-primary:not(.btn--disabled) {
     --bg-color: var(--tw-sky-600);
@@ -44,12 +50,5 @@ html[data-theme='light'] {
   .card,
   .auth-fields {
     background: var(--theme-elevation-0);
-  }
-
-  // Payload colours every link as its surrounding text, so only content links take the accent.
-  .LexicalEditorTheme__link,
-  .table td a,
-  .step-nav a {
-    color: var(--tw-sky-700);
   }
 }
