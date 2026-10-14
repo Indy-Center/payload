@@ -6,6 +6,7 @@ html[data-theme='dark'] {
   --theme-bg: var(--tw-gray-900);
   --theme-input-bg: var(--tw-slate-700);
   --theme-text: white;
+  --indy-link: var(--tw-sky-400);
 
   --theme-elevation-0: var(--tw-gray-900);
   --theme-elevation-50: var(--tw-slate-800); // surfaces: cards, collapsible headers
@@ -42,12 +43,5 @@ html[data-theme='dark'] {
     --color: white;
     --hover-bg: var(--tw-sky-700);
     --hover-color: white;
-  }
-
-  // Payload colours every link as its surrounding text, so only content links take the accent.
-  .LexicalEditorTheme__link,
-  .table td a,
-  .step-nav a {
-    color: var(--tw-sky-400);
   }
 }

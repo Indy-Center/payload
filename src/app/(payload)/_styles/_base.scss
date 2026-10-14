@@ -52,6 +52,15 @@
   border-radius: var(--style-radius-m);
 }
 
+// Payload colours every link as its surrounding text. Its text links have no class, and take the
+// accent each theme sets as `--indy-link`. Nav links (_nav.scss), buttons and other controls
+// drawn as links carry a class, and keep their own colours.
+a:not([class]),
+.LexicalEditorTheme__link,
+.step-nav a {
+  color: var(--indy-link);
+}
+
 // Fields given `admin.className: 'cid'` hold VATSIM CIDs.
 .cid {
   input,

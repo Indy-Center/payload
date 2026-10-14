@@ -4,6 +4,7 @@
 html[data-theme='light'] {
   --theme-bg: var(--tw-gray-50);
   --theme-input-bg: white;
+  --indy-link: var(--tw-sky-700);
 
   --theme-elevation-0: white;
   --theme-elevation-50: var(--tw-slate-50);
@@ -44,12 +45,5 @@ html[data-theme='light'] {
   .card,
   .auth-fields {
     background: var(--theme-elevation-0);
-  }
-
-  // Payload colours every link as its surrounding text, so only content links take the accent.
-  .LexicalEditorTheme__link,
-  .table td a,
-  .step-nav a {
-    color: var(--tw-sky-700);
   }
 }
