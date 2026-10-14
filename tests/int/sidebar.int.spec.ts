@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import type { ReactElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { IndyCenterLinks } from '@/components/admin/IndyCenterLinks'
+import { NavFooter } from '@/components/admin/NavFooter'
 import { importMap } from '@/app/(payload)/admin/importMap'
 
 // The sidebar is server-rendered, so its HTML is what a person first gets.
@@ -69,7 +70,7 @@ describe('the Indy Center group in the sidebar', () => {
 describe('the sidebar', () => {
   // The admin finds each component it is configured with in the import map; a missing entry shows
   // only at runtime.
-  const slot = async (name: 'afterNavLinks') => {
+  const slot = async (name: 'afterNavLinks' | 'afterNav') => {
     const components = (await config).admin.components?.[name] ?? []
     return components.map((component) =>
       typeof component === 'string' ? importMap[component] : component,
@@ -78,5 +79,23 @@ describe('the sidebar', () => {
 
   it('shows the Indy Center group below the collections', async () => {
     expect(await slot('afterNavLinks')).toEqual([IndyCenterLinks])
+  })
+
+  it('ends with the footer, below the settings and log out', async () => {
+    expect(await slot('afterNav')).toEqual([NavFooter])
+  })
+})
+
+describe('the foot of the sidebar', () => {
+  afterEach(() => vi.useRealTimers())
+
+  it("carries the other apps' disclaimer and this year's copyright", () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2031-03-01T12:00:00Z') })
+    const footer = html(NavFooter())
+
+    expect([...footer.querySelectorAll('p')].map((line) => line.textContent)).toEqual([
+      'This site is not affiliated with the Federal Aviation Administration or any governing aviation body. All content contained herein is approved only for use on the VATSIM network.',
+      'Copyright 2031 Indy Center',
+    ])
   })
 })
