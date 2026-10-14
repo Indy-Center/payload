@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
 // What Next calls for every admin page.
 import { generateMetadata } from '@/app/(payload)/admin/[[...segments]]/page'
+import { getNextRequestI18n } from '@payloadcms/next/utilities'
+import config from '@/payload.config'
 
 // Outside a request Next has no headers or cookies; the admin reads them only to pick a language.
 vi.mock('next/headers.js', () => ({
@@ -45,5 +47,12 @@ describe('admin page metadata', () => {
   ])('%s names nothing after Payload', async (path) => {
     const metadata = await metadataOf(path)
     expect(JSON.stringify(metadata)).not.toMatch(/payload/i)
+  })
+})
+
+describe('admin wording', () => {
+  it('heads the account settings without naming Payload', async () => {
+    const i18n = await getNextRequestI18n({ config: await config })
+    expect(i18n.t('general:payloadSettings')).toBe('Settings')
   })
 })

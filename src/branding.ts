@@ -68,6 +68,12 @@ export const branding: Plugin = (config) => ({
       defaultOGImageType: 'off',
     },
   },
+  // The account page's settings heading is the one piece of admin wording that names Payload.
+  // Payload merges these over its own translations.
+  i18n: {
+    ...config.i18n,
+    translations: { en: { general: { payloadSettings: 'Settings' } } },
+  },
   collections: config.collections?.map((collection) => ({
     ...collection,
     admin: {
