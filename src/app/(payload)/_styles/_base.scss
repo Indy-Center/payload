@@ -46,6 +46,12 @@
   width: auto;
 }
 
+// The account's sign-in box is drawn as a card, like the dashboard's.
+.auth-fields {
+  border: 1px solid var(--theme-border-color);
+  border-radius: var(--style-radius-m);
+}
+
 // Fields given `admin.className: 'cid'` hold VATSIM CIDs.
 .cid {
   input,
