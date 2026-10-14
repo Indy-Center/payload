@@ -40,8 +40,9 @@ html[data-theme='light'] {
     --hover-color: white;
   }
 
-  // Cards read as white surfaces, not grey ones.
-  .card {
+  // Cards read as white surfaces, not grey ones. The account's sign-in box is one too.
+  .card,
+  .auth-fields {
     background: var(--theme-elevation-0);
   }
 

@@ -15,7 +15,7 @@ const html = (element: ReactElement) => {
 }
 
 describe('the Indy Center group in the sidebar', () => {
-  it('links to the other apps, each in a new tab', async () => {
+  it('links to the other apps, each in a new tab and saying so', async () => {
     const payload = await getPayload({ config })
     const group = html(await IndyCenterLinks({ payload, user: null }))
 
@@ -28,9 +28,9 @@ describe('the Indy Center group in the sidebar', () => {
         link.getAttribute('target'),
       ]),
     ).toEqual([
-      ['Community', 'https://flyindycenter.com', '_blank'],
-      ['Training', 'https://training.flyindycenter.com', '_blank'],
-      ['Library', 'https://library.flyindycenter.com', '_blank'],
+      ['Community (opens in a new tab)', 'https://flyindycenter.com', '_blank'],
+      ['Training (opens in a new tab)', 'https://training.flyindycenter.com', '_blank'],
+      ['Library (opens in a new tab)', 'https://library.flyindycenter.com', '_blank'],
     ])
     for (const link of links) expect(link.getAttribute('rel')).toBe('noopener noreferrer')
   })

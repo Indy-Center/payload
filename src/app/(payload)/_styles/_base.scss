@@ -38,6 +38,20 @@
   @include scale(warning, amber);
 }
 
+// The account page's settings rules run edge to edge. Payload sizes them past the right edge,
+// which on a phone makes the page scroll sideways.
+.payload-settings::before,
+.payload-settings::after {
+  right: calc(var(--gutter-h) * -1);
+  width: auto;
+}
+
+// The account's sign-in box is drawn as a card, like the dashboard's.
+.auth-fields {
+  border: 1px solid var(--theme-border-color);
+  border-radius: var(--style-radius-m);
+}
+
 // Fields given `admin.className: 'cid'` hold VATSIM CIDs.
 .cid {
   input,
