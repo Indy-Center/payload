@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import type { Plugin } from 'payload'
 
 const title = 'Indy Center | CMS'
@@ -14,6 +15,22 @@ const meta = {
     { rel: 'icon', type: 'image/png', sizes: '48x48', url: '/favicon.png' },
     { rel: 'icon', type: 'image/svg+xml', sizes: 'any', url: '/favicon.svg' },
   ],
+}
+
+/**
+ * Payload builds its not-found page's metadata without `admin.meta`, so it carries Payload's
+ * title, favicon and share text. The admin's page and not-found routes pass theirs through this.
+ */
+export const withBranding = async (metadata: Promise<Metadata>): Promise<Metadata> => {
+  const page = await metadata
+  return {
+    ...page,
+    title,
+    description,
+    keywords: meta.keywords,
+    icons: meta.icons,
+    openGraph: { ...page.openGraph, ...meta.openGraph },
+  }
 }
 
 /**
