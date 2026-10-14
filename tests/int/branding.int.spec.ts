@@ -43,6 +43,8 @@ describe('admin page metadata', () => {
     '/',
     '/collections/lesson-plans',
     '/collections/lesson-plans/create',
+    '/collections/lesson-plans/0190a8e2-0000-7000-8000-000000000000',
+    '/collections/lesson-plans/0190a8e2-0000-7000-8000-000000000000/versions',
     '/nothing-here',
   ])('%s names nothing after Payload', async (path) => {
     const metadata = await metadataOf(path)
