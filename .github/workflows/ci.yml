@@ -90,3 +90,17 @@ jobs:
               })
               .catch((err) => { console.error(err); process.exit(1); });
           " || { docker compose logs --tail 100; exit 1; }
+
+      # The CMS has no frontend of its own.
+      - name: Root redirects to the admin
+        run: |
+          cd deploy
+          docker compose exec -T app node -e "
+            fetch('http://127.0.0.1:3000/', { redirect: 'manual' })
+              .then((res) => {
+                const location = res.headers.get('location');
+                console.log(res.status, location);
+                if (res.status !== 307 || location !== '/admin') process.exit(1);
+              })
+              .catch((err) => { console.error(err); process.exit(1); });
+          "
