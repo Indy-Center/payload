@@ -1,0 +1,53 @@
+// The dark theme, as the other Indy Center apps draw it: gray-900 page, slate-800 surfaces
+// with slate-700 borders, slate-700 inputs, white/gray-300/gray-400 text, sky-600 buttons and
+// sky-400 links. Payload picks it from the user's setting or the system theme.
+
+html[data-theme='dark'] {
+  --theme-bg: var(--tw-gray-900);
+  --theme-input-bg: var(--tw-slate-700);
+  --theme-text: white;
+
+  --theme-elevation-0: var(--tw-gray-900);
+  --theme-elevation-50: var(--tw-slate-800); // surfaces: cards, collapsible headers
+  --theme-elevation-100: color-mix(in oklab, var(--tw-slate-800), var(--tw-slate-700));
+  --theme-elevation-150: var(--tw-slate-700); // borders
+  --theme-elevation-200: var(--tw-slate-600); // input borders
+  --theme-elevation-250: color-mix(in oklab, var(--tw-slate-600), var(--tw-slate-500));
+  --theme-elevation-300: var(--tw-slate-500);
+  --theme-elevation-350: color-mix(in oklab, var(--tw-slate-500), var(--tw-gray-400));
+  // Muted text. Payload's dark scale has no 500; gray-500 here would fail AA.
+  --theme-elevation-400: var(--tw-gray-400);
+  --theme-elevation-450: var(--tw-gray-400);
+  --theme-elevation-500: var(--tw-gray-400);
+  --theme-elevation-550: var(--tw-gray-300);
+  --theme-elevation-600: var(--tw-gray-300);
+  --theme-elevation-650: var(--tw-gray-300);
+  --theme-elevation-700: var(--tw-gray-300);
+  --theme-elevation-750: var(--tw-gray-100);
+  --theme-elevation-800: white;
+  --theme-elevation-850: white;
+  --theme-elevation-900: white;
+  --theme-elevation-950: white;
+  --theme-elevation-1000: white;
+
+  // Inputs draw their border in the shared border colour; the other apps give them slate-600.
+  input,
+  textarea,
+  .rs__control {
+    --theme-elevation-150: var(--tw-slate-600);
+  }
+
+  .btn--style-primary:not(.btn--disabled) {
+    --bg-color: var(--tw-sky-600);
+    --color: white;
+    --hover-bg: var(--tw-sky-700);
+    --hover-color: white;
+  }
+
+  // Payload colours every link as its surrounding text, so only content links take the accent.
+  .LexicalEditorTheme__link,
+  .table td a,
+  .step-nav a {
+    color: var(--tw-sky-400);
+  }
+}
