@@ -2,6 +2,7 @@ import type { CollectionConfig, FilterOptions, Where } from 'payload'
 import { lexicalEditor, UploadFeature } from '@payloadcms/richtext-lexical'
 import { coursewareAccess } from '@/courseware/access'
 import { idOf } from '@/courseware/ids'
+import { refuseLessonPlanShapeChange } from '@/courseware/publishing'
 import { expandTaskRows, pickableTask } from '@/courseware/task-rows'
 
 /**
@@ -39,7 +40,17 @@ export const LessonPlans: CollectionConfig = {
   access: coursewareAccess,
   hooks: {
     beforeChange: [
-      async ({ data, originalDoc, req }) => {
+      async ({ data, operation, originalDoc, req }) => {
+        await refuseLessonPlanShapeChange(req, data, originalDoc)
+        if (operation === 'create' && data.minimum == null && data.courseVersion) {
+          const version = await req.payload.findByID({
+            collection: 'course-versions',
+            id: idOf(data.courseVersion)!,
+            depth: 0,
+            req,
+          })
+          data.minimum = version.defaultMinimum ?? null
+        }
         data.theoryItems = await expandTaskRows(
           req,
           data.theoryItems,
@@ -75,6 +86,16 @@ export const LessonPlans: CollectionConfig = {
     },
     { name: 'time', type: 'number', min: 0, admin: { description: 'Minutes.' } },
     { name: 'isExam', label: 'Exam', type: 'checkbox', defaultValue: false },
+    {
+      name: 'minimum',
+      label: 'Minimum grade',
+      type: 'number',
+      min: 1,
+      admin: {
+        description:
+          'The point on the version’s scale, counted from 1. Starts from the version’s default.',
+      },
+    },
     {
       name: 'theoryItems',
       type: 'array',

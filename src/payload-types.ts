@@ -74,6 +74,7 @@ export interface Config {
     competencies: Competency;
     references: Reference;
     tasks: Task;
+    'grading-scales': GradingScale;
     courses: Course;
     'course-versions': CourseVersion;
     'lesson-plans': LessonPlan;
@@ -96,6 +97,7 @@ export interface Config {
     competencies: CompetenciesSelect<false> | CompetenciesSelect<true>;
     references: ReferencesSelect<false> | ReferencesSelect<true>;
     tasks: TasksSelect<false> | TasksSelect<true>;
+    'grading-scales': GradingScalesSelect<false> | GradingScalesSelect<true>;
     courses: CoursesSelect<false> | CoursesSelect<true>;
     'course-versions': CourseVersionsSelect<false> | CourseVersionsSelect<true>;
     'lesson-plans': LessonPlansSelect<false> | LessonPlansSelect<true>;
@@ -315,6 +317,24 @@ export interface Task {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "grading-scales".
+ */
+export interface GradingScale {
+  id: string;
+  name: string;
+  /**
+   * Lowest first. A minimum grade is a point’s place here: 1, 2, 3…
+   */
+  points: {
+    label: string;
+    description?: string | null;
+    id?: string | null;
+  }[];
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "courses".
  */
 export interface Course {
@@ -344,6 +364,9 @@ export interface CourseVersion {
   title?: string | null;
   course: string | Course;
   number: number;
+  /**
+   * Choose Published and save to publish: the version is checked, becomes the course’s current version, and its shape is frozen.
+   */
   status: 'draft' | 'published';
   description?: string | null;
   /**
@@ -351,6 +374,11 @@ export interface CourseVersion {
    */
   time?: number | null;
   academyRequired?: boolean | null;
+  gradingScale?: (string | null) | GradingScale;
+  /**
+   * The point on the scale, counted from 1 (the lowest). New lesson plans start from it.
+   */
+  defaultMinimum?: number | null;
   modules?:
     | {
         title: string;
@@ -395,6 +423,10 @@ export interface LessonPlan {
    */
   time?: number | null;
   isExam?: boolean | null;
+  /**
+   * The point on the version’s scale, counted from 1. Starts from the version’s default.
+   */
+  minimum?: number | null;
   /**
    * Adding a task that has tasks beneath it adds a row for each of them when you save.
    */
@@ -508,6 +540,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'tasks';
         value: string | Task;
+      } | null)
+    | ({
+        relationTo: 'grading-scales';
+        value: string | GradingScale;
       } | null)
     | ({
         relationTo: 'courses';
@@ -700,6 +736,22 @@ export interface TasksSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "grading-scales_select".
+ */
+export interface GradingScalesSelect<T extends boolean = true> {
+  name?: T;
+  points?:
+    | T
+    | {
+        label?: T;
+        description?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "courses_select".
  */
 export interface CoursesSelect<T extends boolean = true> {
@@ -722,6 +774,8 @@ export interface CourseVersionsSelect<T extends boolean = true> {
   description?: T;
   time?: T;
   academyRequired?: T;
+  gradingScale?: T;
+  defaultMinimum?: T;
   modules?:
     | T
     | {
@@ -745,6 +799,7 @@ export interface LessonPlansSelect<T extends boolean = true> {
   body?: T;
   time?: T;
   isExam?: T;
+  minimum?: T;
   theoryItems?:
     | T
     | {

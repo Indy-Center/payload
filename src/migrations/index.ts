@@ -3,6 +3,7 @@ import * as migration_20261014_051732_courses_versions_lesson_plans from './2026
 import * as migration_20261014_052113_task_tree_and_theory_items from './20261014_052113_task_tree_and_theory_items';
 import * as migration_20261014_052312_scenarios from './20261014_052312_scenarios';
 import * as migration_20261014_052625_frameworks_competencies_references from './20261014_052625_frameworks_competencies_references';
+import * as migration_20261014_053500_grading_scales_and_publishing from './20261014_053500_grading_scales_and_publishing';
 
 export const migrations = [
   {
@@ -28,6 +29,11 @@ export const migrations = [
   {
     up: migration_20261014_052625_frameworks_competencies_references.up,
     down: migration_20261014_052625_frameworks_competencies_references.down,
-    name: '20261014_052625_frameworks_competencies_references'
+    name: '20261014_052625_frameworks_competencies_references',
+  },
+  {
+    up: migration_20261014_053500_grading_scales_and_publishing.up,
+    down: migration_20261014_053500_grading_scales_and_publishing.down,
+    name: '20261014_053500_grading_scales_and_publishing'
   },
 ];

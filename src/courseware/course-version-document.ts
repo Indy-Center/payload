@@ -6,7 +6,14 @@ import type {
   LessonPlan as LessonPlanRecord,
   Scenario as ScenarioRecord,
 } from '@/payload-types'
-import type { CourseList, CourseVersionDocument, LessonPlan, Scenario, TaskRef } from './document'
+import type {
+  CourseList,
+  CourseVersionDocument,
+  GradePoint,
+  LessonPlan,
+  Scenario,
+  TaskRef,
+} from './document'
 import { idOf } from './ids'
 import { loadTaskTree, type TaskTree } from './task-tree'
 
@@ -115,6 +122,17 @@ export async function buildCourseVersionDocument(
     req,
   })
   const scenariosById = new Map(scenarios.docs.map((scenario) => [scenario.id, scenario]))
+  const scaleId = idOf(version.gradingScale)
+  const scale = scaleId
+    ? await payload.findByID({ collection: 'grading-scales', id: scaleId, depth: 0, req })
+    : null
+  const points: GradePoint[] = (scale?.points ?? []).map((point, index) => ({
+    position: index + 1,
+    label: point.label,
+    description: point.description ?? '',
+  }))
+  const point = (position: number | null | undefined) =>
+    points.find((candidate) => candidate.position === position) ?? null
 
   return {
     course: {
@@ -132,8 +150,8 @@ export async function buildCourseVersionDocument(
       academyRequired: version.academyRequired ?? false,
       updatedAt: version.updatedAt,
     },
-    scale: null,
-    defaultMinimum: null,
+    scale: scale ? { id: scale.id, name: scale.name, points } : null,
+    defaultMinimum: point(version.defaultMinimum),
     modules: (version.modules ?? []).map((module) => ({
       id: module.id ?? '',
       title: module.title,
@@ -141,7 +159,10 @@ export async function buildCourseVersionDocument(
       lessonPlans: (module.lessonPlans ?? [])
         .map((plan) => plansById.get(idOf(plan) ?? ''))
         .filter((plan): plan is LessonPlanRecord => plan !== undefined)
-        .map((plan) => lessonPlan(plan, tree, scenariosById)),
+        .map((plan) => ({
+          ...lessonPlan(plan, tree, scenariosById),
+          minimum: point(plan.minimum),
+        })),
     })),
   }
 }

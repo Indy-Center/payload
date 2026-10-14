@@ -15,6 +15,7 @@ import { Frameworks } from './collections/courseware/Frameworks'
 import { Competencies } from './collections/courseware/Competencies'
 import { References } from './collections/courseware/References'
 import { Tasks } from './collections/courseware/Tasks'
+import { GradingScales } from './collections/courseware/GradingScales'
 import { Scenarios } from './collections/courseware/Scenarios'
 import { coursewareEndpoints } from './courseware/endpoints'
 import { migrations } from './migrations'
@@ -38,6 +39,7 @@ export default buildConfig({
     Competencies,
     References,
     Tasks,
+    GradingScales,
     Courses,
     CourseVersions,
     LessonPlans,
