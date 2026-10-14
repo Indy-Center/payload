@@ -20,6 +20,7 @@ import { Scenarios } from './collections/courseware/Scenarios'
 import { coursewareEndpoints } from './courseware/endpoints'
 import { migrations } from './migrations'
 import { storagePlugins } from './storage'
+import { branding } from './branding'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -64,5 +65,5 @@ export default buildConfig({
     prodMigrations: migrations,
   }),
   sharp,
-  plugins: [...storagePlugins],
+  plugins: [...storagePlugins, branding],
 })

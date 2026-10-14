@@ -37,6 +37,8 @@ RUN mkdir .next media private-media && chown nextjs:nodejs .next media private-m
 # https://nextjs.org/docs/app/api-reference/config/next-config-js/output
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# The standalone output leaves out public/, which holds the favicons.
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 USER nextjs
 
