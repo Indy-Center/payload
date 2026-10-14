@@ -27,6 +27,13 @@ export const branding: Plugin = (config) => ({
   ...config,
   admin: {
     ...config.admin,
+    components: {
+      ...config.admin?.components,
+      graphics: {
+        Logo: '/components/admin/Logo#Logo',
+        Icon: '/components/admin/Icon#Icon',
+      },
+    },
     meta: {
       ...config.admin?.meta,
       ...meta,
