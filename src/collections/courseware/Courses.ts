@@ -25,6 +25,7 @@ export const Courses: CollectionConfig = {
       type: 'text',
       hasMany: true,
       admin: {
+        className: 'cid',
         description:
           'VATSIM CIDs of the people who may edit this course’s drafts, lesson plans and scenarios.',
       },

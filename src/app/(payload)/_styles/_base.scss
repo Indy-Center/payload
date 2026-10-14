@@ -1,0 +1,48 @@
+// What both themes share: font, corners, and the status colours Payload flips for dark itself.
+
+// Payload has a step every 50; Tailwind skips 150, 250 … 850. Those take the midpoint.
+@mixin scale($payload, $tailwind) {
+  @for $i from 1 through 19 {
+    $n: $i * 50;
+    @if $n == 50 or $n == 950 or $n % 100 == 0 {
+      --color-#{$payload}-#{$n}: var(--tw-#{$tailwind}-#{$n});
+    } @else {
+      --color-#{$payload}-#{$n}: color-mix(
+        in oklab,
+        var(--tw-#{$tailwind}-#{$n - 50}),
+        var(--tw-#{$tailwind}-#{$n + 50})
+      );
+    }
+  }
+}
+
+:root {
+  // Tailwind 4's default sans and mono stacks
+  --font-body:
+    ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+  // Payload sets rich text in serif; the other apps use sans throughout.
+  --font-serif: var(--font-body);
+
+  // rounded-lg
+  --style-radius-s: 0.5rem;
+  --style-radius-m: 0.5rem;
+  --style-radius-l: 0.5rem;
+
+  // Payload's "success" is its blue: focus rings, selection and success toasts.
+  @include scale(success, sky);
+  @include scale(error, red);
+  @include scale(warning, amber);
+}
+
+// Fields given `admin.className: 'cid'` hold VATSIM CIDs.
+.cid {
+  input,
+  .rs__value-container,
+  .multi-value-label__text {
+    font-family: var(--font-mono);
+  }
+}
