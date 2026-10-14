@@ -5,7 +5,7 @@ The [Payload](https://payloadcms.com) content management system for Indy Center,
 [![Build and Deploy](https://github.com/Indy-Center/payload/actions/workflows/build-and-deploy.yml/badge.svg)](https://github.com/Indy-Center/payload/actions/workflows/build-and-deploy.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-This is a test deployment: the blank Payload template with its two starter collections, `users` and `media`, plus `private-media` for files only signed-in users may read. It signs people in with Payload's own email and password accounts, not with identity.
+It holds Indy Center's **courseware**: courses, their versions, modules and lesson plans, the shared task tree, scenarios, the USA and GCAP frameworks, references and grading scales. indy-library (`library.flyindycenter.com`) reads it; in a later release training-tools will too. It also has `media` for public uploads and `private-media` for files only signed-in users may read. It signs people in with Payload's own email and password accounts, not yet with identity, so courseware is not yet open to course authors (that waits on identity sign-in, DEV-136 and DEV-219).
 
 ## HTTP surface
 
@@ -16,12 +16,16 @@ This is a test deployment: the blank Payload template with its two starter colle
 - `GET /api/private-media/file/<filename>` — a private file, for signed-in users only.
 - `GET /api/media/file/<filename>` — a public upload, when it is stored on local disk. In production public uploads are served from <https://media.flyindycenter.com> instead, not by this app.
 - `POST /api/graphql` — the same data over GraphQL. `GET /api/graphql-playground` is a query editor, off in production.
+- `GET /api/courseware/courses`, `GET /api/courseware/courses/<code>/current` (or `/draft`), `GET /api/courseware/catalogue` — the reads indy-library makes: the course list, one whole course version, and the task tree with frameworks, competencies and references. They include teacher notes, so they need `Authorization: Bearer <LIBRARY_API_TOKEN>` and answer 401 otherwise. The shapes are in `src/courseware/document.ts`.
 - `GET /` — the template's placeholder home page.
 
 ## Project layout
 
 - `src/payload.config.ts`: the Payload config: collections, database, editor.
 - `src/collections/`: one file per collection.
+- `src/collections/courseware/`: the courseware collections.
+- `src/courseware/`: the rules they share: who may do what (`access.ts`), the task tree and its numbers, expanding a parent task into rows, publishing and the frozen shape, the reads for the library, and the framework import.
+- `scripts/import-frameworks.ts`: loads the USA and GCAP frameworks and the rubrics; see Courseware.
 - `src/storage.ts`: where uploads are stored: the two R2 buckets, or local disk when they aren't configured.
 - `src/migrations/`: database migrations, created by `npm run payload migrate:create`. In production the app applies new ones on its first request after a deploy.
 - `src/payload-types.ts`: types generated from the config by `npm run generate:types`.
@@ -34,6 +38,27 @@ This is a test deployment: the blank Payload template with its two starter colle
   - `.env.example`: the runtime settings the deploy writes to `.env`.
 - `.github/workflows/ci.yml`: format, lint, types and tests, then builds the image and starts the whole stack on the runner.
 - `.github/workflows/build-and-deploy.yml`: runs CI, pushes the image to `ghcr.io/indy-center/payload`, then rsyncs `deploy/` to the VPS and runs `docker compose up -d` over SSH.
+
+## Courseware
+
+Written in the admin panel's stock screens, shaped by rules that run on save. The decisions behind them are in the maintainer's courseware notes.
+
+- **Nothing is deleted.** Tasks and scenarios are retired instead; retired records stay where they are used, are left out of pickers, and are hidden from lists unless the list is filtered on Retired.
+- **The task tree.** A task's number (2.3.1) comes from its parent and its place among its siblings, and is never stored. Order siblings by dragging in the Tasks list sorted by its order. A mapping on a task applies to every task beneath it. A competency with no text (a heading) cannot be mapped to.
+- **Parent tasks expand.** Adding a task that has tasks beneath it to a lesson plan's theory items or a scenario's practical tasks adds a row for each of them when the record is saved, once; rows can then be removed or reordered, and later additions to the tree change nothing.
+- **Publishing.** A Training Admin or lead sets a course version's Status to Published and saves. The version must name a grading scale, and every lesson plan in its modules needs a code, a title, a minimum and at least one theory item or scenario, with nothing retired; otherwise the save is refused with every fault listed. A published version becomes the course's current version; the one before stays as data. Its shape (modules, lesson plans and their order, theory items, scenarios offered, minimums, scale) is then frozen, and a scale it uses cannot gain, lose or reorder points; wording still saves.
+- **Who may do what.** Accounts carry a CID and roles, set only by the Training Admin. `training:admin` and `training:lead` do everything, including managing accounts. A course author (their CID named on a course) edits that course's drafts, lesson plans and scenarios only. While no account holds `training:admin`, any signed-in account may set roles, so the first can be given it.
+
+**Importing the frameworks.** VATUSA's competency sheet, saved as CSV (`usa-framework.csv`, `gcap-codes.csv`, `rubric-s1.csv`, `-s2`, `-s3`, `-c1`), is loaded from the engineer's machine:
+
+```bash
+CMS_URL=https://cms.flyindycenter.com CMS_EMAIL=… CMS_PASSWORD=… \
+  npm run import:frameworks -- --sheets ~/vatusa-sheet --usa-edition 2026-10 --gcap-edition 2026-10
+```
+
+Keep the sheets outside this repository, which is public; a folder inside it is refused. Records are matched by framework edition and source id, so running it again changes nothing that is already right; it reports what it created, changed and left alone. It fixes the sheet's known faults and leaves out the "meets all established standards" rows.
+
+**No courseware in this repository.** It is public: tests use made-up content only, and real courseware, rubric wording and import sheets are never committed.
 
 ## Data
 
