@@ -33,6 +33,11 @@ export const branding: Plugin = (config) => ({
         Logo: '/components/admin/Logo#Logo',
         Icon: '/components/admin/Icon#Icon',
       },
+      // Links to the other apps
+      afterNavLinks: [
+        ...(config.admin?.components?.afterNavLinks ?? []),
+        '/components/admin/IndyCenterLinks#IndyCenterLinks',
+      ],
     },
     meta: {
       ...config.admin?.meta,
