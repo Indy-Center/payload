@@ -162,6 +162,44 @@ describe('a course author', () => {
     ).rejects.toThrow()
   })
 
+  it('cannot move their own records into another course', async () => {
+    const { own, other, ownDraft, otherDraft } = await courses()
+    const plan = await payload.create({
+      collection: 'lesson-plans',
+      data: { courseVersion: ownDraft.id, title: 'Mine' },
+    })
+    const scenario = await payload.create({
+      collection: 'scenarios',
+      data: { course: own.id, name: 'Mine', airport: 'KXYZ', position: 'XYZ_TWR', mode: 'sim' },
+    })
+
+    for (const move of [
+      () =>
+        payload.update({
+          collection: 'lesson-plans',
+          id: plan.id,
+          data: { courseVersion: otherDraft.id },
+          ...as(author),
+        }),
+      () =>
+        payload.update({
+          collection: 'course-versions',
+          id: ownDraft.id,
+          data: { course: other.id },
+          ...as(author),
+        }),
+      () =>
+        payload.update({
+          collection: 'scenarios',
+          id: scenario.id,
+          data: { course: other.id },
+          ...as(author),
+        }),
+    ]) {
+      await expect(move()).rejects.toThrow()
+    }
+  })
+
   it('cannot change who authors a course', async () => {
     const { own } = await courses()
     await expect(

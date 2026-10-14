@@ -71,10 +71,13 @@ function authoredAccess(options: {
       const courseId = await options.courseOf(req, data ?? {})
       return courseId !== null && (await authoredCourseIds(req)).includes(courseId)
     },
-    update: async ({ req }) => {
+    update: async ({ req, data }) => {
       if (isStaff(person(req))) return true
       const ids = await authoredCourseIds(req)
       if (ids.length === 0) return false
+      // Moving a record to another course needs that course too, not only the one it is in now.
+      const movingTo = data ? await options.courseOf(req, data) : null
+      if (movingTo !== null && !ids.includes(movingTo)) return false
       const mine: Where = { [options.coursePath]: { in: ids } }
       return options.authorWhere ? { and: [mine, options.authorWhere] } : mine
     },
