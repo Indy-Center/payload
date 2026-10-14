@@ -37,3 +37,12 @@
   @include scale(error, red);
   @include scale(warning, amber);
 }
+
+// Fields given `admin.className: 'cid'` hold VATSIM CIDs.
+.cid {
+  input,
+  .rs__value-container,
+  .multi-value-label__text {
+    font-family: var(--font-mono);
+  }
+}
