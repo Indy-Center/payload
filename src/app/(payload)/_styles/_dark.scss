@@ -1,6 +1,6 @@
-// The dark theme, as the other Indy Center apps draw it: gray-900 page, slate-800 surfaces
-// with slate-700 borders, slate-700 inputs, white/gray-300/gray-400 text, sky-600 buttons and
-// sky-400 links. Payload picks it from the user's setting or the system theme.
+// The dark theme, as the other Indy Center apps draw it: gray-900 page, translucent slate-800
+// surfaces with slate-700 borders, slate-700 inputs, white/gray-300/gray-400 text, sky-600
+// buttons and sky-400 links. Payload picks it from the user's setting or the system theme.
 
 html[data-theme='dark'] {
   --theme-bg: var(--tw-gray-900);
@@ -8,10 +8,15 @@ html[data-theme='dark'] {
   --theme-text: white;
   --indy-link: var(--tw-sky-400);
 
+  // The other apps' cards are slate-800/60 with slate-700/60 borders, over the gray-900 page.
+  // Payload needs opaque colours, so these are those layers blended as the browser draws them.
+  --indy-surface: color-mix(in srgb, var(--tw-slate-800) 60%, var(--tw-gray-900));
   --theme-elevation-0: var(--tw-gray-900);
-  --theme-elevation-50: var(--tw-slate-800); // surfaces: cards, collapsible headers
-  --theme-elevation-100: color-mix(in oklab, var(--tw-slate-800), var(--tw-slate-700));
-  --theme-elevation-150: var(--tw-slate-700); // borders
+  --theme-elevation-50: var(--indy-surface); // surfaces: cards, collapsible headers
+  // Hover: the other apps' slate-700/30.
+  --theme-elevation-100: color-mix(in srgb, var(--tw-slate-700) 30%, var(--indy-surface));
+  // Borders.
+  --theme-elevation-150: color-mix(in srgb, var(--tw-slate-700) 60%, var(--indy-surface));
   --theme-elevation-200: var(--tw-slate-600); // input borders
   --theme-elevation-250: color-mix(in oklab, var(--tw-slate-600), var(--tw-slate-500));
   --theme-elevation-300: var(--tw-slate-500);
@@ -36,6 +41,13 @@ html[data-theme='dark'] {
   textarea,
   .rs__control {
     --theme-elevation-150: var(--tw-slate-600);
+  }
+
+  // Tables are a shade fainter: slate-800/50 rows with slate-700/50 borders.
+  .table {
+    --indy-surface: color-mix(in srgb, var(--tw-slate-800) 50%, var(--tw-gray-900));
+    --theme-elevation-50: var(--indy-surface);
+    --theme-elevation-150: color-mix(in srgb, var(--tw-slate-700) 50%, var(--indy-surface));
   }
 
   .btn--style-primary:not(.btn--disabled) {
