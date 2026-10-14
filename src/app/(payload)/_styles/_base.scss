@@ -69,3 +69,9 @@ a:not([class]),
     font-family: var(--font-mono);
   }
 }
+
+// Their list columns, which Payload classes by field name.
+.cell-cid,
+.collection-list--courses .cell-authors {
+  font-family: var(--font-mono);
+}
