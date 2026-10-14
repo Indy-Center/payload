@@ -12,5 +12,7 @@ export default defineConfig({
     fileParallelism: false,
     testTimeout: 30000,
     hookTimeout: 60000,
+    // The admin's packages import CSS files, which Node cannot load; bundled by Vite, they can.
+    server: { deps: { inline: [/@payloadcms\/(next|ui)/, /react-image-crop/] } },
   },
 })
