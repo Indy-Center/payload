@@ -11,6 +11,9 @@ import { PrivateMedia } from './collections/PrivateMedia'
 import { Courses } from './collections/courseware/Courses'
 import { CourseVersions } from './collections/courseware/CourseVersions'
 import { LessonPlans } from './collections/courseware/LessonPlans'
+import { Frameworks } from './collections/courseware/Frameworks'
+import { Competencies } from './collections/courseware/Competencies'
+import { References } from './collections/courseware/References'
 import { Tasks } from './collections/courseware/Tasks'
 import { Scenarios } from './collections/courseware/Scenarios'
 import { coursewareEndpoints } from './courseware/endpoints'
@@ -27,7 +30,19 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, PrivateMedia, Tasks, Courses, CourseVersions, LessonPlans, Scenarios],
+  collections: [
+    Users,
+    Media,
+    PrivateMedia,
+    Frameworks,
+    Competencies,
+    References,
+    Tasks,
+    Courses,
+    CourseVersions,
+    LessonPlans,
+    Scenarios,
+  ],
   endpoints: coursewareEndpoints,
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

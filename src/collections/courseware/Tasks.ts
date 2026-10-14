@@ -1,6 +1,20 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, FieldHook } from 'payload'
 import { coursewareAccess } from '@/courseware/access'
 import { hideRetiredUnlessAsked } from '@/courseware/retired'
+
+/** The GCAP code VATUSA pairs a mapped USA competency with, read fresh from the competency. */
+const pairedGcapCode: FieldHook = async ({ siblingData, req }) => {
+  const competency = siblingData?.competency
+  if (!competency) return null
+  if (typeof competency === 'object') return competency.pairedGcapCode || null
+  const found = await req.payload.findByID({
+    collection: 'competencies',
+    id: competency,
+    depth: 0,
+    req,
+  })
+  return found.pairedGcapCode || null
+}
 
 /**
  * The one task tree every course draws from. A task's number is never stored: it comes from its
@@ -36,6 +50,47 @@ export const Tasks: CollectionConfig = {
       collection: 'tasks',
       on: 'parent',
       admin: { allowCreate: false },
+    },
+    {
+      name: 'mappings',
+      type: 'array',
+      admin: {
+        description:
+          'Competencies this task teaches. A mapping here also applies to every task beneath it.',
+      },
+      fields: [
+        {
+          name: 'competency',
+          type: 'relationship',
+          relationTo: 'competencies',
+          required: true,
+          // A heading has no text and is not a standard anyone can be taught to.
+          filterOptions: { text: { exists: true, not_equals: '' } },
+        },
+        {
+          name: 'pairedGcapCode',
+          label: 'VATUSA pairs this with GCAP',
+          type: 'text',
+          virtual: true,
+          admin: {
+            readOnly: true,
+            description: 'Shown after saving. Map the GCAP competency too if it fits.',
+          },
+          hooks: { afterRead: [pairedGcapCode] },
+        },
+      ],
+    },
+    {
+      name: 'citations',
+      type: 'array',
+      fields: [
+        { name: 'reference', type: 'relationship', relationTo: 'references', required: true },
+        {
+          name: 'section',
+          type: 'text',
+          admin: { description: 'Where in the reference, such as 3-7-2.' },
+        },
+      ],
     },
     {
       name: 'retired',

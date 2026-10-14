@@ -9,6 +9,9 @@ export type TreeTask = {
   retired: boolean
   /** The orderable collection's fractional key: siblings sort by it. */
   order: string
+  /** Competencies mapped on this task itself, not inherited. */
+  competencyIds: string[]
+  citations: { referenceId: string; section: string }[]
 }
 
 /**
@@ -80,6 +83,16 @@ export async function loadTaskTree(req: PayloadRequest): Promise<TaskTree> {
     collection: 'tasks',
     depth: 0,
     pagination: false,
+    // Leaves out the mappings' paired GCAP code, which costs a lookup per mapping to read.
+    select: {
+      name: true,
+      description: true,
+      parent: true,
+      retired: true,
+      _order: true,
+      mappings: { competency: true },
+      citations: true,
+    },
     req,
   })
   return buildTaskTree(
@@ -90,6 +103,11 @@ export async function loadTaskTree(req: PayloadRequest): Promise<TaskTree> {
       parentId: idOf(task.parent),
       retired: task.retired ?? false,
       order: task._order ?? '',
+      competencyIds: (task.mappings ?? []).map((row) => idOf(row.competency)!),
+      citations: (task.citations ?? []).map((row) => ({
+        referenceId: idOf(row.reference)!,
+        section: row.section ?? '',
+      })),
     })),
   )
 }

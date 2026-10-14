@@ -70,6 +70,9 @@ export interface Config {
     users: User;
     media: Media;
     'private-media': PrivateMedia;
+    frameworks: Framework;
+    competencies: Competency;
+    references: Reference;
     tasks: Task;
     courses: Course;
     'course-versions': CourseVersion;
@@ -89,6 +92,9 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'private-media': PrivateMediaSelect<false> | PrivateMediaSelect<true>;
+    frameworks: FrameworksSelect<false> | FrameworksSelect<true>;
+    competencies: CompetenciesSelect<false> | CompetenciesSelect<true>;
+    references: ReferencesSelect<false> | ReferencesSelect<true>;
     tasks: TasksSelect<false> | TasksSelect<true>;
     courses: CoursesSelect<false> | CoursesSelect<true>;
     'course-versions': CourseVersionsSelect<false> | CourseVersionsSelect<true>;
@@ -202,6 +208,68 @@ export interface PrivateMedia {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frameworks".
+ */
+export interface Framework {
+  id: string;
+  /**
+   * Such as USA or GCAP.
+   */
+  name: string;
+  edition: string;
+  label?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "competencies".
+ */
+export interface Competency {
+  id: string;
+  framework: string | Framework;
+  /**
+   * Such as 2.1.3a.
+   */
+  sourceId: string;
+  title: string;
+  /**
+   * Empty for a heading.
+   */
+  text?: string | null;
+  parent?: (string | null) | Competency;
+  /**
+   * As the source gives it, such as 2-1-2 or AIM 4-3-14a.
+   */
+  sourceReference?: string | null;
+  rubricTheory?: string | null;
+  rubricPractical?: string | null;
+  /**
+   * VATUSA’s pairing, shown as a suggestion when mapping a task.
+   */
+  pairedGcapCode?: string | null;
+  label?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "references".
+ */
+export interface Reference {
+  id: string;
+  name: string;
+  edition?: string | null;
+  url?: string | null;
+  /**
+   * Uploaded documents are public.
+   */
+  document?: (string | null) | Media;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "tasks".
  */
 export interface Task {
@@ -215,6 +283,29 @@ export interface Task {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  /**
+   * Competencies this task teaches. A mapping here also applies to every task beneath it.
+   */
+  mappings?:
+    | {
+        competency: string | Competency;
+        /**
+         * Shown after saving. Map the GCAP competency too if it fits.
+         */
+        pairedGcapCode?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  citations?:
+    | {
+        reference: string | Reference;
+        /**
+         * Where in the reference, such as 3-7-2.
+         */
+        section?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   /**
    * Retired tasks stay where they are used but are not offered for new use.
    */
@@ -403,6 +494,18 @@ export interface PayloadLockedDocument {
         value: string | PrivateMedia;
       } | null)
     | ({
+        relationTo: 'frameworks';
+        value: string | Framework;
+      } | null)
+    | ({
+        relationTo: 'competencies';
+        value: string | Competency;
+      } | null)
+    | ({
+        relationTo: 'references';
+        value: string | Reference;
+      } | null)
+    | ({
         relationTo: 'tasks';
         value: string | Task;
       } | null)
@@ -528,6 +631,47 @@ export interface PrivateMediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "frameworks_select".
+ */
+export interface FrameworksSelect<T extends boolean = true> {
+  name?: T;
+  edition?: T;
+  label?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "competencies_select".
+ */
+export interface CompetenciesSelect<T extends boolean = true> {
+  framework?: T;
+  sourceId?: T;
+  title?: T;
+  text?: T;
+  parent?: T;
+  sourceReference?: T;
+  rubricTheory?: T;
+  rubricPractical?: T;
+  pairedGcapCode?: T;
+  label?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "references_select".
+ */
+export interface ReferencesSelect<T extends boolean = true> {
+  name?: T;
+  edition?: T;
+  url?: T;
+  document?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "tasks_select".
  */
 export interface TasksSelect<T extends boolean = true> {
@@ -536,6 +680,20 @@ export interface TasksSelect<T extends boolean = true> {
   description?: T;
   parent?: T;
   children?: T;
+  mappings?:
+    | T
+    | {
+        competency?: T;
+        pairedGcapCode?: T;
+        id?: T;
+      };
+  citations?:
+    | T
+    | {
+        reference?: T;
+        section?: T;
+        id?: T;
+      };
   retired?: T;
   updatedAt?: T;
   createdAt?: T;
