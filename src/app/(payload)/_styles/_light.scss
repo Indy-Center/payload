@@ -33,6 +33,11 @@ html[data-theme='light'] {
   --indy-nav-active-tint: color-mix(in oklab, var(--tw-sky-600) 12%, transparent);
   --indy-nav-active-edge: var(--tw-sky-600);
 
+  // A field's required mark. Payload's red-500 falls short of AA on white and gray-50.
+  .field-label .required {
+    color: var(--tw-red-600);
+  }
+
   // Stock primary buttons are near-black; ours take the accent.
   .btn--style-primary:not(.btn--disabled) {
     --bg-color: var(--tw-sky-600);
