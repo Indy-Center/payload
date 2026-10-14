@@ -8,6 +8,10 @@ import sharp from 'sharp'
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { PrivateMedia } from './collections/PrivateMedia'
+import { Courses } from './collections/courseware/Courses'
+import { CourseVersions } from './collections/courseware/CourseVersions'
+import { LessonPlans } from './collections/courseware/LessonPlans'
+import { coursewareEndpoints } from './courseware/endpoints'
 import { migrations } from './migrations'
 import { storagePlugins } from './storage'
 
@@ -21,7 +25,8 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, PrivateMedia],
+  collections: [Users, Media, PrivateMedia, Courses, CourseVersions, LessonPlans],
+  endpoints: coursewareEndpoints,
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

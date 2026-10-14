@@ -70,6 +70,9 @@ export interface Config {
     users: User;
     media: Media;
     'private-media': PrivateMedia;
+    courses: Course;
+    'course-versions': CourseVersion;
+    'lesson-plans': LessonPlan;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -80,6 +83,9 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'private-media': PrivateMediaSelect<false> | PrivateMediaSelect<true>;
+    courses: CoursesSelect<false> | CoursesSelect<true>;
+    'course-versions': CourseVersionsSelect<false> | CourseVersionsSelect<true>;
+    'lesson-plans': LessonPlansSelect<false> | LessonPlansSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -188,6 +194,91 @@ export interface PrivateMedia {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "courses".
+ */
+export interface Course {
+  id: string;
+  /**
+   * The course code training-tools uses, such as S-GC.
+   */
+  code: string;
+  title: string;
+  /**
+   * VATSIM CIDs of the people who may edit this course’s drafts, lesson plans and scenarios.
+   */
+  authors?: string[] | null;
+  /**
+   * Set by publishing a version. The library shows this one.
+   */
+  currentVersion?: (string | null) | CourseVersion;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "course-versions".
+ */
+export interface CourseVersion {
+  id: string;
+  title?: string | null;
+  course: string | Course;
+  number: number;
+  status: 'draft' | 'published';
+  description?: string | null;
+  /**
+   * Minutes.
+   */
+  time?: number | null;
+  academyRequired?: boolean | null;
+  modules?:
+    | {
+        title: string;
+        description?: string | null;
+        lessonPlans?: (string | LessonPlan)[] | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "lesson-plans".
+ */
+export interface LessonPlan {
+  id: string;
+  courseVersion: string | CourseVersion;
+  /**
+   * Such as S-GC-3.
+   */
+  code?: string | null;
+  title?: string | null;
+  description?: string | null;
+  body?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Minutes.
+   */
+  time?: number | null;
+  isExam?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -221,6 +312,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'private-media';
         value: string | PrivateMedia;
+      } | null)
+    | ({
+        relationTo: 'courses';
+        value: string | Course;
+      } | null)
+    | ({
+        relationTo: 'course-versions';
+        value: string | CourseVersion;
+      } | null)
+    | ({
+        relationTo: 'lesson-plans';
+        value: string | LessonPlan;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -325,6 +428,56 @@ export interface PrivateMediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "courses_select".
+ */
+export interface CoursesSelect<T extends boolean = true> {
+  code?: T;
+  title?: T;
+  authors?: T;
+  currentVersion?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "course-versions_select".
+ */
+export interface CourseVersionsSelect<T extends boolean = true> {
+  title?: T;
+  course?: T;
+  number?: T;
+  status?: T;
+  description?: T;
+  time?: T;
+  academyRequired?: T;
+  modules?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        lessonPlans?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "lesson-plans_select".
+ */
+export interface LessonPlansSelect<T extends boolean = true> {
+  courseVersion?: T;
+  code?: T;
+  title?: T;
+  description?: T;
+  body?: T;
+  time?: T;
+  isExam?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

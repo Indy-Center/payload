@@ -8,5 +8,9 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
     include: ['tests/int/**/*.int.spec.ts'],
+    // Every file shares the one test database.
+    fileParallelism: false,
+    testTimeout: 30000,
+    hookTimeout: 60000,
   },
 })
