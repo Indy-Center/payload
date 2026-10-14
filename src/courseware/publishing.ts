@@ -50,9 +50,10 @@ export function refuseVersionShapeChange(
 export async function refuseLessonPlanShapeChange(
   req: PayloadRequest,
   data: Partial<LessonPlan>,
-  originalDoc: LessonPlan | undefined,
+  /** The plan before this save, or null when it is being created. */
+  before: LessonPlan | null,
 ): Promise<void> {
-  for (const versionId of new Set([idOf(originalDoc?.courseVersion), idOf(data.courseVersion)])) {
+  for (const versionId of new Set([idOf(before?.courseVersion), idOf(data.courseVersion)])) {
     if (!versionId) continue
     const version = await req.payload.findByID({
       collection: 'course-versions',
@@ -61,7 +62,7 @@ export async function refuseLessonPlanShapeChange(
       req,
     })
     if (version.status !== 'published') continue
-    if (!originalDoc || lessonPlanShape(data) !== lessonPlanShape(originalDoc)) {
+    if (!before || lessonPlanShape(data) !== lessonPlanShape(before)) {
       refuse('theoryItems', [FROZEN])
     }
   }

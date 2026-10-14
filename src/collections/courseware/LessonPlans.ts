@@ -41,7 +41,7 @@ export const LessonPlans: CollectionConfig = {
   hooks: {
     beforeChange: [
       async ({ data, operation, originalDoc, req }) => {
-        await refuseLessonPlanShapeChange(req, data, originalDoc)
+        await refuseLessonPlanShapeChange(req, data, operation === 'update' ? originalDoc : null)
         if (operation === 'create' && data.minimum == null && data.courseVersion) {
           const version = await req.payload.findByID({
             collection: 'course-versions',
