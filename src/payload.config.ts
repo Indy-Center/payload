@@ -12,6 +12,7 @@ import { Courses } from './collections/courseware/Courses'
 import { CourseVersions } from './collections/courseware/CourseVersions'
 import { LessonPlans } from './collections/courseware/LessonPlans'
 import { Tasks } from './collections/courseware/Tasks'
+import { Scenarios } from './collections/courseware/Scenarios'
 import { coursewareEndpoints } from './courseware/endpoints'
 import { migrations } from './migrations'
 import { storagePlugins } from './storage'
@@ -26,7 +27,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, PrivateMedia, Tasks, Courses, CourseVersions, LessonPlans],
+  collections: [Users, Media, PrivateMedia, Tasks, Courses, CourseVersions, LessonPlans, Scenarios],
   endpoints: coursewareEndpoints,
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

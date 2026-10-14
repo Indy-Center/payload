@@ -1,8 +1,12 @@
 import type { PayloadRequest } from 'payload'
 import { convertLexicalToHTML } from '@payloadcms/richtext-lexical/html'
 import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
-import type { CourseVersion, LessonPlan as LessonPlanRecord } from '@/payload-types'
-import type { CourseList, CourseVersionDocument, LessonPlan, TaskRef } from './document'
+import type {
+  CourseVersion,
+  LessonPlan as LessonPlanRecord,
+  Scenario as ScenarioRecord,
+} from '@/payload-types'
+import type { CourseList, CourseVersionDocument, LessonPlan, Scenario, TaskRef } from './document'
 import { idOf } from './ids'
 import { loadTaskTree, type TaskTree } from './task-tree'
 
@@ -103,6 +107,14 @@ export async function buildCourseVersionDocument(
   })
   const plansById = new Map(plans.docs.map((plan) => [plan.id, plan]))
   const tree = await loadTaskTree(req)
+  const scenarios = await payload.find({
+    collection: 'scenarios',
+    where: { course: { equals: course.id } },
+    pagination: false,
+    depth: 0,
+    req,
+  })
+  const scenariosById = new Map(scenarios.docs.map((scenario) => [scenario.id, scenario]))
 
   return {
     course: {
@@ -129,7 +141,7 @@ export async function buildCourseVersionDocument(
       lessonPlans: (module.lessonPlans ?? [])
         .map((plan) => plansById.get(idOf(plan) ?? ''))
         .filter((plan): plan is LessonPlanRecord => plan !== undefined)
-        .map((plan) => lessonPlan(plan, tree)),
+        .map((plan) => lessonPlan(plan, tree, scenariosById)),
     })),
   }
 }
@@ -139,7 +151,29 @@ function taskRef(tree: TaskTree, task: string | { id: string }): TaskRef {
   return { id, number: tree.number(id), name: tree.get(id)?.name ?? '' }
 }
 
-function lessonPlan(plan: LessonPlanRecord, tree: TaskTree): LessonPlan {
+function scenario(record: ScenarioRecord, tree: TaskTree): Scenario {
+  return {
+    id: record.id,
+    name: record.name,
+    airport: record.airport,
+    position: record.position,
+    difficulty: record.difficulty ?? '',
+    mode: record.mode,
+    retired: record.retired ?? false,
+    practicalTasks: (record.practicalTasks ?? []).map((row) => ({
+      id: row.id ?? '',
+      task: taskRef(tree, row.task),
+      teacherNotes: row.teacherNotes ?? '',
+      required: row.required ?? true,
+    })),
+  }
+}
+
+function lessonPlan(
+  plan: LessonPlanRecord,
+  tree: TaskTree,
+  scenarios: Map<string, ScenarioRecord>,
+): LessonPlan {
   return {
     id: plan.id,
     code: plan.code ?? '',
@@ -156,6 +190,9 @@ function lessonPlan(plan: LessonPlanRecord, tree: TaskTree): LessonPlan {
       task: taskRef(tree, item.task),
       teacherNotes: item.teacherNotes ?? '',
     })),
-    scenarios: [],
+    scenarios: (plan.scenarios ?? [])
+      .map((offered) => scenarios.get(idOf(offered) ?? ''))
+      .filter((offered): offered is ScenarioRecord => offered !== undefined)
+      .map((offered) => scenario(offered, tree)),
   }
 }

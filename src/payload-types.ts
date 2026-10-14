@@ -74,6 +74,7 @@ export interface Config {
     courses: Course;
     'course-versions': CourseVersion;
     'lesson-plans': LessonPlan;
+    scenarios: Scenario;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -92,6 +93,7 @@ export interface Config {
     courses: CoursesSelect<false> | CoursesSelect<true>;
     'course-versions': CourseVersionsSelect<false> | CourseVersionsSelect<true>;
     'lesson-plans': LessonPlansSelect<false> | LessonPlansSelect<true>;
+    scenarios: ScenariosSelect<false> | ScenariosSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -315,6 +317,52 @@ export interface LessonPlan {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Scenarios of this course the teacher may choose from.
+   */
+  scenarios?: (string | Scenario)[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "scenarios".
+ */
+export interface Scenario {
+  id: string;
+  course: string | Course;
+  name: string;
+  /**
+   * Such as KIND.
+   */
+  airport: string;
+  /**
+   * In VATUSA’s format, such as IND_GND or IND_1_TWR.
+   */
+  position: string;
+  difficulty?: string | null;
+  mode: 'sim' | 'live';
+  /**
+   * Adding a task that has tasks beneath it adds a row for each of them when you save.
+   */
+  practicalTasks?:
+    | {
+        task: string | Task;
+        /**
+         * Shown only to teachers: how to pose the challenge.
+         */
+        teacherNotes?: string | null;
+        /**
+         * The scenario cannot be completed without it.
+         */
+        required?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Retired scenarios stay where they are offered but are not offered anew.
+   */
+  retired?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -369,6 +417,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'lesson-plans';
         value: string | LessonPlan;
+      } | null)
+    | ({
+        relationTo: 'scenarios';
+        value: string | Scenario;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -542,6 +594,30 @@ export interface LessonPlansSelect<T extends boolean = true> {
         teacherNotes?: T;
         id?: T;
       };
+  scenarios?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "scenarios_select".
+ */
+export interface ScenariosSelect<T extends boolean = true> {
+  course?: T;
+  name?: T;
+  airport?: T;
+  position?: T;
+  difficulty?: T;
+  mode?: T;
+  practicalTasks?:
+    | T
+    | {
+        task?: T;
+        teacherNotes?: T;
+        required?: T;
+        id?: T;
+      };
+  retired?: T;
   updatedAt?: T;
   createdAt?: T;
 }

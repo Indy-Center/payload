@@ -1,7 +1,33 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, FilterOptions, Where } from 'payload'
 import { lexicalEditor, UploadFeature } from '@payloadcms/richtext-lexical'
 import { coursewareAccess } from '@/courseware/access'
+import { idOf } from '@/courseware/ids'
 import { expandTaskRows, pickableTask } from '@/courseware/task-rows'
+
+/**
+ * A lesson plan offers only its own course's scenarios, and the picker leaves out retired ones
+ * other than those already offered.
+ */
+const ownCourseScenarios: FilterOptions = async ({ data, siblingData, req }) => {
+  const versionId = idOf(data?.courseVersion)
+  if (!versionId) return false
+  const version = await req.payload.findByID({
+    collection: 'course-versions',
+    id: versionId,
+    depth: 0,
+    req,
+  })
+  const offered = ((siblingData as { scenarios?: unknown[] })?.scenarios ?? [])
+    .map((scenario) => idOf(scenario as string))
+    .filter((id): id is string => id !== null)
+  const where: Where = {
+    and: [
+      { course: { equals: idOf(version.course) } },
+      { or: [{ retired: { not_equals: true } }, { id: { in: offered } }] },
+    ],
+  }
+  return where
+}
 
 export const LessonPlans: CollectionConfig = {
   slug: 'lesson-plans',
@@ -70,6 +96,15 @@ export const LessonPlans: CollectionConfig = {
           admin: { description: 'Shown only to teachers: the prompt to ask.' },
         },
       ],
+    },
+    {
+      name: 'scenarios',
+      label: 'Scenarios offered',
+      type: 'relationship',
+      relationTo: 'scenarios',
+      hasMany: true,
+      filterOptions: ownCourseScenarios,
+      admin: { description: 'Scenarios of this course the teacher may choose from.' },
     },
   ],
 }
