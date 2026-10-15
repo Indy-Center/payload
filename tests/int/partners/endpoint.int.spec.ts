@@ -47,6 +47,8 @@ async function partner(
     logo?: string
     banner?: string
     gallery?: string[]
+    tagline?: string
+    description?: string
     callsToAction?: Partner['callsToAction']
     socialLinks?: Partner['socialLinks']
   } = {},
@@ -61,8 +63,8 @@ async function partner(
       logo: options.logo ?? (await upload(payload, svg(), `${name} logo`)).id,
       banner: options.banner,
       gallery: options.gallery,
-      tagline: `${name} in one line.`,
-      description: `${name} does made-up things.\n\nA second paragraph.`,
+      tagline: options.tagline ?? `${name} in one line.`,
+      description: options.description ?? `${name} does made-up things.\n\nA second paragraph.`,
       callsToAction: options.callsToAction ?? [
         { label: 'Visit website', url: 'https://example.com' },
       ],
@@ -254,6 +256,32 @@ describe('GET /api/community/partners', () => {
         status: 'draft',
         callsToAction: [...callsToAction],
       })
+      await payload.db.updateOne({
+        collection: 'partners',
+        id: draft.id,
+        data: { status: 'published' },
+      })
+    }
+
+    const { body } = await read()
+
+    expect(
+      (body as PartnersDocument).categories.map((group) => [
+        group.name,
+        group.partners.map((each) => each.name),
+      ]),
+    ).toEqual([['Developers', ['Example Tools']]])
+  })
+
+  it('leaves out a published partner with a blank tagline or description', async () => {
+    const developers = await category('Developers')
+    await partner('Example Tools', developers.id)
+    // Published before the publishing rule existed: saved straight to the database, past it.
+    for (const [name, blanks] of [
+      ['No Tagline Tools', { tagline: ' ' }],
+      ['No Description Tools', { description: '\n\n' }],
+    ] as const) {
+      const draft = await partner(name, developers.id, { status: 'draft', ...blanks })
       await payload.db.updateOne({
         collection: 'partners',
         id: draft.id,

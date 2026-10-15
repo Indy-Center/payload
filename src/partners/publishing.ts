@@ -8,12 +8,8 @@ const blank = (text: string | null | undefined) => !text?.trim()
 
 const missing = (what: string) => `Give the partner ${what} before publishing it.`
 
-/**
- * What is wrong with a published partner's calls to action, if anything: it needs one to three
- * that aren't member perks. The community site's read leaves out a partner this faults, which
- * catches partners published before the rule.
- */
-export function callsToActionFault(calls: Partner['callsToAction']): string | undefined {
+/** What is wrong with a partner's calls to action, if anything: it needs one to three that aren't member perks. */
+function callsToActionFault(calls: Partner['callsToAction']): string | undefined {
   const publicCount = splitCallsToAction(calls).publicCalls.length
   if (publicCount === 0) return missing('a call to action that isn’t a member perk')
   if (publicCount > MAX_PUBLIC_CALLS_TO_ACTION) {
@@ -28,6 +24,14 @@ const publishingFaults = {
   description: (partner) => (blank(partner.description) ? missing('a description') : undefined),
   callsToAction: (partner) => callsToActionFault(partner.callsToAction),
 } satisfies Record<string, (partner: Partial<Partner>) => string | undefined>
+
+/**
+ * Whether a partner meets the publishing rule, so the site can draw it in full. The community
+ * site's read leaves out a published partner that doesn't, which catches partners published
+ * before the rule.
+ */
+export const meetsPublishingRule = (partner: Partial<Partner>): boolean =>
+  Object.values(publishingFaults).every((fault) => fault(partner) === undefined)
 
 /**
  * A field's own check with the publishing rule in front of it: a published partner needs a logo,
