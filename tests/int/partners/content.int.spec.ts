@@ -142,7 +142,7 @@ describe('publishing a partner', () => {
     )
 
     expect(await invalid(publish({ ...complete(), callsToAction: [...three, visit] }))).toEqual([
-      'A published partner has at most three calls to action that aren’t member perks; this one has 4.',
+      'A published partner has at most 3 calls to action that aren’t member perks; this one has 4.',
     ])
   })
 

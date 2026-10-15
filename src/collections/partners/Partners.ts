@@ -1,7 +1,7 @@
 import { ValidationError, type CollectionConfig } from 'payload'
 import { partnersAccess } from '@/partners/access'
 import { bannerRule, galleryRule, imageFilter, logoFilter, logoRule } from '@/partners/images'
-import { SOCIAL_PLATFORMS, webAddress } from '@/partners/links'
+import { SOCIAL_PLATFORMS, urlField } from '@/partners/links'
 import { refuseIncompletePartner } from '@/partners/publishing'
 
 /** "Example Tools & Co." becomes "example-tools-co"; "Café" becomes "cafe". */
@@ -155,7 +155,7 @@ export const Partners: CollectionConfig = {
       },
       fields: [
         { name: 'label', type: 'text', required: true },
-        { name: 'url', label: 'URL', type: 'text', required: true, validate: webAddress },
+        urlField,
         {
           name: 'memberPerk',
           type: 'checkbox',
@@ -186,7 +186,7 @@ export const Partners: CollectionConfig = {
       admin: { description: 'Shown as icons on the partner’s card and page.' },
       fields: [
         { name: 'platform', type: 'select', required: true, options: [...SOCIAL_PLATFORMS] },
-        { name: 'url', label: 'URL', type: 'text', required: true, validate: webAddress },
+        urlField,
       ],
     },
   ],

@@ -3,7 +3,7 @@ import { hasBearerToken, unauthorized } from '@/bearer-token'
 import { idOf } from '@/courseware/ids'
 import type { Media } from '@/payload-types'
 import type { Image, Partner, PartnersDocument } from './document'
-import { publicCallsToAction } from './publishing'
+import { memberPerks, publicCallsToAction } from './links'
 
 /**
  * A media record in one of its sizes, or as uploaded when Payload made no such size (an SVG, or an
@@ -71,9 +71,11 @@ export async function buildPartnersDocument(req: PayloadRequest): Promise<Partne
         label,
         url,
       })),
-      memberPerks: (partner.callsToAction ?? [])
-        .filter((call) => call.memberPerk)
-        .map(({ label, url, perkText }) => ({ label, url, text: perkText ?? '' })),
+      memberPerks: memberPerks(partner.callsToAction).map(({ label, url, perkText }) => ({
+        label,
+        url,
+        text: perkText ?? '',
+      })),
       socialLinks: (partner.socialLinks ?? []).map(({ platform, url }) => ({ platform, url })),
     })
     byCategory.set(categoryId, group)
