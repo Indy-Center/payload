@@ -1,6 +1,6 @@
 import { ValidationError } from 'payload'
 import type { Partner } from '@/payload-types'
-import { publicCallsToAction } from './links'
+import { splitCallsToAction } from './links'
 
 const MAX_PUBLIC_CALLS_TO_ACTION = 3
 
@@ -20,7 +20,7 @@ export function refuseIncompletePartner(partner: Partial<Partner>): void {
   if (!partner.logo) missing('logo', 'a logo')
   if (blank(partner.tagline)) missing('tagline', 'a tagline')
   if (blank(partner.description)) missing('description', 'a description')
-  const publicCount = publicCallsToAction(partner.callsToAction).length
+  const publicCount = splitCallsToAction(partner.callsToAction).publicCalls.length
   if (publicCount === 0) missing('callsToAction', 'a call to action that isn’t a member perk')
   if (publicCount > MAX_PUBLIC_CALLS_TO_ACTION) {
     faults.push({

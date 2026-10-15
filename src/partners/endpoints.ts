@@ -3,7 +3,7 @@ import { hasBearerToken, unauthorized } from '@/bearer-token'
 import { idOf } from '@/courseware/ids'
 import type { Media } from '@/payload-types'
 import type { Image, Partner, PartnersDocument } from './document'
-import { memberPerks, publicCallsToAction } from './links'
+import { splitCallsToAction } from './links'
 
 /**
  * A media record in one of its sizes, or as uploaded when Payload made no such size (an SVG, or an
@@ -52,6 +52,7 @@ export async function buildPartnersDocument(req: PayloadRequest): Promise<Partne
     // The site can't draw a partner without one. Publishing requires one, but deleting the logo's
     // media record still clears it.
     if (!logo) continue
+    const { publicCalls, memberPerks } = splitCallsToAction(partner.callsToAction)
     const categoryId = idOf(partner.category)!
     const group = byCategory.get(categoryId) ?? []
     group.push({
@@ -67,11 +68,8 @@ export async function buildPartnersDocument(req: PayloadRequest): Promise<Partne
         const large = inSize(photo, 'large')
         return thumbnail && large ? [{ thumbnail, large }] : []
       }),
-      callsToAction: publicCallsToAction(partner.callsToAction).map(({ label, url }) => ({
-        label,
-        url,
-      })),
-      memberPerks: memberPerks(partner.callsToAction).map(({ label, url, perkText }) => ({
+      callsToAction: publicCalls.map(({ label, url }) => ({ label, url })),
+      memberPerks: memberPerks.map(({ label, url, perkText }) => ({
         label,
         url,
         text: perkText ?? '',

@@ -48,10 +48,16 @@ export const urlField: TextField = {
 
 type CallToAction = NonNullable<Partner['callsToAction']>[number]
 
-/** Calls to action that aren't member perks: the ones everyone sees. */
-export const publicCallsToAction = (calls: Partner['callsToAction']): CallToAction[] =>
-  (calls ?? []).filter((call) => !call.memberPerk)
-
-/** Calls to action only Indy Center members see. */
-export const memberPerks = (calls: Partner['callsToAction']): CallToAction[] =>
-  (calls ?? []).filter((call) => call.memberPerk)
+/**
+ * A partner's calls to action, split into the public ones everyone sees and the member perks only
+ * Indy Center members see, each in the editor's order.
+ */
+export function splitCallsToAction(calls: Partner['callsToAction']): {
+  publicCalls: CallToAction[]
+  memberPerks: CallToAction[]
+} {
+  const publicCalls: CallToAction[] = []
+  const memberPerks: CallToAction[] = []
+  for (const call of calls ?? []) (call.memberPerk ? memberPerks : publicCalls).push(call)
+  return { publicCalls, memberPerks }
+}
