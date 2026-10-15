@@ -72,7 +72,9 @@ Keep the sheets outside this repository, which is public; a folder inside it is 
 The people and groups Indy Center works with, listed on the community site's partners page. The decisions behind them are in the maintainer's community-website notes.
 
 - **Who may edit them.** Accounts with `partners:editor`, which the Training Admin gives. Nobody else can see or change partners or partner categories, through the admin or the API.
-- **Publishing.** A partner starts as a draft. Setting its Status to Published puts it on the site within a few minutes; setting it back to Draft takes it off and keeps its details.
+- **Publishing.** A partner starts as a draft, which may be incomplete. Setting its Status to Published puts it on the site within a few minutes, and is refused, with every fault listed, until it has a logo, a tagline, a description and one to three calls to action that aren't member perks. Setting it back to Draft takes it off and keeps its details.
+- **Calls to action and member perks.** A call to action is a label and a web address. One marked as a member perk also says what members get, and the site shows it only to people signed in; perks don't count towards the three. Social links pair a platform from a fixed list with a web address.
+- **Partner categories.** One that still has partners, drafts included, can't be deleted.
 - **Slugs.** A partner's slug is its address on the site, `/partners/<slug>`. Left empty, it is filled from the name; it can be changed, and no two partners share one.
 - **Images.** A partner's logo (SVG, PNG or WebP), banner (optional, at least 1600×500) and gallery (optional) are uploads to `media`, so they are public as soon as they are uploaded. Payload makes the sizes the site shows: a 256px logo, a 2400px-wide banner, and a 400px thumbnail and 1600px large copy of each photo. It can't make sizes for partner images only, so every image in `media` gets them; SVGs, and images already smaller than a size, are served as uploaded.
 

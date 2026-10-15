@@ -109,6 +109,24 @@ describe('partner categories', () => {
       )
     }
   })
+
+  it('can’t be deleted while a partner is in one, even a draft', async () => {
+    const category = await payload.create({
+      collection: 'partner-categories',
+      data: { name: 'Developers', blurb: 'People who build tools.' },
+    })
+    await payload.create({
+      collection: 'partners',
+      data: { name: 'Example Tools', category: category.id, status: 'draft' },
+    })
+
+    await expect(
+      payload.delete({ collection: 'partner-categories', id: category.id, ...as(editor) }),
+    ).rejects.toThrow(
+      'Developers still has 1 partner. Move it to another category or delete it first.',
+    )
+    expect(await payload.count({ collection: 'partner-categories' })).toEqual({ totalDocs: 1 })
+  })
 })
 
 describe('partners', () => {

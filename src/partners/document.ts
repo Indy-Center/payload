@@ -32,7 +32,19 @@ export type Partner = {
   banner: Image | null
   /** In the editor's order. */
   gallery: { thumbnail: Image; large: Image }[]
+  /** One to three, in the editor's order; the first is the primary one. */
+  callsToAction: { label: string; url: string }[]
+  /**
+   * For Indy Center members only, in the editor's order. Sent for every partner: the site removes
+   * them for visitors who aren't signed in, so a code never reaches their browser.
+   */
+  memberPerks: { label: string; url: string; text: string }[]
+  /** In the editor's order. */
+  socialLinks: { platform: SocialPlatform; url: string }[]
 }
+
+export type SocialPlatform =
+  'twitch' | 'youtube' | 'discord' | 'x' | 'instagram' | 'tiktok' | 'facebook' | 'github' | 'web'
 
 /**
  * One image, in the size the site shows it, or as uploaded when it is smaller than that size or an

@@ -1,6 +1,8 @@
 import { ValidationError, type CollectionConfig } from 'payload'
 import { partnersAccess } from '@/partners/access'
 import { bannerRule, galleryRule, imageFilter, logoFilter, logoRule } from '@/partners/images'
+import { SOCIAL_PLATFORMS, webAddress } from '@/partners/links'
+import { refuseIncompletePartner } from '@/partners/publishing'
 
 /** "Example Tools & Co." becomes "example-tools-co"; "Café" becomes "cafe". */
 const slugify = (text: string) =>
@@ -25,6 +27,15 @@ export const Partners: CollectionConfig = {
     group: 'Partners',
   },
   access: partnersAccess,
+  hooks: {
+    beforeChange: [
+      // `data` holds only what this save changes, so the rule reads it over the stored partner.
+      ({ data, originalDoc }) => {
+        refuseIncompletePartner({ ...originalDoc, ...data })
+        return data
+      },
+    ],
+  },
   fields: [
     { name: 'name', type: 'text', required: true },
     {
@@ -132,6 +143,51 @@ export const Partners: CollectionConfig = {
       name: 'description',
       type: 'textarea',
       admin: { description: 'Plain text. Leave a blank line between paragraphs.' },
+    },
+    {
+      name: 'callsToAction',
+      label: 'Calls to action',
+      type: 'array',
+      labels: { singular: 'Call to action', plural: 'Calls to action' },
+      admin: {
+        description:
+          'Buttons on the partner’s page; the first is highlighted. A published partner needs one to three that aren’t member perks. Member perks don’t count towards the three.',
+      },
+      fields: [
+        { name: 'label', type: 'text', required: true },
+        { name: 'url', label: 'URL', type: 'text', required: true, validate: webAddress },
+        {
+          name: 'memberPerk',
+          type: 'checkbox',
+          admin: {
+            description: 'Shown only to people signed in to the site, with the text below.',
+          },
+        },
+        {
+          name: 'perkText',
+          type: 'textarea',
+          validate: (
+            value: string | null | undefined,
+            { siblingData }: { siblingData: { memberPerk?: boolean } },
+          ) =>
+            !siblingData.memberPerk || value?.trim()
+              ? true
+              : 'Say what members get from this perk.',
+          admin: {
+            condition: (_, siblingData) => Boolean(siblingData?.memberPerk),
+            description: 'What members get, such as a discount code.',
+          },
+        },
+      ],
+    },
+    {
+      name: 'socialLinks',
+      type: 'array',
+      admin: { description: 'Shown as icons on the partner’s card and page.' },
+      fields: [
+        { name: 'platform', type: 'select', required: true, options: [...SOCIAL_PLATFORMS] },
+        { name: 'url', label: 'URL', type: 'text', required: true, validate: webAddress },
+      ],
     },
   ],
 }

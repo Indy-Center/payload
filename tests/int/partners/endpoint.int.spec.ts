@@ -3,6 +3,7 @@
 import type { Payload } from 'payload'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { PartnersDocument } from '@/partners/document'
+import type { Partner } from '@/payload-types'
 import {
   TOKEN as LIBRARY_TOKEN,
   callEndpoint,
@@ -46,6 +47,8 @@ async function partner(
     logo?: string
     banner?: string
     gallery?: string[]
+    callsToAction?: Partner['callsToAction']
+    socialLinks?: Partner['socialLinks']
   } = {},
 ) {
   return payload.create({
@@ -60,6 +63,10 @@ async function partner(
       gallery: options.gallery,
       tagline: `${name} in one line.`,
       description: `${name} does made-up things.\n\nA second paragraph.`,
+      callsToAction: options.callsToAction ?? [
+        { label: 'Visit website', url: 'https://example.com' },
+      ],
+      socialLinks: options.socialLinks,
     },
   })
 }
@@ -98,11 +105,60 @@ describe('GET /api/community/partners', () => {
               },
               banner: null,
               gallery: [],
+              callsToAction: [{ label: 'Visit website', url: 'https://example.com' }],
+              memberPerks: [],
+              socialLinks: [],
             },
           ],
         },
       ],
     })
+  })
+
+  it('gives public calls to action and member perks apart, each in order, with social links', async () => {
+    const developers = await category('Developers')
+    await partner('Example Tools', developers.id, {
+      callsToAction: [
+        {
+          label: 'Claim discount',
+          url: 'https://example.com/discount',
+          memberPerk: true,
+          perkText: 'Members get 10% off with the made-up code EXAMPLE10.',
+        },
+        { label: 'Visit website', url: 'https://example.com' },
+        {
+          label: 'Join the made-up beta',
+          url: 'https://example.com/beta',
+          memberPerk: true,
+          perkText: 'Early access.',
+        },
+        { label: 'Download', url: 'https://example.com/download' },
+      ],
+      socialLinks: [
+        { platform: 'youtube', url: 'https://youtube.com/@example' },
+        { platform: 'discord', url: 'https://discord.gg/example' },
+      ],
+    })
+
+    const { body } = await read()
+    const [shown] = (body as PartnersDocument).categories[0].partners
+
+    expect(shown.callsToAction).toEqual([
+      { label: 'Visit website', url: 'https://example.com' },
+      { label: 'Download', url: 'https://example.com/download' },
+    ])
+    expect(shown.memberPerks).toEqual([
+      {
+        label: 'Claim discount',
+        url: 'https://example.com/discount',
+        text: 'Members get 10% off with the made-up code EXAMPLE10.',
+      },
+      { label: 'Join the made-up beta', url: 'https://example.com/beta', text: 'Early access.' },
+    ])
+    expect(shown.socialLinks).toEqual([
+      { platform: 'youtube', url: 'https://youtube.com/@example' },
+      { platform: 'discord', url: 'https://discord.gg/example' },
+    ])
   })
 
   it('gives each image in the size the site shows it', async () => {

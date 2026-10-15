@@ -590,6 +590,34 @@ export interface Partner {
    * Plain text. Leave a blank line between paragraphs.
    */
   description?: string | null;
+  /**
+   * Buttons on the partner’s page; the first is highlighted. A published partner needs one to three that aren’t member perks. Member perks don’t count towards the three.
+   */
+  callsToAction?:
+    | {
+        label: string;
+        url: string;
+        /**
+         * Shown only to people signed in to the site, with the text below.
+         */
+        memberPerk?: boolean | null;
+        /**
+         * What members get, such as a discount code.
+         */
+        perkText?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Shown as icons on the partner’s card and page.
+   */
+  socialLinks?:
+    | {
+        platform: 'twitch' | 'youtube' | 'discord' | 'x' | 'instagram' | 'tiktok' | 'facebook' | 'github' | 'web';
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1018,6 +1046,22 @@ export interface PartnersSelect<T extends boolean = true> {
   gallery?: T;
   tagline?: T;
   description?: T;
+  callsToAction?:
+    | T
+    | {
+        label?: T;
+        url?: T;
+        memberPerk?: T;
+        perkText?: T;
+        id?: T;
+      };
+  socialLinks?:
+    | T
+    | {
+        platform?: T;
+        url?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
