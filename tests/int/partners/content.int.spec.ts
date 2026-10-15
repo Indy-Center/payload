@@ -176,6 +176,23 @@ describe('publishing a partner', () => {
     ])
   })
 
+  it('is refused with field errors listed alongside what is missing', async () => {
+    const badCall = { label: 'Run', url: 'javascript:alert(1)' }
+    expect(
+      await invalid(publish({ ...complete(), tagline: null, callsToAction: [visit, badCall] })),
+    ).toEqual([
+      'Give the partner a tagline before publishing it.',
+      'Enter a web address starting with https:// or http://.',
+    ])
+  })
+
+  it('leaves an incomplete draft refused only for its field errors', async () => {
+    const badCall = { label: 'Run', url: 'javascript:alert(1)' }
+    expect(await invalid(create({ callsToAction: [badCall] }))).toEqual([
+      'Enter a web address starting with https:// or http://.',
+    ])
+  })
+
   it('leaves a draft free to be incomplete', async () => {
     const draft = await create({ callsToAction: [visit, visit, visit, visit] })
     expect(draft.status).toBe('draft')

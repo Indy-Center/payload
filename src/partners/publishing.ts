@@ -1,4 +1,4 @@
-import { ValidationError } from 'payload'
+import type { Validate } from 'payload'
 import type { Partner } from '@/payload-types'
 import { splitCallsToAction } from './links'
 
@@ -21,22 +21,28 @@ export function callsToActionFault(calls: Partner['callsToAction']): string | un
   }
 }
 
+/** What each field the publishing rule covers lacks, on a partner the site couldn't show in full. */
+const publishingFaults = {
+  logo: (partner) => (partner.logo ? undefined : missing('a logo')),
+  tagline: (partner) => (blank(partner.tagline) ? missing('a tagline') : undefined),
+  description: (partner) => (blank(partner.description) ? missing('a description') : undefined),
+  callsToAction: (partner) => callsToActionFault(partner.callsToAction),
+} satisfies Record<string, (partner: Partial<Partner>) => string | undefined>
+
 /**
- * Refuses to publish a partner the site couldn't show in full: one with no logo, tagline or
- * description, or without one to three calls to action that aren't member perks. Each of these
- * faults is listed at once. A draft may be incomplete.
+ * A field's own check with the publishing rule in front of it: a published partner needs a logo,
+ * tagline and description, and one to three calls to action that aren't member perks. A draft may
+ * be incomplete. The rule is a field check rather than a hook so that a refused save lists its
+ * publishing faults and its field errors together. `data` is the stored partner with the change
+ * over it, so publishing a partner saved earlier checks what it already holds.
  */
-export function refuseIncompletePartner(partner: Partial<Partner>): void {
-  if (partner.status !== 'published') return
-  const faults: { path: string; message: string }[] = []
-  const fault = (path: string, message: string | undefined) => {
-    if (message) faults.push({ path, message })
+export function withPublishingRule<TValue, TField extends object>(
+  field: keyof typeof publishingFaults,
+  check: Validate<TValue, unknown, unknown, TField>,
+): Validate<TValue, unknown, unknown, TField> {
+  return (value, options) => {
+    const partner: Partial<Partner> = options.data ?? {}
+    const fault = partner.status === 'published' ? publishingFaults[field](partner) : undefined
+    return fault ?? check(value, options)
   }
-
-  if (!partner.logo) fault('logo', missing('a logo'))
-  if (blank(partner.tagline)) fault('tagline', missing('a tagline'))
-  if (blank(partner.description)) fault('description', missing('a description'))
-  fault('callsToAction', callsToActionFault(partner.callsToAction))
-
-  if (faults.length > 0) throw new ValidationError({ errors: faults })
 }

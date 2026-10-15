@@ -1,8 +1,9 @@
 import { ValidationError, type CollectionConfig } from 'payload'
+import { array, text, textarea } from 'payload/shared'
 import { partnersAccess } from '@/partners/access'
 import { bannerRule, galleryRule, imageFilter, logoFilter, logoRule } from '@/partners/images'
 import { SOCIAL_PLATFORMS, urlField } from '@/partners/links'
-import { refuseIncompletePartner } from '@/partners/publishing'
+import { withPublishingRule } from '@/partners/publishing'
 
 /** "Example Tools & Co." becomes "example-tools-co"; "Café" becomes "cafe". */
 const slugify = (text: string) =>
@@ -27,15 +28,6 @@ export const Partners: CollectionConfig = {
     group: 'Partners',
   },
   access: partnersAccess,
-  hooks: {
-    beforeChange: [
-      // `data` holds only what this save changes, so the rule reads it over the stored partner.
-      ({ data, originalDoc }) => {
-        refuseIncompletePartner({ ...originalDoc, ...data })
-        return data
-      },
-    ],
-  },
   fields: [
     { name: 'name', type: 'text', required: true },
     {
@@ -106,7 +98,7 @@ export const Partners: CollectionConfig = {
       type: 'upload',
       relationTo: 'media',
       filterOptions: logoFilter,
-      validate: logoRule,
+      validate: withPublishingRule('logo', logoRule),
       admin: {
         description: 'A square mark, at least 256×256 pixels: SVG, PNG or WebP.',
       },
@@ -137,11 +129,13 @@ export const Partners: CollectionConfig = {
       name: 'tagline',
       type: 'text',
       maxLength: 120,
+      validate: withPublishingRule('tagline', text),
       admin: { description: 'One line, up to 120 characters.' },
     },
     {
       name: 'description',
       type: 'textarea',
+      validate: withPublishingRule('description', textarea),
       admin: { description: 'Plain text. Leave a blank line between paragraphs.' },
     },
     {
@@ -149,6 +143,7 @@ export const Partners: CollectionConfig = {
       label: 'Calls to action',
       type: 'array',
       labels: { singular: 'Call to action', plural: 'Calls to action' },
+      validate: withPublishingRule('callsToAction', array),
       admin: {
         description:
           'Buttons on the partner’s page; the first is highlighted. A published partner needs one to three that aren’t member perks. Member perks don’t count towards the three.',
