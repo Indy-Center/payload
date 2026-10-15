@@ -5,18 +5,19 @@ The [Payload](https://payloadcms.com) content management system for Indy Center,
 [![Build and Deploy](https://github.com/Indy-Center/payload/actions/workflows/build-and-deploy.yml/badge.svg)](https://github.com/Indy-Center/payload/actions/workflows/build-and-deploy.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-It holds Indy Center's **courseware**: courses, their versions, modules and lesson plans, the shared task tree, scenarios, the USA and GCAP frameworks, references and grading scales. indy-library (`library.flyindycenter.com`) reads it; in a later release training-tools will too. It also has `media` for public uploads and `private-media` for files only signed-in users may read. It signs people in with Payload's own email and password accounts, not yet with identity, so courseware is not yet open to course authors (that waits on identity sign-in, DEV-136 and DEV-219).
+It holds Indy Center's **courseware**: courses, their versions, modules and lesson plans, the shared task tree, scenarios, the USA and GCAP frameworks, references and grading scales. indy-library (`library.flyindycenter.com`) reads it; in a later release training-tools will too. It also holds the **partners** the community site (`flyindycenter.com`) lists, and has `media` for public uploads and `private-media` for files only signed-in users may read. It signs people in with Payload's own email and password accounts, not yet with identity, so courseware is not yet open to course authors (that waits on identity sign-in, DEV-136 and DEV-219).
 
 ## HTTP surface
 
 - `GET /admin` — the admin panel. On an empty database it asks whoever opens it to create the first admin account.
-- `/api/<collection>` — Payload's REST API for each collection (`users`, `media`, `private-media`, and the courseware collections `frameworks`, `competencies`, `references`, `tasks`, `grading-scales`, `courses`, `course-versions`, `lesson-plans`, `scenarios`): `GET` to list, `POST` to create, `GET`, `PATCH` and `DELETE` on `/api/<collection>/<id>`. Courseware refuses `DELETE`.
+- `/api/<collection>` — Payload's REST API for each collection (`users`, `media`, `private-media`, and the courseware collections `frameworks`, `competencies`, `references`, `tasks`, `grading-scales`, `courses`, `course-versions`, `lesson-plans`, `scenarios`, and `partner-categories` and `partners`): `GET` to list, `POST` to create, `GET`, `PATCH` and `DELETE` on `/api/<collection>/<id>`. Courseware refuses `DELETE`. Partners and partner categories are open to partners editors only.
 - `GET /api/users/init` — whether the first admin account exists. The deploy calls it to check the app can reach its database.
 - `POST /api/users/login`, `POST /api/users/logout`, `GET /api/users/me` — sign in, sign out, and the signed-in user.
 - `GET /api/private-media/file/<filename>` — a private file, for signed-in users only.
 - `GET /api/media/file/<filename>` — a public upload, when it is stored on local disk. In production public uploads are served from <https://media.flyindycenter.com> instead, not by this app.
 - `POST /api/graphql` — the same data over GraphQL. `GET /api/graphql-playground` is a query editor, off in production.
 - `GET /api/courseware/courses`, `GET /api/courseware/courses/<code>/current` (or `/draft`), `GET /api/courseware/catalogue` — the reads indy-library makes: the course list, one whole course version, and the task tree with frameworks, competencies and references. They include teacher notes, so they need `Authorization: Bearer <LIBRARY_API_TOKEN>` and answer 401 otherwise. The shapes are in `src/courseware/document.ts`.
+- `GET /api/community/partners` — the read the community site makes: the published partners, grouped by partner category, in order. Drafts and categories with no published partners are left out. It needs `Authorization: Bearer <COMMUNITY_API_TOKEN>` and answers 401 otherwise. The shape is in `src/partners/document.ts`. (Not `/api/partners`, which is the partners collection's own REST API.)
 - `GET /` — redirects to `/admin`. The CMS has no frontend of its own.
 
 ## Project layout
@@ -26,6 +27,9 @@ It holds Indy Center's **courseware**: courses, their versions, modules and less
 - `src/collections/`: one file per collection.
 - `src/collections/courseware/`: the courseware collections.
 - `src/courseware/`: the rules they share: who may do what (`access.ts`), the task tree and its numbers, expanding a parent task into rows, publishing and the frozen shape, the reads for the library, and the framework import.
+- `src/collections/partners/`: the partner categories and partners collections.
+- `src/partners/`: who may edit partners (`access.ts`), and the community site's read and its shape.
+- `src/bearer-token.ts`: the check the library's and the community site's reads share.
 - `scripts/import-frameworks.ts`: loads the USA and GCAP frameworks and the rubrics; see Courseware.
 - `src/storage.ts`: where uploads are stored: the two R2 buckets, or local disk when they aren't configured.
 - `src/migrations/`: database migrations, created by `npm run payload migrate:create`. In production the app applies new ones on its first request after a deploy.
@@ -62,6 +66,14 @@ CMS_URL=https://cms.flyindycenter.com CMS_EMAIL=… CMS_PASSWORD=… \
 Keep the sheets outside this repository, which is public; a folder inside it is refused. Records are matched by framework edition and source id, so running it again changes nothing that is already right; it reports what it created, changed and left alone. It fixes the sheet's known faults and leaves out the "meets all established standards" rows.
 
 **No courseware in this repository.** It is public: tests use made-up content only, and real courseware, rubric wording and import sheets are never committed.
+
+## Partners
+
+The people and groups Indy Center works with, listed on the community site's partners page. The decisions behind them are in the maintainer's community-website notes.
+
+- **Who may edit them.** Accounts with `partners:editor`, which the Training Admin gives. Nobody else can see or change partners or partner categories, through the admin or the API.
+- **Publishing.** A partner starts as a draft. Setting its Status to Published puts it on the site within a few minutes; setting it back to Draft takes it off and keeps its details.
+- **Slugs.** A partner's slug is its address on the site, `/partners/<slug>`. Left empty, it is filled from the name; it can be changed, and no two partners share one.
 
 ## The admin's look
 
