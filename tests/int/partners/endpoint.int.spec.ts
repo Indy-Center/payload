@@ -239,6 +239,38 @@ describe('GET /api/community/partners', () => {
     ).toEqual([['Developers', ['Example Tools']]])
   })
 
+  it('leaves out a published partner without one to three public calls to action', async () => {
+    const developers = await category('Developers')
+    const visit = { label: 'Visit website', url: 'https://example.com' }
+    const perk = { ...visit, memberPerk: true, perkText: 'A made-up discount.' }
+    await partner('Example Tools', developers.id)
+    // Published before the publishing rule existed: saved straight to the database, past it.
+    for (const [name, callsToAction] of [
+      ['No Calls Tools', []],
+      ['Only Perks Tools', [perk, perk]],
+      ['Four Calls Tools', [visit, visit, visit, visit, perk]],
+    ] as const) {
+      const draft = await partner(name, developers.id, {
+        status: 'draft',
+        callsToAction: [...callsToAction],
+      })
+      await payload.db.updateOne({
+        collection: 'partners',
+        id: draft.id,
+        data: { status: 'published' },
+      })
+    }
+
+    const { body } = await read()
+
+    expect(
+      (body as PartnersDocument).categories.map((group) => [
+        group.name,
+        group.partners.map((each) => each.name),
+      ]),
+    ).toEqual([['Developers', ['Example Tools']]])
+  })
+
   it('orders categories by order, and partners by order then name', async () => {
     const second = await category('Creators', 2)
     const first = await category('Developers', 1)

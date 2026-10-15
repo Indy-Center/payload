@@ -4,7 +4,8 @@
  *
  * `GET /api/community/partners`, with the site's server credential in `COMMUNITY_API_TOKEN` as a
  * bearer token, returns the published partners grouped by category. Drafts are never included,
- * and neither is a category with no published partners.
+ * nor is a published partner the site can't draw in full: one with no logo, or without one to
+ * three calls to action that aren't member perks. A category with no partners left is left out.
  */
 
 export type PartnersDocument = {

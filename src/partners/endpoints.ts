@@ -4,6 +4,7 @@ import { idOf } from '@/courseware/ids'
 import type { Media } from '@/payload-types'
 import type { Image, Partner, PartnersDocument } from './document'
 import { splitCallsToAction } from './links'
+import { callsToActionFault } from './publishing'
 
 /**
  * A media record in one of its sizes, or as uploaded when Payload made no such size (an SVG, or an
@@ -52,6 +53,8 @@ export async function buildPartnersDocument(req: PayloadRequest): Promise<Partne
     // The site can't draw a partner without one. Publishing requires one, but deleting the logo's
     // media record still clears it.
     if (!logo) continue
+    // Nor without a button on its card. A partner published before the rule may still break it.
+    if (callsToActionFault(partner.callsToAction)) continue
     const { publicCalls, memberPerks } = splitCallsToAction(partner.callsToAction)
     const categoryId = idOf(partner.category)!
     const group = byCategory.get(categoryId) ?? []
