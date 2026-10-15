@@ -7,6 +7,7 @@ import * as migration_20261014_053500_grading_scales_and_publishing from './2026
 import * as migration_20261014_053903_courseware_permissions from './20261014_053903_courseware_permissions';
 import * as migration_20261015_025540_partners from './20261015_025540_partners';
 import * as migration_20261015_031917_partner_images from './20261015_031917_partner_images';
+import * as migration_20261015_040842_partner_links from './20261015_040842_partner_links';
 
 export const migrations = [
   {
@@ -52,6 +53,11 @@ export const migrations = [
   {
     up: migration_20261015_031917_partner_images.up,
     down: migration_20261015_031917_partner_images.down,
-    name: '20261015_031917_partner_images'
+    name: '20261015_031917_partner_images',
+  },
+  {
+    up: migration_20261015_040842_partner_links.up,
+    down: migration_20261015_040842_partner_links.down,
+    name: '20261015_040842_partner_links'
   },
 ];

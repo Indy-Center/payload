@@ -1,6 +1,9 @@
 import { ValidationError, type CollectionConfig } from 'payload'
+import { array, text, textarea } from 'payload/shared'
 import { partnersAccess } from '@/partners/access'
 import { bannerRule, galleryRule, imageFilter, logoFilter, logoRule } from '@/partners/images'
+import { SOCIAL_PLATFORMS, urlField } from '@/partners/links'
+import { withPublishingRule } from '@/partners/publishing'
 
 /** "Example Tools & Co." becomes "example-tools-co"; "Café" becomes "cafe". */
 const slugify = (text: string) =>
@@ -95,7 +98,7 @@ export const Partners: CollectionConfig = {
       type: 'upload',
       relationTo: 'media',
       filterOptions: logoFilter,
-      validate: logoRule,
+      validate: withPublishingRule('logo', logoRule),
       admin: {
         description: 'A square mark, at least 256×256 pixels: SVG, PNG or WebP.',
       },
@@ -126,12 +129,60 @@ export const Partners: CollectionConfig = {
       name: 'tagline',
       type: 'text',
       maxLength: 120,
+      validate: withPublishingRule('tagline', text),
       admin: { description: 'One line, up to 120 characters.' },
     },
     {
       name: 'description',
       type: 'textarea',
+      validate: withPublishingRule('description', textarea),
       admin: { description: 'Plain text. Leave a blank line between paragraphs.' },
+    },
+    {
+      name: 'callsToAction',
+      label: 'Calls to action',
+      type: 'array',
+      labels: { singular: 'Call to action', plural: 'Calls to action' },
+      validate: withPublishingRule('callsToAction', array),
+      admin: {
+        description:
+          'Buttons on the partner’s page; the first is highlighted. A published partner needs one to three that aren’t member perks. Member perks don’t count towards the three.',
+      },
+      fields: [
+        { name: 'label', type: 'text', required: true },
+        urlField,
+        {
+          name: 'memberPerk',
+          type: 'checkbox',
+          admin: {
+            description: 'Shown only to people signed in to the site, with the text below.',
+          },
+        },
+        {
+          name: 'perkText',
+          type: 'textarea',
+          validate: (
+            value: string | null | undefined,
+            { siblingData }: { siblingData: { memberPerk?: boolean } },
+          ) =>
+            !siblingData.memberPerk || value?.trim()
+              ? true
+              : 'Say what members get from this perk.',
+          admin: {
+            condition: (_, siblingData) => Boolean(siblingData?.memberPerk),
+            description: 'What members get, such as a discount code.',
+          },
+        },
+      ],
+    },
+    {
+      name: 'socialLinks',
+      type: 'array',
+      admin: { description: 'Shown as icons on the partner’s card and page.' },
+      fields: [
+        { name: 'platform', type: 'select', required: true, options: [...SOCIAL_PLATFORMS] },
+        urlField,
+      ],
     },
   ],
 }

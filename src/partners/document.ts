@@ -4,7 +4,9 @@
  *
  * `GET /api/community/partners`, with the site's server credential in `COMMUNITY_API_TOKEN` as a
  * bearer token, returns the published partners grouped by category. Drafts are never included,
- * and neither is a category with no published partners.
+ * nor is a published partner the site can't draw in full: one without a logo, a tagline, a
+ * description, or one to three calls to action that aren't member perks. A category with no
+ * partners left is left out.
  */
 
 export type PartnersDocument = {
@@ -32,7 +34,19 @@ export type Partner = {
   banner: Image | null
   /** In the editor's order. */
   gallery: { thumbnail: Image; large: Image }[]
+  /** One to three, in the editor's order; the first is the primary one. */
+  callsToAction: { label: string; url: string }[]
+  /**
+   * For Indy Center members only, in the editor's order. Sent for every partner: the site removes
+   * them for visitors who aren't signed in, so a code never reaches their browser.
+   */
+  memberPerks: { label: string; url: string; text: string }[]
+  /** In the editor's order. */
+  socialLinks: { platform: SocialPlatform; url: string }[]
 }
+
+export type SocialPlatform =
+  'twitch' | 'youtube' | 'discord' | 'x' | 'instagram' | 'tiktok' | 'facebook' | 'github' | 'web'
 
 /**
  * One image, in the size the site shows it, or as uploaded when it is smaller than that size or an

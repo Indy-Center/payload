@@ -3,6 +3,7 @@
 import type { Payload } from 'payload'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { PartnersDocument } from '@/partners/document'
+import type { Partner } from '@/payload-types'
 import {
   TOKEN as LIBRARY_TOKEN,
   callEndpoint,
@@ -46,6 +47,10 @@ async function partner(
     logo?: string
     banner?: string
     gallery?: string[]
+    tagline?: string
+    description?: string
+    callsToAction?: Partner['callsToAction']
+    socialLinks?: Partner['socialLinks']
   } = {},
 ) {
   return payload.create({
@@ -58,11 +63,36 @@ async function partner(
       logo: options.logo ?? (await upload(payload, svg(), `${name} logo`)).id,
       banner: options.banner,
       gallery: options.gallery,
-      tagline: `${name} in one line.`,
-      description: `${name} does made-up things.\n\nA second paragraph.`,
+      tagline: options.tagline ?? `${name} in one line.`,
+      description: options.description ?? `${name} does made-up things.\n\nA second paragraph.`,
+      callsToAction: options.callsToAction ?? [
+        { label: 'Visit website', url: 'https://example.com' },
+      ],
+      socialLinks: options.socialLinks,
     },
   })
 }
+
+// Published before the publishing rule existed: saved as a draft, then published straight
+// to the database, past the rule.
+async function publishedPastTheRule(
+  name: string,
+  categoryId: string,
+  options: Omit<NonNullable<Parameters<typeof partner>[2]>, 'status'>,
+) {
+  const draft = await partner(name, categoryId, { ...options, status: 'draft' })
+  await payload.db.updateOne({
+    collection: 'partners',
+    id: draft.id,
+    data: { status: 'published' },
+  })
+}
+
+const namesByCategory = (body: unknown) =>
+  (body as PartnersDocument).categories.map((group) => [
+    group.name,
+    group.partners.map((each) => each.name),
+  ])
 
 describe('GET /api/community/partners', () => {
   it('refuses a missing or wrong token', async () => {
@@ -98,11 +128,60 @@ describe('GET /api/community/partners', () => {
               },
               banner: null,
               gallery: [],
+              callsToAction: [{ label: 'Visit website', url: 'https://example.com' }],
+              memberPerks: [],
+              socialLinks: [],
             },
           ],
         },
       ],
     })
+  })
+
+  it('gives public calls to action and member perks apart, each in order, with social links', async () => {
+    const developers = await category('Developers')
+    await partner('Example Tools', developers.id, {
+      callsToAction: [
+        {
+          label: 'Claim discount',
+          url: 'https://example.com/discount',
+          memberPerk: true,
+          perkText: 'Members get 10% off with the made-up code EXAMPLE10.',
+        },
+        { label: 'Visit website', url: 'https://example.com' },
+        {
+          label: 'Join the made-up beta',
+          url: 'https://example.com/beta',
+          memberPerk: true,
+          perkText: 'Early access.',
+        },
+        { label: 'Download', url: 'https://example.com/download' },
+      ],
+      socialLinks: [
+        { platform: 'youtube', url: 'https://youtube.com/@example' },
+        { platform: 'discord', url: 'https://discord.gg/example' },
+      ],
+    })
+
+    const { body } = await read()
+    const [shown] = (body as PartnersDocument).categories[0].partners
+
+    expect(shown.callsToAction).toEqual([
+      { label: 'Visit website', url: 'https://example.com' },
+      { label: 'Download', url: 'https://example.com/download' },
+    ])
+    expect(shown.memberPerks).toEqual([
+      {
+        label: 'Claim discount',
+        url: 'https://example.com/discount',
+        text: 'Members get 10% off with the made-up code EXAMPLE10.',
+      },
+      { label: 'Join the made-up beta', url: 'https://example.com/beta', text: 'Early access.' },
+    ])
+    expect(shown.socialLinks).toEqual([
+      { platform: 'youtube', url: 'https://youtube.com/@example' },
+      { platform: 'discord', url: 'https://discord.gg/example' },
+    ])
   })
 
   it('gives each image in the size the site shows it', async () => {
@@ -175,12 +254,34 @@ describe('GET /api/community/partners', () => {
 
     const { body } = await read()
 
-    expect(
-      (body as PartnersDocument).categories.map((group) => [
-        group.name,
-        group.partners.map((each) => each.name),
-      ]),
-    ).toEqual([['Developers', ['Example Tools']]])
+    expect(namesByCategory(body)).toEqual([['Developers', ['Example Tools']]])
+  })
+
+  it('leaves out a published partner without one to three public calls to action', async () => {
+    const developers = await category('Developers')
+    const visit = { label: 'Visit website', url: 'https://example.com' }
+    const perk = { ...visit, memberPerk: true, perkText: 'A made-up discount.' }
+    await partner('Example Tools', developers.id)
+    await publishedPastTheRule('No Calls Tools', developers.id, { callsToAction: [] })
+    await publishedPastTheRule('Only Perks Tools', developers.id, { callsToAction: [perk, perk] })
+    await publishedPastTheRule('Four Calls Tools', developers.id, {
+      callsToAction: [visit, visit, visit, visit, perk],
+    })
+
+    const { body } = await read()
+
+    expect(namesByCategory(body)).toEqual([['Developers', ['Example Tools']]])
+  })
+
+  it('leaves out a published partner with a blank tagline or description', async () => {
+    const developers = await category('Developers')
+    await partner('Example Tools', developers.id)
+    await publishedPastTheRule('No Tagline Tools', developers.id, { tagline: ' ' })
+    await publishedPastTheRule('No Description Tools', developers.id, { description: '\n\n' })
+
+    const { body } = await read()
+
+    expect(namesByCategory(body)).toEqual([['Developers', ['Example Tools']]])
   })
 
   it('orders categories by order, and partners by order then name', async () => {
@@ -193,12 +294,7 @@ describe('GET /api/community/partners', () => {
 
     const { body } = await read()
 
-    expect(
-      (body as PartnersDocument).categories.map((group) => [
-        group.name,
-        group.partners.map((each) => each.name),
-      ]),
-    ).toEqual([
+    expect(namesByCategory(body)).toEqual([
       ['Developers', ['Zulu Tools', 'Alpha Tools', 'Bravo Tools']],
       ['Creators', ['Example Stream']],
     ])

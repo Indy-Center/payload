@@ -17,7 +17,7 @@ It holds Indy Center's **courseware**: courses, their versions, modules and less
 - `GET /api/media/file/<filename>` — a public upload, when it is stored on local disk. In production public uploads are served from <https://media.flyindycenter.com> instead, not by this app.
 - `POST /api/graphql` — the same data over GraphQL. `GET /api/graphql-playground` is a query editor, off in production.
 - `GET /api/courseware/courses`, `GET /api/courseware/courses/<code>/current` (or `/draft`), `GET /api/courseware/catalogue` — the reads indy-library makes: the course list, one whole course version, and the task tree with frameworks, competencies and references. They include teacher notes, so they need `Authorization: Bearer <LIBRARY_API_TOKEN>` and answer 401 otherwise. The shapes are in `src/courseware/document.ts`.
-- `GET /api/community/partners` — the read the community site makes: the published partners, grouped by partner category, in order. Drafts and categories with no published partners are left out. It needs `Authorization: Bearer <COMMUNITY_API_TOKEN>` and answers 401 otherwise. The shape is in `src/partners/document.ts`. (Not `/api/partners`, which is the partners collection's own REST API.)
+- `GET /api/community/partners` — the read the community site makes: the published partners, grouped by partner category, in order. Drafts are left out, as is a published partner that breaks the publishing rule (one published before it, or whose logo was deleted): it needs a logo, a tagline, a description and one to three public calls to action, and so is a category with none left. It needs `Authorization: Bearer <COMMUNITY_API_TOKEN>` and answers 401 otherwise. The shape is in `src/partners/document.ts`. (Not `/api/partners`, which is the partners collection's own REST API.)
 - `GET /` — redirects to `/admin`. The CMS has no frontend of its own.
 
 ## Project layout
@@ -28,7 +28,7 @@ It holds Indy Center's **courseware**: courses, their versions, modules and less
 - `src/collections/courseware/`: the courseware collections.
 - `src/courseware/`: the rules they share: who may do what (`access.ts`), the task tree and its numbers, expanding a parent task into rows, publishing and the frozen shape, the reads for the library, and the framework import.
 - `src/collections/partners/`: the partner categories and partners collections.
-- `src/partners/`: who may edit partners (`access.ts`), the rules for their logo, banner and gallery (`images.ts`), and the community site's read and its shape.
+- `src/partners/`: who may edit partners (`access.ts`), the rules for their logo, banner and gallery (`images.ts`), their links and member perks (`links.ts`), what publishing needs (`publishing.ts`), and the community site's read and its shape.
 - `src/bearer-token.ts`: the check the library's and the community site's reads share.
 - `scripts/import-frameworks.ts`: loads the USA and GCAP frameworks and the rubrics; see Courseware.
 - `src/storage.ts`: where uploads are stored: the two R2 buckets, or local disk when they aren't configured.
@@ -72,7 +72,9 @@ Keep the sheets outside this repository, which is public; a folder inside it is 
 The people and groups Indy Center works with, listed on the community site's partners page. The decisions behind them are in the maintainer's community-website notes.
 
 - **Who may edit them.** Accounts with `partners:editor`, which the Training Admin gives. Nobody else can see or change partners or partner categories, through the admin or the API.
-- **Publishing.** A partner starts as a draft. Setting its Status to Published puts it on the site within a few minutes; setting it back to Draft takes it off and keeps its details.
+- **Publishing.** A partner starts as a draft, which may be incomplete. Setting its Status to Published puts it on the site within a few minutes. It is refused until the partner has a logo, a tagline, a description and one to three calls to action that aren't member perks, and the refusal names everything missing. Setting it back to Draft takes it off and keeps its details.
+- **Calls to action and member perks.** A call to action is a label and a web address. One marked as a member perk also says what members get, and the site shows it only to people signed in; perks don't count towards the three. Social links pair a platform from a fixed list with a web address.
+- **Partner categories.** One that still has partners, drafts included, can't be deleted.
 - **Slugs.** A partner's slug is its address on the site, `/partners/<slug>`. Left empty, it is filled from the name; it can be changed, and no two partners share one.
 - **Images.** A partner's logo (SVG, PNG or WebP), banner (optional, at least 1600×500) and gallery (optional) are uploads to `media`, so they are public as soon as they are uploaded. Payload makes the sizes the site shows: a 256px logo, a 2400px-wide banner, and a 400px thumbnail and 1600px large copy of each photo. It can't make sizes for partner images only, so every image in `media` gets them; SVGs, and images already smaller than a size, are served as uploaded.
 

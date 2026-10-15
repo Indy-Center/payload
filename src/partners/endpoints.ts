@@ -3,6 +3,8 @@ import { hasBearerToken, unauthorized } from '@/bearer-token'
 import { idOf } from '@/courseware/ids'
 import type { Media } from '@/payload-types'
 import type { Image, Partner, PartnersDocument } from './document'
+import { splitCallsToAction } from './links'
+import { meetsPublishingRule } from './publishing'
 
 /**
  * A media record in one of its sizes, or as uploaded when Payload made no such size (an SVG, or an
@@ -48,9 +50,10 @@ export async function buildPartnersDocument(req: PayloadRequest): Promise<Partne
   const byCategory = new Map<string, Partner[]>()
   for (const partner of partners.docs) {
     const logo = inSize(partner.logo, 'logo')
-    // The site can't draw a partner without one. Publishing will require one, but deleting the
-    // logo's media record still clears it.
-    if (!logo) continue
+    // The site draws only a partner that meets the publishing rule. One published before the rule
+    // may break it, and deleting the logo's media record clears the logo.
+    if (!logo || !meetsPublishingRule(partner)) continue
+    const { publicCalls, memberPerks } = splitCallsToAction(partner.callsToAction)
     const categoryId = idOf(partner.category)!
     const group = byCategory.get(categoryId) ?? []
     group.push({
@@ -66,6 +69,13 @@ export async function buildPartnersDocument(req: PayloadRequest): Promise<Partne
         const large = inSize(photo, 'large')
         return thumbnail && large ? [{ thumbnail, large }] : []
       }),
+      callsToAction: publicCalls.map(({ label, url }) => ({ label, url })),
+      memberPerks: memberPerks.map(({ label, url, perkText }) => ({
+        label,
+        url,
+        text: perkText ?? '',
+      })),
+      socialLinks: (partner.socialLinks ?? []).map(({ platform, url }) => ({ platform, url })),
     })
     byCategory.set(categoryId, group)
   }
