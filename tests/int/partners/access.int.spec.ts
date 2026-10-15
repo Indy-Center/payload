@@ -127,6 +127,42 @@ describe('partner categories', () => {
     )
     expect(await payload.count({ collection: 'partner-categories' })).toEqual({ totalDocs: 1 })
   })
+
+  it('are refused one by one in a bulk delete, and the empty ones deleted', async () => {
+    const named = (name: string) =>
+      payload.create({
+        collection: 'partner-categories',
+        data: { name, blurb: `About ${name.toLowerCase()}.` },
+      })
+    const developers = await named('Developers')
+    const creators = await named('Creators')
+    await named('Empty')
+    await named('Also Empty')
+    for (const [name, categoryId] of [
+      ['Example Tools', developers.id],
+      ['Example Stream', creators.id],
+      ['Another Stream', creators.id],
+    ]) {
+      await payload.create({
+        collection: 'partners',
+        data: { name, category: categoryId, status: 'draft' },
+      })
+    }
+
+    const { docs, errors } = await payload.delete({
+      collection: 'partner-categories',
+      where: { id: { exists: true } },
+      ...as(editor),
+    })
+
+    expect(docs.map((category) => category.name).sort()).toEqual(['Also Empty', 'Empty'])
+    expect(errors.map((error) => error.message).sort()).toEqual([
+      'Creators still has 2 partners. Move them to another category or delete them first.',
+      'Developers still has 1 partner. Move it to another category or delete it first.',
+    ])
+    const { docs: left } = await payload.find({ collection: 'partner-categories' })
+    expect(left.map((category) => category.name).sort()).toEqual(['Creators', 'Developers'])
+  })
 })
 
 describe('partners', () => {
