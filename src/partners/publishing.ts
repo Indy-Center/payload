@@ -47,6 +47,10 @@ export function withPublishingRule<TValue, TField extends object>(
   return (value, options) => {
     const partner: Partial<Partner> = options.data ?? {}
     const fault = partner.status === 'published' ? publishingFaults[field](partner) : undefined
-    return fault ?? check(value, options)
+    if (!fault) return check(value, options)
+    // Payload shows one message per field, so a field's own error shares it with the fault.
+    const withFault = (result: string | true) => (result === true ? fault : `${fault} ${result}`)
+    const result = check(value, options)
+    return result instanceof Promise ? result.then(withFault) : withFault(result)
   }
 }

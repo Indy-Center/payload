@@ -115,12 +115,15 @@ describe('publishing a partner', () => {
   })
 
   it('is refused without a logo, tagline, description or call to action', async () => {
-    expect(await invalid(publish({}))).toEqual([
-      'Give the partner a logo before publishing it.',
-      'Give the partner a tagline before publishing it.',
-      'Give the partner a description before publishing it.',
-      'Give the partner a call to action that isn’t a member perk before publishing it.',
-    ])
+    // In any order: the logo's own check reads the database, so it may finish last.
+    expect(new Set(await invalid(publish({})))).toEqual(
+      new Set([
+        'Give the partner a logo before publishing it.',
+        'Give the partner a tagline before publishing it.',
+        'Give the partner a description before publishing it.',
+        'Give the partner a call to action that isn’t a member perk before publishing it.',
+      ]),
+    )
   })
 
   it('treats blank text as missing', async () => {
@@ -183,6 +186,13 @@ describe('publishing a partner', () => {
     ).toEqual([
       'Give the partner a tagline before publishing it.',
       'Enter a web address starting with https:// or http://.',
+    ])
+  })
+
+  it('lists a field’s own error alongside its publishing fault', async () => {
+    const tooLongAndBlank = ' '.repeat(121)
+    expect(await invalid(publish({ ...complete(), tagline: tooLongAndBlank }))).toEqual([
+      'Give the partner a tagline before publishing it. This value must be shorter than the max length of 120 characters.',
     ])
   })
 
