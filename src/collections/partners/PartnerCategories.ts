@@ -25,10 +25,10 @@ export const PartnerCategories: CollectionConfig = {
           overrideAccess: true,
           req,
         })
-        const [partnerCount, them] =
+        const [partnersPhrase, partnersPronoun] =
           totalDocs === 1 ? ['1 partner', 'it'] : [`${totalDocs} partners`, 'them']
         throw new APIError(
-          `${category.name} still has ${partnerCount}. Move ${them} to another category or delete ${them} first.`,
+          `${category.name} still has ${partnersPhrase}. Move ${partnersPronoun} to another category or delete ${partnersPronoun} first.`,
           409,
         )
       },
