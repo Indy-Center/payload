@@ -11,20 +11,22 @@ export const Media: CollectionConfig = {
     read: () => true,
   },
   hooks: {
-    beforeOperation: [
-      // Before Payload stores the file or makes its sizes.
-      ({ req, args }) => {
-        if (req.file && req.file.size > MAX_BYTES) {
+    beforeValidate: [
+      // Payload has read the file by now, whether it was uploaded or fetched from a URL, and has not
+      // yet stored it. A save that keeps the stored file is left alone.
+      ({ data, originalDoc }) => {
+        const size = data?.filesize
+        if (typeof size === 'number' && size > MAX_BYTES && size !== originalDoc?.filesize) {
           throw new ValidationError({
             errors: [
               {
                 path: 'file',
-                message: `Files over 10 MB can’t be uploaded; this one is ${megabytes(req.file.size)}.`,
+                message: `Files over 10 MB can’t be uploaded; this one is ${megabytes(size)}.`,
               },
             ],
           })
         }
-        return args
+        return data
       },
     ],
   },

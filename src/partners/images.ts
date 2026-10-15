@@ -4,12 +4,8 @@ import { idOf } from '@/courseware/ids'
 
 type MediaValue = string | Media | null | undefined
 
-/** The media records a partner's upload field points at, read past access. */
-async function chosenMedia(
-  value: MediaValue | MediaValue[],
-  req: PayloadRequest,
-): Promise<Media[]> {
-  const ids = (Array.isArray(value) ? value : [value]).map(idOf).filter((id) => id !== null)
+/** The media records with these ids, read past access. */
+async function findMedia(ids: string[], req: PayloadRequest): Promise<Media[]> {
   if (ids.length === 0) return []
   const { docs } = await req.payload.find({
     collection: 'media',
@@ -28,9 +24,12 @@ async function chosenMedia(
  */
 function eachMedia(fault: (media: Media) => string | undefined): Validate {
   return async (value: MediaValue | MediaValue[], { req }) => {
-    const wanted = (Array.isArray(value) ? value : [value]).filter(Boolean)
-    const found = await chosenMedia(value, req)
-    if (found.length < wanted.length) return 'Choose a file from Media.'
+    // A gallery may show one photo twice.
+    const ids = [
+      ...new Set((Array.isArray(value) ? value : [value]).map(idOf).filter((id) => id !== null)),
+    ]
+    const found = await findMedia(ids, req)
+    if (found.length < ids.length) return 'Choose a file from Media.'
     for (const media of found) {
       const message = fault(media)
       if (message) return message

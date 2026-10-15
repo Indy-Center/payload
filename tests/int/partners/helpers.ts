@@ -16,6 +16,10 @@ export async function invalid(promise: Promise<unknown>): Promise<string[]> {
 /** A made-up file, as an upload hands it to Payload. */
 export type TestFile = { data: Buffer; mimetype: string; name: string; size: number }
 
+export function file(name: string, mimetype: string, data: Buffer): TestFile {
+  return { data, mimetype, name, size: data.length }
+}
+
 /** A plain image of the given size, drawn on the spot. */
 export async function image(
   width: number,
@@ -27,15 +31,18 @@ export async function image(
   })
     .toFormat(format)
     .toBuffer()
-  return { data, mimetype: `image/${format}`, name: `example.${format}`, size: data.length }
+  return file(`example.${format}`, `image/${format}`, data)
 }
 
-/** A square SVG mark. */
-export function svg(size = 300): TestFile {
-  const data = Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><rect width="${size}" height="${size}" fill="#0ea5e9"/></svg>`,
+/** A 300×300 SVG mark. */
+export function svg(): TestFile {
+  return file(
+    'example.svg',
+    'image/svg+xml',
+    Buffer.from(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect width="300" height="300" fill="#0ea5e9"/></svg>',
+    ),
   )
-  return { data, mimetype: 'image/svg+xml', name: 'example.svg', size: data.length }
 }
 
 /**

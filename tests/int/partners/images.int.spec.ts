@@ -5,7 +5,7 @@ import sharp from 'sharp'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { PartnerCategory, User } from '@/payload-types'
 import { resetCourseware, testPayload } from '../courseware/helpers'
-import { image, invalid, removeUploads, svg, upload } from './helpers'
+import { file, image, invalid, removeUploads, svg, upload } from './helpers'
 
 let payload: Payload
 let editor: User
@@ -78,22 +78,27 @@ describe('a partner’s gallery', () => {
     expect((await save({ name: 'Another Example' })).gallery ?? []).toEqual([])
   })
 
+  it('may show the same photo twice', async () => {
+    const photo = await upload(payload, await image(1200, 800, 'jpeg'))
+
+    const partner = await save({ gallery: [photo.id, photo.id] })
+
+    expect(partner.gallery).toHaveLength(2)
+  })
+
   it('refuses a file that isn’t an image', async () => {
-    const data = Buffer.from('Made-up notes.')
-    const notes = await upload(payload, {
-      data,
-      mimetype: 'text/plain',
-      name: 'notes.txt',
-      size: data.length,
-    })
+    const notes = await upload(
+      payload,
+      file('notes.txt', 'text/plain', Buffer.from('Made-up notes.')),
+    )
 
     expect(await invalid(save({ gallery: [notes.id] }))).toEqual(['Gallery photos must be images.'])
   })
 })
 
 describe('media uploads', () => {
-  it('refuse a file over 10 MB', async () => {
-    // Noise doesn't compress, so this PNG stays just over the limit.
+  /** Noise doesn't compress, so this PNG stays just over the limit. */
+  async function huge() {
     const data = await sharp({
       create: {
         width: 1900,
@@ -106,12 +111,22 @@ describe('media uploads', () => {
       .png({ compressionLevel: 0 })
       .toBuffer()
     expect(data.length).toBeGreaterThan(10 * 1024 * 1024)
+    return file('huge.png', 'image/png', data)
+  }
+  const TOO_BIG = 'Files over 10 MB can’t be uploaded; this one is 10.3 MB.'
+
+  it('refuse a file over 10 MB', async () => {
+    expect(await invalid(upload(payload, await huge()))).toEqual([TOO_BIG])
+  })
+
+  it('refuse a file over 10 MB in place of an existing one', async () => {
+    const media = await upload(payload, await image(1600, 500))
 
     expect(
       await invalid(
-        upload(payload, { data, mimetype: 'image/png', name: 'huge.png', size: data.length }),
+        payload.update({ collection: 'media', id: media.id, data: {}, file: await huge() }),
       ),
-    ).toEqual(['Files over 10 MB can’t be uploaded; this one is 10.3 MB.'])
+    ).toEqual([TOO_BIG])
   })
 
   it('accept a file of 10 MB or less', async () => {

@@ -28,7 +28,7 @@ It holds Indy Center's **courseware**: courses, their versions, modules and less
 - `src/collections/courseware/`: the courseware collections.
 - `src/courseware/`: the rules they share: who may do what (`access.ts`), the task tree and its numbers, expanding a parent task into rows, publishing and the frozen shape, the reads for the library, and the framework import.
 - `src/collections/partners/`: the partner categories and partners collections.
-- `src/partners/`: who may edit partners (`access.ts`), and the community site's read and its shape.
+- `src/partners/`: who may edit partners (`access.ts`), the rules for their logo, banner and gallery (`images.ts`), and the community site's read and its shape.
 - `src/bearer-token.ts`: the check the library's and the community site's reads share.
 - `scripts/import-frameworks.ts`: loads the USA and GCAP frameworks and the rubrics; see Courseware.
 - `src/storage.ts`: where uploads are stored: the two R2 buckets, or local disk when they aren't configured.

@@ -8,7 +8,7 @@ import type { Image, Partner, PartnersDocument } from './document'
  * A media record in one of its sizes, or as uploaded when Payload made no such size (an SVG, or an
  * image already smaller). Null when there is no image to show.
  */
-function image(
+function inSize(
   media: string | Media | null | undefined,
   size: keyof NonNullable<Media['sizes']>,
 ): Image | null {
@@ -47,8 +47,9 @@ export async function buildPartnersDocument(req: PayloadRequest): Promise<Partne
 
   const byCategory = new Map<string, Partner[]>()
   for (const partner of partners.docs) {
-    const logo = image(partner.logo, 'logo')
-    // The site can't draw a partner without one.
+    const logo = inSize(partner.logo, 'logo')
+    // The site can't draw a partner without one. Publishing will require one, but deleting the
+    // logo's media record still clears it.
     if (!logo) continue
     const categoryId = idOf(partner.category)!
     const group = byCategory.get(categoryId) ?? []
@@ -59,10 +60,10 @@ export async function buildPartnersDocument(req: PayloadRequest): Promise<Partne
       tagline: partner.tagline ?? '',
       description: partner.description ?? '',
       logo,
-      banner: image(partner.banner, 'banner'),
+      banner: inSize(partner.banner, 'banner'),
       gallery: (partner.gallery ?? []).flatMap((photo) => {
-        const thumbnail = image(photo, 'thumbnail')
-        const large = image(photo, 'large')
+        const thumbnail = inSize(photo, 'thumbnail')
+        const large = inSize(photo, 'large')
         return thumbnail && large ? [{ thumbnail, large }] : []
       }),
     })
