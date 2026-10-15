@@ -17,13 +17,20 @@ function callsToActionFault(calls: Partner['callsToAction']): string | undefined
   }
 }
 
-/** What each field the publishing rule covers lacks, on a partner the site couldn't show in full. */
-const publishingFaults = {
+/**
+ * What each field the publishing rule covers lacks, on a partner the site couldn't show in full.
+ * Each field named here wraps its check in `withPublishingRule`; a test holds the two together.
+ */
+const faultByField = {
   logo: (partner) => (partner.logo ? undefined : missing('a logo')),
   tagline: (partner) => (blank(partner.tagline) ? missing('a tagline') : undefined),
   description: (partner) => (blank(partner.description) ? missing('a description') : undefined),
   callsToAction: (partner) => callsToActionFault(partner.callsToAction),
 } satisfies Record<string, (partner: Partial<Partner>) => string | undefined>
+
+/** Everything the publishing rule finds wrong with a partner, as the editor is told it. */
+export const publishingFaults = (partner: Partial<Partner>): string[] =>
+  Object.values(faultByField).flatMap((fault) => fault(partner) ?? [])
 
 /**
  * Whether a partner meets the publishing rule, so the site can draw it in full. The community
@@ -31,7 +38,7 @@ const publishingFaults = {
  * before the rule.
  */
 export const meetsPublishingRule = (partner: Partial<Partner>): boolean =>
-  Object.values(publishingFaults).every((fault) => fault(partner) === undefined)
+  publishingFaults(partner).length === 0
 
 /**
  * A field's own check with the publishing rule in front of it: a published partner needs a logo,
@@ -41,12 +48,12 @@ export const meetsPublishingRule = (partner: Partial<Partner>): boolean =>
  * over it, so publishing a partner saved earlier checks what it already holds.
  */
 export function withPublishingRule<TValue, TField extends object>(
-  field: keyof typeof publishingFaults,
+  field: keyof typeof faultByField,
   check: Validate<TValue, unknown, unknown, TField>,
 ): Validate<TValue, unknown, unknown, TField> {
   return (value, options) => {
     const partner: Partial<Partner> = options.data ?? {}
-    const fault = partner.status === 'published' ? publishingFaults[field](partner) : undefined
+    const fault = partner.status === 'published' ? faultByField[field](partner) : undefined
     if (!fault) return check(value, options)
     // Payload shows one message per field, so a field's own error shares it with the fault.
     const withFault = (result: string | true) => (result === true ? fault : `${fault} ${result}`)

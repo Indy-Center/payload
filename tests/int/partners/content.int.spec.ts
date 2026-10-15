@@ -2,6 +2,7 @@
 // Uploads are checked with `instanceof Uint8Array`, which jsdom's own globals fail.
 import type { Payload } from 'payload'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { publishingFaults } from '@/partners/publishing'
 import type { Partner, PartnerCategory, User } from '@/payload-types'
 import { resetCourseware, testPayload } from '../courseware/helpers'
 import { invalid, removeUploads, svg, upload } from './helpers'
@@ -123,6 +124,14 @@ describe('publishing a partner', () => {
         'Give the partner a description before publishing it.',
         'Give the partner a call to action that isn’t a member perk before publishing it.',
       ]),
+    )
+  })
+
+  it('is refused for everything the community site’s read checks', async () => {
+    // Fails when a field joins the rule without its check: the read would leave out a partner
+    // that editors could still publish.
+    expect(await invalid(publish({}))).toEqual(
+      expect.arrayContaining(publishingFaults({ status: 'published' })),
     )
   })
 
