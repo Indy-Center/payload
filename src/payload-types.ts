@@ -524,7 +524,7 @@ export interface Partner {
   id: string;
   name: string;
   /**
-   * The partner’s address on the site: /partners/<slug>. Left empty, it is filled from the name.
+   * The partner’s address on the site: /partners/<slug>. Left empty, it is filled from the name. Saved in lowercase with hyphens.
    */
   slug?: string | null;
   category: string | PartnerCategory;

@@ -1,11 +1,12 @@
-import type { CollectionConfig } from 'payload'
+import { ValidationError, type CollectionConfig } from 'payload'
 import { partnersAccess } from '@/partners/access'
 
-/** "Example Tools & Co." becomes "example-tools-co". */
-const slugify = (name: string) =>
-  name
+/** "Example Tools & Co." becomes "example-tools-co"; "Café" becomes "cafe". */
+const slugify = (text: string) =>
+  text
     .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
+    // The accents NFKD split off their letters
+    .replace(/\p{Mn}/gu, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
@@ -35,16 +36,25 @@ export const Partners: CollectionConfig = {
       admin: {
         position: 'sidebar',
         description:
-          'The partner’s address on the site: /partners/<slug>. Left empty, it is filled from the name.',
+          'The partner’s address on the site: /partners/<slug>. Left empty, it is filled from the name. Saved in lowercase with hyphens.',
       },
       hooks: {
         beforeValidate: [
           ({ value, data, originalDoc, operation }) => {
-            if (value) return value
             // An update that doesn't mention the slug leaves it as it is.
             if (operation === 'update' && value === undefined) return value
             const name = data?.name ?? originalDoc?.name
-            return typeof name === 'string' ? slugify(name) : value
+            const slug = slugify(value || (typeof name === 'string' ? name : ''))
+            if (slug) return slug
+            throw new ValidationError({
+              errors: [
+                {
+                  path: 'slug',
+                  message:
+                    'Give the partner a slug: its name has no letters or digits to make one from.',
+                },
+              ],
+            })
           },
         ],
       },

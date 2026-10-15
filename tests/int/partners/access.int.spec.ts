@@ -5,6 +5,7 @@ import { resetCourseware, testPayload } from '../courseware/helpers'
 
 let payload: Payload
 let editor: User
+let admin: User
 let lead: User
 let nobody: User
 
@@ -22,7 +23,7 @@ async function account(email: string, roles: User['roles'] = []): Promise<User> 
 const as = (user: User) => ({ user, overrideAccess: false })
 
 /** The message Payload gives when access is refused. */
-async function refusal(promise: Promise<unknown>): Promise<string> {
+async function forbidden(promise: Promise<unknown>): Promise<string> {
   try {
     await promise
   } catch (error) {
@@ -31,7 +32,7 @@ async function refusal(promise: Promise<unknown>): Promise<string> {
   }
   throw new Error('Expected the request to be refused')
 }
-const FORBIDDEN = 'You are not allowed to perform this action.'
+const NOT_ALLOWED = 'You are not allowed to perform this action.'
 
 /** The messages a person sees when a save is refused as invalid. */
 async function invalid(promise: Promise<unknown>): Promise<string[]> {
@@ -47,6 +48,7 @@ async function invalid(promise: Promise<unknown>): Promise<string[]> {
 beforeEach(async () => {
   await resetCourseware(payload)
   editor = await account('editor@example.com', ['partners:editor'])
+  admin = await account('admin@example.com', ['training:admin'])
   lead = await account('lead@example.com', ['training:lead'])
   nobody = await account('nobody@example.com')
 })
@@ -77,18 +79,18 @@ describe('partner categories', () => {
       data: { name: 'Developers', blurb: 'People who build tools.' },
     })
 
-    for (const user of [lead, nobody]) {
+    for (const user of [admin, lead, nobody]) {
       expect(
-        await refusal(
+        await forbidden(
           payload.create({
             collection: 'partner-categories',
             data: { name: 'Creators', blurb: 'People who stream.' },
             ...as(user),
           }),
         ),
-      ).toBe(FORBIDDEN)
+      ).toBe(NOT_ALLOWED)
       expect(
-        await refusal(
+        await forbidden(
           payload.update({
             collection: 'partner-categories',
             id: category.id,
@@ -96,14 +98,14 @@ describe('partner categories', () => {
             ...as(user),
           }),
         ),
-      ).toBe(FORBIDDEN)
+      ).toBe(NOT_ALLOWED)
       expect(
-        await refusal(
+        await forbidden(
           payload.delete({ collection: 'partner-categories', id: category.id, ...as(user) }),
         ),
-      ).toBe(FORBIDDEN)
-      expect(await refusal(payload.find({ collection: 'partner-categories', ...as(user) }))).toBe(
-        FORBIDDEN,
+      ).toBe(NOT_ALLOWED)
+      expect(await forbidden(payload.find({ collection: 'partner-categories', ...as(user) }))).toBe(
+        NOT_ALLOWED,
       )
     }
   })
@@ -154,18 +156,18 @@ describe('partners', () => {
       data: { name: 'Example Tools', category: categoryId, status: 'draft' },
     })
 
-    for (const user of [lead, nobody]) {
+    for (const user of [admin, lead, nobody]) {
       expect(
-        await refusal(
+        await forbidden(
           payload.create({
             collection: 'partners',
             data: { name: 'Example Stream', category: categoryId, status: 'draft' },
             ...as(user),
           }),
         ),
-      ).toBe(FORBIDDEN)
+      ).toBe(NOT_ALLOWED)
       expect(
-        await refusal(
+        await forbidden(
           payload.update({
             collection: 'partners',
             id: partner.id,
@@ -173,11 +175,13 @@ describe('partners', () => {
             ...as(user),
           }),
         ),
-      ).toBe(FORBIDDEN)
+      ).toBe(NOT_ALLOWED)
       expect(
-        await refusal(payload.delete({ collection: 'partners', id: partner.id, ...as(user) })),
-      ).toBe(FORBIDDEN)
-      expect(await refusal(payload.find({ collection: 'partners', ...as(user) }))).toBe(FORBIDDEN)
+        await forbidden(payload.delete({ collection: 'partners', id: partner.id, ...as(user) })),
+      ).toBe(NOT_ALLOWED)
+      expect(await forbidden(payload.find({ collection: 'partners', ...as(user) }))).toBe(
+        NOT_ALLOWED,
+      )
     }
   })
 
@@ -198,6 +202,31 @@ describe('partners', () => {
         }),
       ),
     ).toEqual(['Value must be unique'])
+  })
+
+  it('keep slugs fit for an address', async () => {
+    const { id: categoryId } = await category()
+    const partner = await payload.create({
+      collection: 'partners',
+      data: {
+        name: 'Example Tools',
+        slug: 'Example Tools 2',
+        category: categoryId,
+        status: 'draft',
+      },
+      ...as(editor),
+    })
+    expect(partner.slug).toBe('example-tools-2')
+
+    expect(
+      await invalid(
+        payload.create({
+          collection: 'partners',
+          data: { name: '!!!', category: categoryId, status: 'draft' },
+          ...as(editor),
+        }),
+      ),
+    ).toEqual(['Give the partner a slug: its name has no letters or digits to make one from.'])
   })
 
   it('keep taglines to 120 characters', async () => {
