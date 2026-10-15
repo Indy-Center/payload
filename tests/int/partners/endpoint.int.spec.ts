@@ -1,5 +1,7 @@
+// @vitest-environment node
+// Uploads are checked with `instanceof Uint8Array`, which jsdom's own globals fail.
 import type { Payload } from 'payload'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { PartnersDocument } from '@/partners/document'
 import {
   TOKEN as LIBRARY_TOKEN,
@@ -7,6 +9,7 @@ import {
   resetCourseware,
   testPayload,
 } from '../courseware/helpers'
+import { image, removeUploads, svg, upload } from './helpers'
 
 const TOKEN = 'test-community-token'
 process.env.COMMUNITY_API_TOKEN = TOKEN
@@ -18,8 +21,11 @@ beforeAll(async () => {
 })
 
 beforeEach(async () => {
+  await removeUploads(payload)
   await resetCourseware(payload)
 })
+
+afterAll(() => removeUploads(payload))
 
 const read = (token: string | null = TOKEN) =>
   callEndpoint(payload, '/community/partners', { token })
@@ -34,7 +40,13 @@ async function category(name: string, order?: number) {
 async function partner(
   name: string,
   categoryId: string,
-  options: { status?: 'draft' | 'published'; order?: number } = {},
+  options: {
+    status?: 'draft' | 'published'
+    order?: number
+    logo?: string
+    banner?: string
+    gallery?: string[]
+  } = {},
 ) {
   return payload.create({
     collection: 'partners',
@@ -43,6 +55,9 @@ async function partner(
       category: categoryId,
       status: options.status ?? 'published',
       order: options.order,
+      logo: options.logo ?? (await upload(payload, svg(), `${name} logo`)).id,
+      banner: options.banner,
+      gallery: options.gallery,
       tagline: `${name} in one line.`,
       description: `${name} does made-up things.\n\nA second paragraph.`,
     },
@@ -75,11 +90,79 @@ describe('GET /api/community/partners', () => {
               name: 'Example Tools',
               tagline: 'Example Tools in one line.',
               description: 'Example Tools does made-up things.\n\nA second paragraph.',
+              logo: {
+                url: expect.stringMatching(/\/example(-\d+)?\.svg$/),
+                alt: 'Example Tools logo',
+                width: 300,
+                height: 300,
+              },
+              banner: null,
+              gallery: [],
             },
           ],
         },
       ],
     })
+  })
+
+  it('gives each image in the size the site shows it', async () => {
+    const developers = await category('Developers')
+    const logo = await upload(payload, await image(512, 512, 'png'), 'The Example Tools mark')
+    const banner = await upload(payload, await image(3000, 1000, 'jpeg'), 'A made-up workshop')
+    const wide = await upload(payload, await image(2000, 1500, 'jpeg'), 'A made-up screenshot')
+    const small = await upload(payload, await image(300, 200, 'webp'), 'A small made-up photo')
+    await partner('Example Tools', developers.id, {
+      logo: logo.id,
+      banner: banner.id,
+      gallery: [wide.id, small.id],
+    })
+
+    const { body } = await read()
+    const [shown] = (body as PartnersDocument).categories[0].partners
+
+    expect(shown.logo).toEqual({
+      url: expect.stringMatching(/-256x256\.png$/),
+      alt: 'The Example Tools mark',
+      width: 256,
+      height: 256,
+    })
+    expect(shown.banner).toEqual({
+      url: expect.stringMatching(/-2400x800\.jpg$/),
+      alt: 'A made-up workshop',
+      width: 2400,
+      height: 800,
+    })
+    expect(shown.gallery).toEqual([
+      {
+        thumbnail: {
+          url: expect.stringMatching(/-400x300\.jpg$/),
+          alt: 'A made-up screenshot',
+          width: 400,
+          height: 300,
+        },
+        large: {
+          url: expect.stringMatching(/-1600x1200\.jpg$/),
+          alt: 'A made-up screenshot',
+          width: 1600,
+          height: 1200,
+        },
+      },
+      // Smaller than both sizes, so served as it was uploaded.
+      {
+        thumbnail: {
+          url: expect.stringMatching(/\/example(-\d+)?\.webp$/),
+          alt: 'A small made-up photo',
+          width: 300,
+          height: 200,
+        },
+        large: {
+          url: expect.stringMatching(/\/example(-\d+)?\.webp$/),
+          alt: 'A small made-up photo',
+          width: 300,
+          height: 200,
+        },
+      },
+    ])
   })
 
   it('leaves out drafts and categories with no published partners', async () => {

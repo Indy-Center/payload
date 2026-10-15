@@ -74,6 +74,7 @@ The people and groups Indy Center works with, listed on the community site's par
 - **Who may edit them.** Accounts with `partners:editor`, which the Training Admin gives. Nobody else can see or change partners or partner categories, through the admin or the API.
 - **Publishing.** A partner starts as a draft. Setting its Status to Published puts it on the site within a few minutes; setting it back to Draft takes it off and keeps its details.
 - **Slugs.** A partner's slug is its address on the site, `/partners/<slug>`. Left empty, it is filled from the name; it can be changed, and no two partners share one.
+- **Images.** A partner's logo (SVG, PNG or WebP), banner (optional, at least 1600×500) and gallery (optional) are uploads to `media`, so they are public as soon as they are uploaded. Payload makes the sizes the site shows: a 256px logo, a 2400px-wide banner, and a 400px thumbnail and 1600px large copy of each photo. It can't make sizes for partner images only, so every image in `media` gets them; SVGs, and images already smaller than a size, are served as uploaded.
 
 ## The admin's look
 
@@ -95,7 +96,7 @@ Uploads live in two Cloudflare R2 buckets:
 | `media`         | `payload-media`   | Anyone with its URL. Served by Cloudflare from `media.flyindycenter.com`.   |
 | `private-media` | `payload-private` | Signed-in users. The bucket has no public access; this app serves the file. |
 
-Don't put anything in `media` that shouldn't be public, including images for pages that aren't published yet.
+Don't put anything in `media` that shouldn't be public, including images for pages that aren't published yet. Files over 10 MB are refused.
 
 A bucket is used once all of its `R2_*` settings are present (`deploy/.env.example`). Without them that collection's uploads go to the `payload_media` or `payload_private-media` volume instead, which is what CI and local development do. Files aren't moved when a bucket is switched on or off: uploads made before the switch stop resolving.
 

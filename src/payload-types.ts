@@ -199,6 +199,40 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+  sizes?: {
+    logo?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    banner?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    thumbnail?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    large?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -537,6 +571,18 @@ export interface Partner {
    */
   order?: number | null;
   /**
+   * A square mark, at least 256×256 pixels: SVG, PNG or WebP.
+   */
+  logo?: (string | null) | Media;
+  /**
+   * Optional. The header photo on the partner’s page, at least 1600×500 pixels. Without one the page shows a gradient.
+   */
+  banner?: (string | null) | Media;
+  /**
+   * Optional. Photos of the partner’s work, shown in this order.
+   */
+  gallery?: (string | Media)[] | null;
+  /**
    * One line, up to 120 characters.
    */
   tagline?: string | null;
@@ -713,6 +759,50 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+  sizes?:
+    | T
+    | {
+        logo?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        banner?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        thumbnail?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        large?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -923,6 +1013,9 @@ export interface PartnersSelect<T extends boolean = true> {
   category?: T;
   status?: T;
   order?: T;
+  logo?: T;
+  banner?: T;
+  gallery?: T;
   tagline?: T;
   description?: T;
   updatedAt?: T;

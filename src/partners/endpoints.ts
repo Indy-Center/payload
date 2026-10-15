@@ -1,7 +1,23 @@
 import type { Endpoint, PayloadRequest } from 'payload'
 import { hasBearerToken, unauthorized } from '@/bearer-token'
 import { idOf } from '@/courseware/ids'
-import type { Partner, PartnersDocument } from './document'
+import type { Media } from '@/payload-types'
+import type { Image, Partner, PartnersDocument } from './document'
+
+/**
+ * A media record in one of its sizes, or as uploaded when Payload made no such size (an SVG, or an
+ * image already smaller). Null when there is no image to show.
+ */
+function image(
+  media: string | Media | null | undefined,
+  size: keyof NonNullable<Media['sizes']>,
+): Image | null {
+  if (!media || typeof media === 'string') return null
+  const sized = media.sizes?.[size]
+  const { url, width, height } = sized?.url ? sized : media
+  if (!url || !width || !height) return null
+  return { url, alt: media.alt, width, height }
+}
 
 /**
  * The published partners, by category. Partners are closed to the API for everyone but their
@@ -22,7 +38,8 @@ export async function buildPartnersDocument(req: PayloadRequest): Promise<Partne
       where: { status: { equals: 'published' } },
       sort: ['order', 'name'],
       pagination: false,
-      depth: 0,
+      // Fills in the images, and the category, which `idOf` reads either way.
+      depth: 1,
       overrideAccess: true,
       req,
     }),
@@ -30,6 +47,9 @@ export async function buildPartnersDocument(req: PayloadRequest): Promise<Partne
 
   const byCategory = new Map<string, Partner[]>()
   for (const partner of partners.docs) {
+    const logo = image(partner.logo, 'logo')
+    // The site can't draw a partner without one.
+    if (!logo) continue
     const categoryId = idOf(partner.category)!
     const group = byCategory.get(categoryId) ?? []
     group.push({
@@ -38,6 +58,13 @@ export async function buildPartnersDocument(req: PayloadRequest): Promise<Partne
       name: partner.name,
       tagline: partner.tagline ?? '',
       description: partner.description ?? '',
+      logo,
+      banner: image(partner.banner, 'banner'),
+      gallery: (partner.gallery ?? []).flatMap((photo) => {
+        const thumbnail = image(photo, 'thumbnail')
+        const large = image(photo, 'large')
+        return thumbnail && large ? [{ thumbnail, large }] : []
+      }),
     })
     byCategory.set(categoryId, group)
   }

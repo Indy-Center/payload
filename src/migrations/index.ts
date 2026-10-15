@@ -6,6 +6,7 @@ import * as migration_20261014_052625_frameworks_competencies_references from '.
 import * as migration_20261014_053500_grading_scales_and_publishing from './20261014_053500_grading_scales_and_publishing';
 import * as migration_20261014_053903_courseware_permissions from './20261014_053903_courseware_permissions';
 import * as migration_20261015_025540_partners from './20261015_025540_partners';
+import * as migration_20261015_031917_partner_images from './20261015_031917_partner_images';
 
 export const migrations = [
   {
@@ -46,6 +47,11 @@ export const migrations = [
   {
     up: migration_20261015_025540_partners.up,
     down: migration_20261015_025540_partners.down,
-    name: '20261015_025540_partners'
+    name: '20261015_025540_partners',
+  },
+  {
+    up: migration_20261015_031917_partner_images.up,
+    down: migration_20261015_031917_partner_images.down,
+    name: '20261015_031917_partner_images'
   },
 ];

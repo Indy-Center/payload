@@ -26,4 +26,21 @@ export type Partner = {
   tagline: string
   /** Plain text, paragraphs separated by blank lines. */
   description: string
+  /** 256px across at most, or the SVG as uploaded. */
+  logo: Image
+  /** 2400px wide at most; without one the site shows a gradient. */
+  banner: Image | null
+  /** In the editor's order. */
+  gallery: { thumbnail: Image; large: Image }[]
+}
+
+/**
+ * One image, in the size the site shows it, or as uploaded when it is smaller than that size or an
+ * SVG. The URL is absolute in production, where media is served from its own domain.
+ */
+export type Image = {
+  url: string
+  alt: string
+  width: number
+  height: number
 }

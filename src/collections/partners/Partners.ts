@@ -1,5 +1,6 @@
 import { ValidationError, type CollectionConfig } from 'payload'
 import { partnersAccess } from '@/partners/access'
+import { bannerRule, galleryRule, imageFilter, logoFilter, logoRule } from '@/partners/images'
 
 /** "Example Tools & Co." becomes "example-tools-co"; "Café" becomes "cafe". */
 const slugify = (text: string) =>
@@ -87,6 +88,38 @@ export const Partners: CollectionConfig = {
       admin: {
         position: 'sidebar',
         description: 'Lowest first within its category; equal orders go by name.',
+      },
+    },
+    {
+      name: 'logo',
+      type: 'upload',
+      relationTo: 'media',
+      filterOptions: logoFilter,
+      validate: logoRule,
+      admin: {
+        description: 'A square mark, at least 256×256 pixels: SVG, PNG or WebP.',
+      },
+    },
+    {
+      name: 'banner',
+      type: 'upload',
+      relationTo: 'media',
+      filterOptions: imageFilter,
+      validate: bannerRule,
+      admin: {
+        description:
+          'Optional. The header photo on the partner’s page, at least 1600×500 pixels. Without one the page shows a gradient.',
+      },
+    },
+    {
+      name: 'gallery',
+      type: 'upload',
+      relationTo: 'media',
+      hasMany: true,
+      filterOptions: imageFilter,
+      validate: galleryRule,
+      admin: {
+        description: 'Optional. Photos of the partner’s work, shown in this order.',
       },
     },
     {
