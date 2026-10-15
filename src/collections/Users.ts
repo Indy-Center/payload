@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { ROLES, trainingAdminField, userAccess } from '@/courseware/access'
+import { PARTNERS_EDITOR } from '@/partners/access'
 
 /**
  * The CMS's own accounts. Until the CMS signs in through identity (DEV-219), `cid` and `roles`
@@ -27,11 +28,12 @@ export const Users: CollectionConfig = {
       name: 'roles',
       type: 'select',
       hasMany: true,
-      options: ROLES.map((role) => ({ label: role, value: role })),
+      options: [...ROLES, PARTNERS_EDITOR].map((role) => ({ label: role, value: role })),
       defaultValue: [],
       access: { create: trainingAdminField, update: trainingAdminField },
       admin: {
-        description: 'training:admin is the Training Admin; training:lead a lead instructor.',
+        description:
+          'training:admin is the Training Admin; training:lead a lead instructor; partners:editor edits the community site’s partners.',
       },
     },
   ],

@@ -1,0 +1,94 @@
+import type { CollectionConfig } from 'payload'
+import { partnersAccess } from '@/partners/access'
+
+/** "Example Tools & Co." becomes "example-tools-co". */
+const slugify = (name: string) =>
+  name
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+/**
+ * Someone Indy Center works with, shown on the community site's partners page once published.
+ * Publishing is a hand-made status, as course versions have, not Payload's drafts (decision 0001):
+ * a former partner goes back to draft.
+ */
+export const Partners: CollectionConfig = {
+  slug: 'partners',
+  admin: {
+    useAsTitle: 'name',
+    defaultColumns: ['name', 'category', 'status', 'order'],
+    group: 'Partners',
+  },
+  access: partnersAccess,
+  fields: [
+    { name: 'name', type: 'text', required: true },
+    {
+      name: 'slug',
+      type: 'text',
+      // Never empty, but not `required`: the admin checks required fields before this hook fills
+      // the slug in, and would refuse a new partner whose slug was left blank.
+      unique: true,
+      index: true,
+      admin: {
+        position: 'sidebar',
+        description:
+          'The partner’s address on the site: /partners/<slug>. Left empty, it is filled from the name.',
+      },
+      hooks: {
+        beforeValidate: [
+          ({ value, data, originalDoc, operation }) => {
+            if (value) return value
+            // An update that doesn't mention the slug leaves it as it is.
+            if (operation === 'update' && value === undefined) return value
+            const name = data?.name ?? originalDoc?.name
+            return typeof name === 'string' ? slugify(name) : value
+          },
+        ],
+      },
+    },
+    {
+      name: 'category',
+      type: 'relationship',
+      relationTo: 'partner-categories',
+      required: true,
+      index: true,
+    },
+    {
+      name: 'status',
+      type: 'select',
+      required: true,
+      defaultValue: 'draft',
+      options: [
+        { label: 'Draft', value: 'draft' },
+        { label: 'Published', value: 'published' },
+      ],
+      index: true,
+      admin: {
+        position: 'sidebar',
+        description: 'Published partners are on the site within a few minutes.',
+      },
+    },
+    {
+      name: 'order',
+      type: 'number',
+      admin: {
+        position: 'sidebar',
+        description: 'Lowest first within its category; equal orders go by name.',
+      },
+    },
+    {
+      name: 'tagline',
+      type: 'text',
+      maxLength: 120,
+      admin: { description: 'One line, up to 120 characters.' },
+    },
+    {
+      name: 'description',
+      type: 'textarea',
+      admin: { description: 'Plain text. Leave a blank line between paragraphs.' },
+    },
+  ],
+}

@@ -17,6 +17,8 @@ import { References } from './collections/courseware/References'
 import { Tasks } from './collections/courseware/Tasks'
 import { GradingScales } from './collections/courseware/GradingScales'
 import { Scenarios } from './collections/courseware/Scenarios'
+import { PartnerCategories } from './collections/partners/PartnerCategories'
+import { Partners } from './collections/partners/Partners'
 import { coursewareEndpoints } from './courseware/endpoints'
 import { migrations } from './migrations'
 import { storagePlugins } from './storage'
@@ -45,6 +47,8 @@ export default buildConfig({
     CourseVersions,
     LessonPlans,
     Scenarios,
+    PartnerCategories,
+    Partners,
   ],
   endpoints: coursewareEndpoints,
   editor: lexicalEditor(),

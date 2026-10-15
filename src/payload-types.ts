@@ -79,6 +79,8 @@ export interface Config {
     'course-versions': CourseVersion;
     'lesson-plans': LessonPlan;
     scenarios: Scenario;
+    'partner-categories': PartnerCategory;
+    partners: Partner;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -102,6 +104,8 @@ export interface Config {
     'course-versions': CourseVersionsSelect<false> | CourseVersionsSelect<true>;
     'lesson-plans': LessonPlansSelect<false> | LessonPlansSelect<true>;
     scenarios: ScenariosSelect<false> | ScenariosSelect<true>;
+    'partner-categories': PartnerCategoriesSelect<false> | PartnerCategoriesSelect<true>;
+    partners: PartnersSelect<false> | PartnersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -152,9 +156,9 @@ export interface User {
    */
   cid?: string | null;
   /**
-   * training:admin is the Training Admin; training:lead a lead instructor.
+   * training:admin is the Training Admin; training:lead a lead instructor; partners:editor edits the community site’s partners.
    */
-  roles?: ('training:admin' | 'training:lead')[] | null;
+  roles?: ('training:admin' | 'training:lead' | 'partners:editor')[] | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -499,6 +503,52 @@ export interface Scenario {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "partner-categories".
+ */
+export interface PartnerCategory {
+  id: string;
+  name: string;
+  blurb: string;
+  /**
+   * Lowest first on the partners page.
+   */
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "partners".
+ */
+export interface Partner {
+  id: string;
+  name: string;
+  /**
+   * The partner’s address on the site: /partners/<slug>. Left empty, it is filled from the name.
+   */
+  slug?: string | null;
+  category: string | PartnerCategory;
+  /**
+   * Published partners are on the site within a few minutes.
+   */
+  status: 'draft' | 'published';
+  /**
+   * Lowest first within its category; equal orders go by name.
+   */
+  order?: number | null;
+  /**
+   * One line, up to 120 characters.
+   */
+  tagline?: string | null;
+  /**
+   * Plain text. Leave a blank line between paragraphs.
+   */
+  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -568,6 +618,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'scenarios';
         value: string | Scenario;
+      } | null)
+    | ({
+        relationTo: 'partner-categories';
+        value: string | PartnerCategory;
+      } | null)
+    | ({
+        relationTo: 'partners';
+        value: string | Partner;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -841,6 +899,32 @@ export interface ScenariosSelect<T extends boolean = true> {
         id?: T;
       };
   retired?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "partner-categories_select".
+ */
+export interface PartnerCategoriesSelect<T extends boolean = true> {
+  name?: T;
+  blurb?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "partners_select".
+ */
+export interface PartnersSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  category?: T;
+  status?: T;
+  order?: T;
+  tagline?: T;
+  description?: T;
   updatedAt?: T;
   createdAt?: T;
 }
