@@ -84,6 +84,7 @@ jobs:
           ENV_R2_PUBLIC_URL: ${{ vars.ENV_R2_PUBLIC_URL }}
           ENV_R2_PRIVATE_BUCKET: ${{ vars.ENV_R2_PRIVATE_BUCKET }}
           ENV_LIBRARY_API_TOKEN: ${{ secrets.ENV_LIBRARY_API_TOKEN }}
+          ENV_COMMUNITY_API_TOKEN: ${{ secrets.ENV_COMMUNITY_API_TOKEN }}
         run: |
           # Values are single-quoted so Compose takes them literally, $ and # included. So a value can't
           # contain a single quote or a newline; if one does, this fails before anything reaches the box.

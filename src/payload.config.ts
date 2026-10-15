@@ -20,6 +20,7 @@ import { Scenarios } from './collections/courseware/Scenarios'
 import { PartnerCategories } from './collections/partners/PartnerCategories'
 import { Partners } from './collections/partners/Partners'
 import { coursewareEndpoints } from './courseware/endpoints'
+import { partnersEndpoints } from './partners/endpoints'
 import { migrations } from './migrations'
 import { storagePlugins } from './storage'
 import { branding } from './branding'
@@ -50,7 +51,7 @@ export default buildConfig({
     PartnerCategories,
     Partners,
   ],
-  endpoints: coursewareEndpoints,
+  endpoints: [...coursewareEndpoints, ...partnersEndpoints],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
