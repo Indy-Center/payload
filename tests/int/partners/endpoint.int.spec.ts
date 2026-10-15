@@ -73,6 +73,12 @@ async function partner(
   })
 }
 
+const namesByCategory = (body: unknown) =>
+  (body as PartnersDocument).categories.map((group) => [
+    group.name,
+    group.partners.map((each) => each.name),
+  ])
+
 describe('GET /api/community/partners', () => {
   it('refuses a missing or wrong token', async () => {
     for (const token of [null, 'wrong', LIBRARY_TOKEN]) {
@@ -233,12 +239,7 @@ describe('GET /api/community/partners', () => {
 
     const { body } = await read()
 
-    expect(
-      (body as PartnersDocument).categories.map((group) => [
-        group.name,
-        group.partners.map((each) => each.name),
-      ]),
-    ).toEqual([['Developers', ['Example Tools']]])
+    expect(namesByCategory(body)).toEqual([['Developers', ['Example Tools']]])
   })
 
   it('leaves out a published partner without one to three public calls to action', async () => {
@@ -265,12 +266,7 @@ describe('GET /api/community/partners', () => {
 
     const { body } = await read()
 
-    expect(
-      (body as PartnersDocument).categories.map((group) => [
-        group.name,
-        group.partners.map((each) => each.name),
-      ]),
-    ).toEqual([['Developers', ['Example Tools']]])
+    expect(namesByCategory(body)).toEqual([['Developers', ['Example Tools']]])
   })
 
   it('leaves out a published partner with a blank tagline or description', async () => {
@@ -291,12 +287,7 @@ describe('GET /api/community/partners', () => {
 
     const { body } = await read()
 
-    expect(
-      (body as PartnersDocument).categories.map((group) => [
-        group.name,
-        group.partners.map((each) => each.name),
-      ]),
-    ).toEqual([['Developers', ['Example Tools']]])
+    expect(namesByCategory(body)).toEqual([['Developers', ['Example Tools']]])
   })
 
   it('orders categories by order, and partners by order then name', async () => {
@@ -309,12 +300,7 @@ describe('GET /api/community/partners', () => {
 
     const { body } = await read()
 
-    expect(
-      (body as PartnersDocument).categories.map((group) => [
-        group.name,
-        group.partners.map((each) => each.name),
-      ]),
-    ).toEqual([
+    expect(namesByCategory(body)).toEqual([
       ['Developers', ['Zulu Tools', 'Alpha Tools', 'Bravo Tools']],
       ['Creators', ['Example Stream']],
     ])
