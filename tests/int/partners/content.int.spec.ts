@@ -42,6 +42,7 @@ const perk = {
   memberPerk: true,
   perkText: 'Members get 10% off with the made-up code EXAMPLE10.',
 }
+const badCall = { label: 'Run', url: 'javascript:alert(1)' }
 
 /** Everything a published partner needs. */
 const complete = (): Fields => ({
@@ -69,9 +70,9 @@ describe('a call to action', () => {
   })
 
   it('needs a web address', async () => {
-    expect(
-      await invalid(create({ callsToAction: [{ label: 'Run', url: 'javascript:alert(1)' }] })),
-    ).toEqual(['Enter a web address starting with https:// or http://.'])
+    expect(await invalid(create({ callsToAction: [badCall] }))).toEqual([
+      'Enter a web address starting with https:// or http://.',
+    ])
   })
 })
 
@@ -177,7 +178,6 @@ describe('publishing a partner', () => {
   })
 
   it('is refused with field errors listed alongside what is missing', async () => {
-    const badCall = { label: 'Run', url: 'javascript:alert(1)' }
     expect(
       await invalid(publish({ ...complete(), tagline: null, callsToAction: [visit, badCall] })),
     ).toEqual([
@@ -187,7 +187,6 @@ describe('publishing a partner', () => {
   })
 
   it('leaves an incomplete draft refused only for its field errors', async () => {
-    const badCall = { label: 'Run', url: 'javascript:alert(1)' }
     expect(await invalid(create({ callsToAction: [badCall] }))).toEqual([
       'Enter a web address starting with https:// or http://.',
     ])
