@@ -73,6 +73,21 @@ async function partner(
   })
 }
 
+// Published before the publishing rule existed: saved as a draft, then published straight
+// to the database, past the rule.
+async function publishedPastTheRule(
+  name: string,
+  categoryId: string,
+  options: Omit<NonNullable<Parameters<typeof partner>[2]>, 'status'>,
+) {
+  const draft = await partner(name, categoryId, { ...options, status: 'draft' })
+  await payload.db.updateOne({
+    collection: 'partners',
+    id: draft.id,
+    data: { status: 'published' },
+  })
+}
+
 const namesByCategory = (body: unknown) =>
   (body as PartnersDocument).categories.map((group) => [
     group.name,
@@ -247,22 +262,11 @@ describe('GET /api/community/partners', () => {
     const visit = { label: 'Visit website', url: 'https://example.com' }
     const perk = { ...visit, memberPerk: true, perkText: 'A made-up discount.' }
     await partner('Example Tools', developers.id)
-    // Published before the publishing rule existed: saved straight to the database, past it.
-    for (const [name, callsToAction] of [
-      ['No Calls Tools', []],
-      ['Only Perks Tools', [perk, perk]],
-      ['Four Calls Tools', [visit, visit, visit, visit, perk]],
-    ] as const) {
-      const draft = await partner(name, developers.id, {
-        status: 'draft',
-        callsToAction: [...callsToAction],
-      })
-      await payload.db.updateOne({
-        collection: 'partners',
-        id: draft.id,
-        data: { status: 'published' },
-      })
-    }
+    await publishedPastTheRule('No Calls Tools', developers.id, { callsToAction: [] })
+    await publishedPastTheRule('Only Perks Tools', developers.id, { callsToAction: [perk, perk] })
+    await publishedPastTheRule('Four Calls Tools', developers.id, {
+      callsToAction: [visit, visit, visit, visit, perk],
+    })
 
     const { body } = await read()
 
@@ -272,18 +276,8 @@ describe('GET /api/community/partners', () => {
   it('leaves out a published partner with a blank tagline or description', async () => {
     const developers = await category('Developers')
     await partner('Example Tools', developers.id)
-    // Published before the publishing rule existed: saved straight to the database, past it.
-    for (const [name, blanks] of [
-      ['No Tagline Tools', { tagline: ' ' }],
-      ['No Description Tools', { description: '\n\n' }],
-    ] as const) {
-      const draft = await partner(name, developers.id, { status: 'draft', ...blanks })
-      await payload.db.updateOne({
-        collection: 'partners',
-        id: draft.id,
-        data: { status: 'published' },
-      })
-    }
+    await publishedPastTheRule('No Tagline Tools', developers.id, { tagline: ' ' })
+    await publishedPastTheRule('No Description Tools', developers.id, { description: '\n\n' })
 
     const { body } = await read()
 
