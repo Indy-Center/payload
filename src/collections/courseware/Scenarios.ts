@@ -12,7 +12,7 @@ export const Scenarios: CollectionConfig = {
   admin: {
     useAsTitle: 'name',
     defaultColumns: ['name', 'course', 'position', 'mode', 'retired'],
-    group: 'Courseware',
+    group: 'Training',
     baseFilter: hideRetiredUnlessAsked,
   },
   access: scenarioAccess,

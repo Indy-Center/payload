@@ -7,7 +7,7 @@ import { staffAccess } from '@/courseware/access'
  */
 export const Frameworks: CollectionConfig = {
   slug: 'frameworks',
-  admin: { useAsTitle: 'label', defaultColumns: ['name', 'edition'], group: 'Courseware' },
+  admin: { useAsTitle: 'label', defaultColumns: ['name', 'edition'], group: 'Training' },
   access: staffAccess,
   indexes: [{ fields: ['name', 'edition'], unique: true }],
   fields: [

@@ -35,7 +35,7 @@ export const LessonPlans: CollectionConfig = {
   admin: {
     useAsTitle: 'code',
     defaultColumns: ['code', 'title', 'courseVersion'],
-    group: 'Courseware',
+    group: 'Training',
   },
   access: lessonPlanAccess,
   hooks: {

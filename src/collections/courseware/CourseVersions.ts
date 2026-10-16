@@ -8,7 +8,7 @@ export const CourseVersions: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'status', 'updatedAt'],
-    group: 'Courseware',
+    group: 'Training',
   },
   access: courseVersionAccess,
   hooks: {

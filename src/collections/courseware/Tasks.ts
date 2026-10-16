@@ -27,7 +27,7 @@ export const Tasks: CollectionConfig = {
   admin: {
     useAsTitle: 'name',
     defaultColumns: ['name', 'parent', 'retired'],
-    group: 'Courseware',
+    group: 'Training',
     baseFilter: hideRetiredUnlessAsked,
   },
   access: staffAccess,
