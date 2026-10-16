@@ -5,7 +5,10 @@ import tsconfigPaths from 'vite-tsconfig-paths'
 export default defineConfig({
   plugins: [tsconfigPaths(), react()],
   test: {
-    environment: 'jsdom',
+    // Files that render the admin opt into jsdom themselves.
+    environment: 'node',
+    // Files share one module graph, so Payload starts and syncs its schema once rather than per file.
+    isolate: false,
     setupFiles: ['./vitest.setup.ts'],
     include: ['tests/int/**/*.int.spec.ts'],
     // Every file shares the one test database.
