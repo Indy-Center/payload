@@ -11,7 +11,7 @@ export const Competencies: CollectionConfig = {
   admin: {
     useAsTitle: 'label',
     defaultColumns: ['sourceId', 'title', 'framework'],
-    group: 'Courseware',
+    group: 'Training',
   },
   access: staffAccess,
   indexes: [{ fields: ['framework', 'sourceId'], unique: true }],

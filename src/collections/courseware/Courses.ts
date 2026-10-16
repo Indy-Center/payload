@@ -6,7 +6,7 @@ export const Courses: CollectionConfig = {
   admin: {
     useAsTitle: 'code',
     defaultColumns: ['code', 'title', 'currentVersion'],
-    group: 'Courseware',
+    group: 'Training',
   },
   access: staffAccess,
   fields: [

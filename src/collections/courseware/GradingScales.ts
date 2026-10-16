@@ -8,7 +8,7 @@ import { staffAccess } from '@/courseware/access'
  */
 export const GradingScales: CollectionConfig = {
   slug: 'grading-scales',
-  admin: { useAsTitle: 'name', group: 'Courseware' },
+  admin: { useAsTitle: 'name', group: 'Training' },
   access: staffAccess,
   hooks: {
     beforeChange: [
