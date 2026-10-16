@@ -1,6 +1,6 @@
 import type { Payload } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { callEndpoint, paragraph, resetCourseware, testPayload } from './helpers'
+import { callEndpoint, paragraph, resetDatabase, testPayload } from './helpers'
 
 let payload: Payload
 
@@ -9,7 +9,7 @@ beforeAll(async () => {
 })
 
 beforeEach(async () => {
-  await resetCourseware(payload)
+  await resetDatabase(payload)
 })
 
 /** A made-up course with one version holding one module of two lesson plans. */

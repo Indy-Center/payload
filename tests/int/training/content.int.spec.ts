@@ -1,6 +1,6 @@
 import type { Payload } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { resetCourseware, testPayload } from '../courseware/helpers'
+import { resetDatabase, testPayload } from '../courseware/helpers'
 import { invalid } from '../partners/helpers'
 import { type ResourceRow, saveResources } from './helpers'
 
@@ -10,7 +10,7 @@ beforeAll(async () => {
   payload = await testPayload()
 })
 
-beforeEach(() => resetCourseware(payload))
+beforeEach(() => resetDatabase(payload))
 
 const save = (resources: ResourceRow[]) => saveResources(payload, resources)
 

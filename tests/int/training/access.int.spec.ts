@@ -1,7 +1,7 @@
 import { Forbidden, type Payload } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { User } from '@/payload-types'
-import { resetCourseware, testPayload } from '../courseware/helpers'
+import { resetDatabase, testPayload } from '../courseware/helpers'
 
 let payload: Payload
 let admin: User
@@ -34,7 +34,7 @@ const NOT_ALLOWED = 'You are not allowed to perform this action.'
 const resources = [{ title: 'Example handbook', url: 'https://example.com/handbook' }]
 
 beforeEach(async () => {
-  await resetCourseware(payload)
+  await resetDatabase(payload)
   admin = await account('admin@example.com', ['training:admin'])
 })
 

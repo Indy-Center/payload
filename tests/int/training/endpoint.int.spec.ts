@@ -3,7 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import {
   TOKEN as LIBRARY_TOKEN,
   callEndpoint,
-  resetCourseware,
+  resetDatabase,
   testPayload,
 } from '../courseware/helpers'
 import { type ResourceRow, saveResources } from './helpers'
@@ -17,7 +17,7 @@ beforeAll(async () => {
   payload = await testPayload()
 })
 
-beforeEach(() => resetCourseware(payload))
+beforeEach(() => resetDatabase(payload))
 
 // One test unsets the token.
 afterEach(() => {
