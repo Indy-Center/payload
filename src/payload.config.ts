@@ -22,6 +22,7 @@ import { Partners } from './collections/partners/Partners'
 import { TeacherResources } from './globals/TeacherResources'
 import { coursewareEndpoints } from './courseware/endpoints'
 import { partnersEndpoints } from './partners/endpoints'
+import { trainingEndpoints } from './training/endpoints'
 import { migrations } from './migrations'
 import { storagePlugins } from './storage'
 import { branding } from './branding'
@@ -53,7 +54,7 @@ export default buildConfig({
     Partners,
   ],
   globals: [TeacherResources],
-  endpoints: [...coursewareEndpoints, ...partnersEndpoints],
+  endpoints: [...coursewareEndpoints, ...partnersEndpoints, ...trainingEndpoints],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
