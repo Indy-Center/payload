@@ -3,6 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { TeacherResource } from '@/payload-types'
 import { resetCourseware, testPayload } from '../courseware/helpers'
 import { invalid } from '../partners/helpers'
+import { saveResources } from './helpers'
 
 let payload: Payload
 
@@ -12,8 +13,7 @@ beforeAll(async () => {
 
 beforeEach(() => resetCourseware(payload))
 
-const save = (resources: TeacherResource['resources']) =>
-  payload.updateGlobal({ slug: 'teacher-resources', data: { resources } })
+const save = (resources: TeacherResource['resources']) => saveResources(payload, resources)
 
 describe('a teacher resource', () => {
   it('opens in a new tab unless told not to', async () => {

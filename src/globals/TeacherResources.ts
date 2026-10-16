@@ -1,8 +1,5 @@
-import type { Access, GlobalConfig, TextFieldSingleValidation } from 'payload'
-import { isTrainingAdmin } from '@/courseware/access'
-import type { User } from '@/payload-types'
-
-const trainingAdminOnly: Access = ({ req }) => isTrainingAdmin(req.user as User | null)
+import type { GlobalConfig, TextFieldSingleValidation } from 'payload'
+import { trainingAdminOnly } from '@/training/access'
 
 /**
  * A link training-tools puts in an `href`. Only `https`, which training-tools checks again: the

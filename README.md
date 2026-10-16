@@ -31,7 +31,7 @@ It holds Indy Center's **courseware**: courses, their versions, modules and less
 - `src/collections/partners/`: the partner categories and partners collections.
 - `src/partners/`: who may edit partners (`access.ts`), the rules for their logo, banner and gallery (`images.ts`), their links and member perks (`links.ts`), what publishing needs (`publishing.ts`), and the community site's read and its shape.
 - `src/globals/`: one file per Global: Teacher resources.
-- `src/training/`: training-tools' read and its shape.
+- `src/training/`: who may edit what training-tools shows (`access.ts`), and training-tools' read and its shape.
 - `src/bearer-token.ts`: the check the library's, the community site's and training-tools' reads share.
 - `scripts/import-frameworks.ts`: loads the USA and GCAP frameworks and the rubrics; see Courseware.
 - `src/storage.ts`: where uploads are stored: the two R2 buckets, or local disk when they aren't configured.
@@ -83,7 +83,7 @@ The people and groups Indy Center works with, listed on the community site's par
 
 ## Teacher resources
 
-The links every teacher sees on training-tools' `/teach` page, kept by the Training Admin under **Training → Teacher resources**. Nobody else can see or change them, through the admin or the API. Each row is a title, an `https` address and whether it opens in a new tab (on unless unticked). Rows show in the order they are listed; a removed row is gone. A save is live, and reaches `/teach` within about five minutes. The decision behind it is in the maintainer's training-app notes (0036).
+The links every teacher sees on training-tools' `/teach` page, kept by the Training Admin under **Training → Teacher resources**. Nobody else can see or change them, through the admin or the API. Each row is a title, an `https` address and whether it opens in a new tab (on unless unticked). Rows show in the order they are listed; a removed row is gone. A save is live; training-tools' README says how soon `/teach` shows it. The decision behind it is in the maintainer's training-app notes (0036).
 
 **To set the token**, generate one value (`openssl rand -hex 32`) and set it in both places: as the repo secret `ENV_TRAINING_API_TOKEN` here, then re-run the deploy, and on training-tools with `npx wrangler secret put TRAINING_API_TOKEN`. Either may go first; until both match, training-tools does not show the panel.
 

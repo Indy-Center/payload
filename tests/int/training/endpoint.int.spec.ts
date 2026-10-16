@@ -7,8 +7,10 @@ import {
   resetCourseware,
   testPayload,
 } from '../courseware/helpers'
+import { saveResources } from './helpers'
 
 const TOKEN = 'test-training-token'
+process.env.TRAINING_API_TOKEN = TOKEN
 
 let payload: Payload
 
@@ -16,11 +18,9 @@ beforeAll(async () => {
   payload = await testPayload()
 })
 
-beforeEach(async () => {
-  process.env.TRAINING_API_TOKEN = TOKEN
-  await resetCourseware(payload)
-})
+beforeEach(() => resetCourseware(payload))
 
+// One test unsets the token.
 afterEach(() => {
   process.env.TRAINING_API_TOKEN = TOKEN
 })
@@ -28,8 +28,7 @@ afterEach(() => {
 const read = (token: string | null = TOKEN) =>
   callEndpoint(payload, '/training/resources', { token })
 
-const save = (resources: TeacherResource['resources']) =>
-  payload.updateGlobal({ slug: 'teacher-resources', data: { resources } })
+const save = (resources: TeacherResource['resources']) => saveResources(payload, resources)
 
 describe('GET /api/training/resources', () => {
   it('refuses a missing or wrong token', async () => {
