@@ -46,7 +46,7 @@ It holds Indy Center's **courseware**: courses, their versions, modules and less
 - `deploy/`: everything deployed to `/home/deploy/apps/payload/` on the VPS, and nothing else.
   - `docker-compose.yml`: the app, its Postgres database, their volumes and the Traefik labels.
   - `.env.example`: the runtime settings the deploy writes to `.env`.
-- `.github/workflows/ci.yml`: format, lint, types and tests, then builds the image and starts the whole stack on the runner.
+- `.github/workflows/ci.yml`: two jobs side by side. One runs format, lint, types and tests; the other checks the compose file, builds the image and starts the whole stack on the runner. This goes against [CI shape](https://tech.flyindycenter.com/patterns/ci-shape/), which runs the compose check after the project's own checks: the page was written before a stack like this one, whose image builds from source without anything the checks produce. Side by side, a typo still fails the pull request, only sooner.
 - `.github/workflows/build-and-deploy.yml`: runs CI, pushes the image to `ghcr.io/indy-center/payload`, then rsyncs `deploy/` to the VPS and runs `docker compose up -d` over SSH.
 
 ## Courseware
