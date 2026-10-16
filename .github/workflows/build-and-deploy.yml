@@ -23,7 +23,7 @@ jobs:
     env:
       # The app's directory on the VPS: /home/deploy/apps/<repo name>/.
       APP: ${{ github.event.repository.name }}
-      IMAGE: ghcr.io/indy-center/payload
+      IMAGE: ${{ needs.ci.outputs.image }}
       URL: https://cms.flyindycenter.com
     steps:
       - uses: actions/checkout@v4

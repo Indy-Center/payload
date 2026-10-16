@@ -4,17 +4,26 @@ name: CI
 on:
   pull_request:
   workflow_call:
+    outputs:
+      image:
+        description: The image name compose runs, without a tag.
+        value: ${{ jobs.image.outputs.image }}
 
 permissions:
   contents: read
+
+env:
+  # Must match the app's image in deploy/docker-compose.yml.
+  IMAGE: ghcr.io/indy-center/payload
+  # Throwaway values for the runner, which the app and the compose file both refuse to start without.
+  # The real ones are the repo's ENV_* secrets.
+  PAYLOAD_SECRET: ci-only-not-a-secret
+  POSTGRES_PASSWORD: payload
 
 jobs:
   check:
     runs-on: ubuntu-latest
     env:
-      # Throwaway values for the runner. The real ones are the repo's ENV_* secrets.
-      PAYLOAD_SECRET: ci-only-not-a-secret
-      POSTGRES_PASSWORD: payload
       DATABASE_URL: postgres://payload:payload@127.0.0.1:5432/payload
     services:
       # The database the tests run against.
@@ -52,10 +61,8 @@ jobs:
   # Runs alongside check: the image build and smoke test don't need the checks' node_modules.
   image:
     runs-on: ubuntu-latest
-    env:
-      # The compose file refuses to start without these.
-      PAYLOAD_SECRET: ci-only-not-a-secret
-      POSTGRES_PASSWORD: payload
+    outputs:
+      image: ${{ env.IMAGE }}
     steps:
       - uses: actions/checkout@v4
 
@@ -78,7 +85,7 @@ jobs:
         with:
           context: .
           load: true
-          tags: ghcr.io/indy-center/payload:latest
+          tags: ${{ env.IMAGE }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
