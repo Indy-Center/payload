@@ -6,9 +6,9 @@ import { PREFERENCE_KEYS } from 'payload/shared'
 const label = 'Indy Center'
 
 const apps = [
-  { name: 'Community', href: 'https://flyindycenter.com' },
+  { name: 'Community Site', href: 'https://flyindycenter.com' },
   { name: 'Training Tools', href: 'https://training.flyindycenter.com' },
-  { name: 'Library', href: 'https://library.flyindycenter.com' },
+  { name: 'Indy Library', href: 'https://library.flyindycenter.com' },
 ]
 
 type Props = { payload: Payload; user?: TypedUser | null }
