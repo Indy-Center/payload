@@ -8,6 +8,7 @@ import * as migration_20261014_053903_courseware_permissions from './20261014_05
 import * as migration_20261015_025540_partners from './20261015_025540_partners';
 import * as migration_20261015_031917_partner_images from './20261015_031917_partner_images';
 import * as migration_20261015_040842_partner_links from './20261015_040842_partner_links';
+import * as migration_20261016_173341_teacher_resources from './20261016_173341_teacher_resources';
 
 export const migrations = [
   {
@@ -58,6 +59,11 @@ export const migrations = [
   {
     up: migration_20261015_040842_partner_links.up,
     down: migration_20261015_040842_partner_links.down,
-    name: '20261015_040842_partner_links'
+    name: '20261015_040842_partner_links',
+  },
+  {
+    up: migration_20261016_173341_teacher_resources.up,
+    down: migration_20261016_173341_teacher_resources.down,
+    name: '20261016_173341_teacher_resources'
   },
 ];
