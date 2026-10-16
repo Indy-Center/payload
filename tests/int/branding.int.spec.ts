@@ -1,14 +1,8 @@
-import { describe, it, expect, vi } from 'vitest'
-// What Next calls for every admin page.
+import { describe, it, expect } from 'vitest'
+// What Next calls for every admin page. vitest.setup.ts stands in for its headers and cookies.
 import { generateMetadata } from '@/app/(payload)/admin/[[...segments]]/page'
 import { getNextRequestI18n } from '@payloadcms/next/utilities'
 import config from '@/payload.config'
-
-// Outside a request Next has no headers or cookies; the admin reads them only to pick a language.
-vi.mock('next/headers.js', () => ({
-  headers: async () => new Headers(),
-  cookies: async () => ({ get: () => undefined, getAll: () => [] }),
-}))
 
 const metadataOf = (path: string) =>
   generateMetadata({
