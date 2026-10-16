@@ -1118,8 +1118,28 @@ export interface TeacherResource {
   resources?:
     | {
         title: string;
+        description?: string | null;
         url: string;
         newTab?: boolean | null;
+        icon:
+          | 'link-variant'
+          | 'file-document'
+          | 'book-open-variant'
+          | 'google-drive'
+          | 'table'
+          | 'form-select'
+          | 'video'
+          | 'youtube'
+          | 'calendar'
+          | 'headset'
+          | 'discord'
+          | 'map'
+          | 'radar'
+          | 'airplane'
+          | 'school'
+          | 'clipboard-text'
+          | 'web'
+          | 'help-circle';
         id?: string | null;
       }[]
     | null;
@@ -1135,8 +1155,10 @@ export interface TeacherResourcesSelect<T extends boolean = true> {
     | T
     | {
         title?: T;
+        description?: T;
         url?: T;
         newTab?: T;
+        icon?: T;
         id?: T;
       };
   updatedAt?: T;

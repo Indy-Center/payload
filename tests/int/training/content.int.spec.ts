@@ -1,9 +1,8 @@
 import type { Payload } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import type { TeacherResource } from '@/payload-types'
 import { resetCourseware, testPayload } from '../courseware/helpers'
 import { invalid } from '../partners/helpers'
-import { saveResources } from './helpers'
+import { type ResourceRow, saveResources } from './helpers'
 
 let payload: Payload
 
@@ -13,7 +12,7 @@ beforeAll(async () => {
 
 beforeEach(() => resetCourseware(payload))
 
-const save = (resources: TeacherResource['resources']) => saveResources(payload, resources)
+const save = (resources: ResourceRow[]) => saveResources(payload, resources)
 
 describe('a teacher resource', () => {
   it('opens in a new tab unless told not to', async () => {
@@ -34,5 +33,18 @@ describe('a teacher resource', () => {
     expect(await invalid(save([{ title: '', url: 'https://example.com' }]))).toEqual([
       'This field is required.',
     ])
+  })
+
+  it('takes only an icon from the list', async () => {
+    const row = { title: 'Example handbook', url: 'https://example.com/handbook' }
+
+    const saved = await save([{ ...row, icon: 'discord' }])
+    expect(saved.resources?.map((r) => r.icon)).toEqual(['discord'])
+
+    for (const icon of ['rocket-launch', '']) {
+      expect(await invalid(save([{ ...row, icon: icon as ResourceRow['icon'] }])), icon).toEqual([
+        'This field has an invalid selection.',
+      ])
+    }
   })
 })

@@ -83,7 +83,7 @@ The people and groups Indy Center works with, listed on the community site's par
 
 ## Teacher resources
 
-The links every teacher sees on training-tools' `/teach` page, kept by the Training Admin under **Training → Teacher resources**. Nobody else can see or change them, through the admin or the API. Each row is a title, an `https` address and whether it opens in a new tab (on unless unticked). Rows show in the order they are listed; a removed row is gone. A save is live; training-tools' README says how soon `/teach` shows it. The decision behind it is in the maintainer's training-app notes (0036).
+The links every teacher sees on training-tools' `/teach` page, kept by the Training Admin under **Training → Teacher resources**. Nobody else can see or change them, through the admin or the API. Each row is a title, an optional plain-text description, an `https` address, whether it opens in a new tab (on unless unticked), and an icon from a fixed list (the link icon unless chosen). The list is fixed because training-tools builds each icon in; adding one is a change in both repos. Rows show in the order they are listed; a removed row is gone. A save is live; training-tools' README says how soon `/teach` shows it. The decision behind it is in the maintainer's training-app notes (0036).
 
 **To set the token**, generate one value (`openssl rand -hex 32`) and set it in both places: as the repo secret `ENV_TRAINING_API_TOKEN` here, then re-run the deploy, and on training-tools with `npx wrangler secret put TRAINING_API_TOKEN`. Either may go first; until both match, training-tools does not show the panel.
 

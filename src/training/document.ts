@@ -13,7 +13,31 @@ export type TeacherResourcesDocument = {
 
 export type TeacherResource = {
   title: string
+  /** Plain text, to be drawn as text. Null when there is none, or it is blank. */
+  description: string | null
   /** Always `https`. */
   url: string
   newTab: boolean
+  icon: TeacherResourceIcon
 }
+
+/** mdi icon names; training-tools draws each one. Offered in `./icons`. */
+export type TeacherResourceIcon =
+  | 'link-variant'
+  | 'file-document'
+  | 'book-open-variant'
+  | 'google-drive'
+  | 'table'
+  | 'form-select'
+  | 'video'
+  | 'youtube'
+  | 'calendar'
+  | 'headset'
+  | 'discord'
+  | 'map'
+  | 'radar'
+  | 'airplane'
+  | 'school'
+  | 'clipboard-text'
+  | 'web'
+  | 'help-circle'

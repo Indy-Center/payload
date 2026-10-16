@@ -9,6 +9,7 @@ import * as migration_20261015_025540_partners from './20261015_025540_partners'
 import * as migration_20261015_031917_partner_images from './20261015_031917_partner_images';
 import * as migration_20261015_040842_partner_links from './20261015_040842_partner_links';
 import * as migration_20261016_173341_teacher_resources from './20261016_173341_teacher_resources';
+import * as migration_20261016_180115_teacher_resource_descriptions_and_icons from './20261016_180115_teacher_resource_descriptions_and_icons';
 
 export const migrations = [
   {
@@ -64,6 +65,11 @@ export const migrations = [
   {
     up: migration_20261016_173341_teacher_resources.up,
     down: migration_20261016_173341_teacher_resources.down,
-    name: '20261016_173341_teacher_resources'
+    name: '20261016_173341_teacher_resources',
+  },
+  {
+    up: migration_20261016_180115_teacher_resource_descriptions_and_icons.up,
+    down: migration_20261016_180115_teacher_resource_descriptions_and_icons.down,
+    name: '20261016_180115_teacher_resource_descriptions_and_icons'
   },
 ];

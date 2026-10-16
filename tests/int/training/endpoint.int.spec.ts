@@ -1,13 +1,12 @@
 import type { Payload } from 'payload'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import type { TeacherResource } from '@/payload-types'
 import {
   TOKEN as LIBRARY_TOKEN,
   callEndpoint,
   resetCourseware,
   testPayload,
 } from '../courseware/helpers'
-import { saveResources } from './helpers'
+import { type ResourceRow, saveResources } from './helpers'
 
 const TOKEN = 'test-training-token'
 process.env.TRAINING_API_TOKEN = TOKEN
@@ -28,7 +27,7 @@ afterEach(() => {
 const read = (token: string | null = TOKEN) =>
   callEndpoint(payload, '/training/resources', { token })
 
-const save = (resources: TeacherResource['resources']) => saveResources(payload, resources)
+const save = (resources: ResourceRow[]) => saveResources(payload, resources)
 
 describe('GET /api/training/resources', () => {
   it('refuses a missing or wrong token', async () => {
@@ -58,11 +57,58 @@ describe('GET /api/training/resources', () => {
       status: 200,
       body: {
         resources: [
-          { title: 'Example handbook', url: 'https://example.com/handbook', newTab: true },
-          { title: 'Example form', url: 'https://example.com/form', newTab: false },
+          {
+            title: 'Example handbook',
+            description: null,
+            url: 'https://example.com/handbook',
+            newTab: true,
+            icon: 'link-variant',
+          },
+          {
+            title: 'Example form',
+            description: null,
+            url: 'https://example.com/form',
+            newTab: false,
+            icon: 'link-variant',
+          },
         ],
       },
     })
+  })
+
+  it("returns each resource's description and icon", async () => {
+    await save([
+      {
+        title: 'Example handbook',
+        description: 'Read before your first session.\nAsk if anything is unclear.',
+        url: 'https://example.com/handbook',
+        icon: 'book-open-variant',
+      },
+    ])
+
+    const { body } = await read()
+
+    expect(body.resources).toEqual([
+      {
+        title: 'Example handbook',
+        description: 'Read before your first session.\nAsk if anything is unclear.',
+        url: 'https://example.com/handbook',
+        newTab: true,
+        icon: 'book-open-variant',
+      },
+    ])
+  })
+
+  it('returns a cleared or blank description as none', async () => {
+    const row = { title: 'Example form', url: 'https://example.com/form' }
+    await save([
+      { ...row, description: '' },
+      { ...row, description: '  \n ' },
+    ])
+
+    const { body } = await read()
+
+    expect(body.resources.map((r: { description: unknown }) => r.description)).toEqual([null, null])
   })
 
   it('leaves out a removed resource', async () => {

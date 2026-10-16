@@ -1,5 +1,6 @@
 import type { GlobalConfig, TextFieldSingleValidation } from 'payload'
 import { trainingAdminOnly } from '@/training/access'
+import { TEACHER_RESOURCE_ICONS } from '@/training/icons'
 
 /**
  * A link training-tools puts in an `href`. Only `https`, which training-tools checks again: the
@@ -31,12 +32,21 @@ export const TeacherResources: GlobalConfig = {
       type: 'array',
       fields: [
         { name: 'title', type: 'text', required: true },
+        // Plain text: training-tools draws it as text, never as HTML.
+        { name: 'description', type: 'textarea' },
         { name: 'url', label: 'URL', type: 'text', required: true, validate: httpsAddress },
         {
           name: 'newTab',
           label: 'Open in a new tab',
           type: 'checkbox',
           defaultValue: true,
+        },
+        {
+          name: 'icon',
+          type: 'select',
+          required: true,
+          defaultValue: 'link-variant',
+          options: [...TEACHER_RESOURCE_ICONS],
         },
       ],
     },

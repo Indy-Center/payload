@@ -16,11 +16,13 @@ export async function buildTeacherResourcesDocument(
     req,
   })
   return {
-    resources: (global.resources ?? []).map(({ title, url, newTab }) => ({
+    resources: (global.resources ?? []).map(({ title, description, url, newTab, icon }) => ({
       title,
+      description: description?.trim() ? description : null,
       url,
       // A checkbox may be stored empty; empty means its default, on.
       newTab: newTab ?? true,
+      icon,
     })),
   }
 }
