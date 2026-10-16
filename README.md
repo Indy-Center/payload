@@ -18,6 +18,7 @@ It holds Indy Center's **courseware**: courses, their versions, modules and less
 - `POST /api/graphql` — the same data over GraphQL. `GET /api/graphql-playground` is a query editor, off in production.
 - `GET /api/courseware/courses`, `GET /api/courseware/courses/<code>/current` (or `/draft`), `GET /api/courseware/catalogue` — the reads indy-library makes: the course list, one whole course version, and the task tree with frameworks, competencies and references. They include teacher notes, so they need `Authorization: Bearer <LIBRARY_API_TOKEN>` and answer 401 otherwise. The shapes are in `src/courseware/document.ts`.
 - `GET /api/community/partners` — the read the community site makes: the published partners, grouped by partner category, in order. Drafts are left out, as is a published partner that breaks the publishing rule (one published before it, or whose logo was deleted): it needs a logo, a tagline, a description and one to three public calls to action, and so is a category with none left. It needs `Authorization: Bearer <COMMUNITY_API_TOKEN>` and answers 401 otherwise. The shape is in `src/partners/document.ts`. (Not `/api/partners`, which is the partners collection's own REST API.)
+- `GET /api/training/resources` — the read training-tools makes: the teacher resources, in the Training Admin's order. It needs `Authorization: Bearer <TRAINING_API_TOKEN>` and answers 401 otherwise. The shape is in `src/training/document.ts`. (`/api/globals/teacher-resources` is the Global's own REST API, open to the Training Admin only.)
 - `GET /` — redirects to `/admin`. The CMS has no frontend of its own.
 
 ## Project layout
@@ -29,7 +30,9 @@ It holds Indy Center's **courseware**: courses, their versions, modules and less
 - `src/courseware/`: the rules they share: who may do what (`access.ts`), the task tree and its numbers, expanding a parent task into rows, publishing and the frozen shape, the reads for the library, and the framework import.
 - `src/collections/partners/`: the partner categories and partners collections.
 - `src/partners/`: who may edit partners (`access.ts`), the rules for their logo, banner and gallery (`images.ts`), their links and member perks (`links.ts`), what publishing needs (`publishing.ts`), and the community site's read and its shape.
-- `src/bearer-token.ts`: the check the library's and the community site's reads share.
+- `src/globals/`: one file per Global: Teacher resources.
+- `src/training/`: who may edit what training-tools shows (`access.ts`), and training-tools' read and its shape.
+- `src/bearer-token.ts`: the check the library's, the community site's and training-tools' reads share.
 - `scripts/import-frameworks.ts`: loads the USA and GCAP frameworks and the rubrics; see Courseware.
 - `src/storage.ts`: where uploads are stored: the two R2 buckets, or local disk when they aren't configured.
 - `src/migrations/`: database migrations, created by `npm run payload migrate:create`. In production the app applies new ones on its first request after a deploy.
@@ -77,6 +80,12 @@ The people and groups Indy Center works with, listed on the community site's par
 - **Partner categories.** One that still has partners, drafts included, can't be deleted.
 - **Slugs.** A partner's slug is its address on the site, `/partners/<slug>`. Left empty, it is filled from the name; it can be changed, and no two partners share one.
 - **Images.** A partner's logo (SVG, PNG or WebP), banner (optional, at least 1600×500) and gallery (optional) are uploads to `media`, so they are public as soon as they are uploaded. Payload makes the sizes the site shows: a 256px logo, a 2400px-wide banner, and a 400px thumbnail and 1600px large copy of each photo. It can't make sizes for partner images only, so every image in `media` gets them; SVGs, and images already smaller than a size, are served as uploaded.
+
+## Teacher resources
+
+The links every teacher sees on training-tools' `/teach` page, kept by the Training Admin under **Training → Teacher resources**. Nobody else can see or change them, through the admin or the API. Each row is a title, an optional plain-text description, an `https` address, whether it opens in a new tab (on unless unticked), and an icon from a fixed list (the link icon unless chosen). The list is fixed because training-tools builds each icon in; adding one is a change in both repos. Rows show in the order they are listed; a removed row is gone. A save is live; training-tools' README says how soon `/teach` shows it. The decision behind it is in the maintainer's training-app notes (0036).
+
+**To set the token**, generate one value (`openssl rand -hex 32`) and set it in both places: as the repo secret `ENV_TRAINING_API_TOKEN` here, then re-run the deploy, and on training-tools with `npx wrangler secret put TRAINING_API_TOKEN`. Either may go first; until both match, training-tools does not show the panel.
 
 ## The admin's look
 

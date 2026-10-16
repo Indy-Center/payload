@@ -5,7 +5,7 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { importFrameworks } from '@/courseware/import/import-frameworks'
 import { readSheets } from '@/courseware/import/sheets'
 import { localStore } from '@/courseware/import/store'
-import { resetCourseware, testPayload } from './helpers'
+import { resetDatabase, testPayload } from './helpers'
 
 let payload: Payload
 
@@ -17,7 +17,7 @@ beforeAll(async () => {
 })
 
 beforeEach(async () => {
-  await resetCourseware(payload)
+  await resetDatabase(payload)
 })
 
 async function competency(framework: string, sourceId: string) {

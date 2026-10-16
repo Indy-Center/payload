@@ -4,7 +4,7 @@ import type { Payload } from 'payload'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { publishingFaults } from '@/partners/publishing'
 import type { Partner, PartnerCategory, User } from '@/payload-types'
-import { resetCourseware, testPayload } from '../courseware/helpers'
+import { resetDatabase, testPayload } from '../courseware/helpers'
 import { invalid, removeUploads, svg, upload } from './helpers'
 
 let payload: Payload
@@ -18,7 +18,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await removeUploads(payload)
-  await resetCourseware(payload)
+  await resetDatabase(payload)
   editor = await payload.create({
     collection: 'users',
     data: { email: 'editor@example.com', password: 'example-password', roles: ['partners:editor'] },

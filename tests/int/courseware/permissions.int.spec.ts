@@ -1,7 +1,7 @@
 import type { Payload } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { User } from '@/payload-types'
-import { resetCourseware, testPayload } from './helpers'
+import { resetDatabase, testPayload } from './helpers'
 
 let payload: Payload
 let admin: User
@@ -45,7 +45,7 @@ async function courses() {
 const as = (user: User) => ({ user, overrideAccess: false })
 
 beforeEach(async () => {
-  await resetCourseware(payload)
+  await resetDatabase(payload)
   admin = await account('admin@example.com', '1000000', ['training:admin'])
   lead = await account('lead@example.com', '1000009', ['training:lead'])
   author = await account('author@example.com', '1000001')

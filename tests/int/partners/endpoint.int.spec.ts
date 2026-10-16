@@ -7,7 +7,7 @@ import type { Partner } from '@/payload-types'
 import {
   TOKEN as LIBRARY_TOKEN,
   callEndpoint,
-  resetCourseware,
+  resetDatabase,
   testPayload,
 } from '../courseware/helpers'
 import { image, removeUploads, svg, upload } from './helpers'
@@ -23,7 +23,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await removeUploads(payload)
-  await resetCourseware(payload)
+  await resetDatabase(payload)
 })
 
 afterAll(() => removeUploads(payload))

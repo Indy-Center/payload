@@ -115,8 +115,12 @@ export interface Config {
     defaultIDType: string;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'teacher-resources': TeacherResource;
+  };
+  globalsSelect: {
+    'teacher-resources': TeacherResourcesSelect<false> | TeacherResourcesSelect<true>;
+  };
   locale: null;
   widgets: {
     collections: CollectionsWidget;
@@ -1104,6 +1108,62 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "teacher-resources".
+ */
+export interface TeacherResource {
+  id: string;
+  resources?:
+    | {
+        title: string;
+        description?: string | null;
+        url: string;
+        newTab?: boolean | null;
+        icon:
+          | 'link-variant'
+          | 'file-document'
+          | 'book-open-variant'
+          | 'google-drive'
+          | 'table'
+          | 'form-select'
+          | 'video'
+          | 'youtube'
+          | 'calendar'
+          | 'headset'
+          | 'discord'
+          | 'map'
+          | 'radar'
+          | 'airplane'
+          | 'school'
+          | 'clipboard-text'
+          | 'web'
+          | 'help-circle';
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "teacher-resources_select".
+ */
+export interface TeacherResourcesSelect<T extends boolean = true> {
+  resources?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        url?: T;
+        newTab?: T;
+        icon?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

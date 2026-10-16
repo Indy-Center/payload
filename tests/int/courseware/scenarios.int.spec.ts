@@ -1,6 +1,6 @@
 import type { Payload } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { callEndpoint, resetCourseware, testPayload } from './helpers'
+import { callEndpoint, resetDatabase, testPayload } from './helpers'
 
 let payload: Payload
 
@@ -9,7 +9,7 @@ beforeAll(async () => {
 })
 
 beforeEach(async () => {
-  await resetCourseware(payload)
+  await resetDatabase(payload)
 })
 
 async function course(code: string) {

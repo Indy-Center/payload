@@ -19,8 +19,10 @@ import { GradingScales } from './collections/courseware/GradingScales'
 import { Scenarios } from './collections/courseware/Scenarios'
 import { PartnerCategories } from './collections/partners/PartnerCategories'
 import { Partners } from './collections/partners/Partners'
+import { TeacherResources } from './globals/TeacherResources'
 import { coursewareEndpoints } from './courseware/endpoints'
 import { partnersEndpoints } from './partners/endpoints'
+import { trainingEndpoints } from './training/endpoints'
 import { migrations } from './migrations'
 import { storagePlugins } from './storage'
 import { branding } from './branding'
@@ -51,7 +53,8 @@ export default buildConfig({
     PartnerCategories,
     Partners,
   ],
-  endpoints: [...coursewareEndpoints, ...partnersEndpoints],
+  globals: [TeacherResources],
+  endpoints: [...coursewareEndpoints, ...partnersEndpoints, ...trainingEndpoints],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

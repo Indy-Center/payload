@@ -1,7 +1,7 @@
 import { Forbidden, ValidationError, type Payload } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { Partner, User } from '@/payload-types'
-import { resetCourseware, testPayload } from '../courseware/helpers'
+import { resetDatabase, testPayload } from '../courseware/helpers'
 
 let payload: Payload
 let editor: User
@@ -46,7 +46,7 @@ async function invalid(promise: Promise<unknown>): Promise<string[]> {
 }
 
 beforeEach(async () => {
-  await resetCourseware(payload)
+  await resetDatabase(payload)
   editor = await account('editor@example.com', ['partners:editor'])
   admin = await account('admin@example.com', ['training:admin'])
   lead = await account('lead@example.com', ['training:lead'])
