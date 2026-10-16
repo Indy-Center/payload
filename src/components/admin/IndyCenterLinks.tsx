@@ -7,7 +7,7 @@ const label = 'Indy Center'
 
 const apps = [
   { name: 'Community', href: 'https://flyindycenter.com' },
-  { name: 'Training', href: 'https://training.flyindycenter.com' },
+  { name: 'Training Tools', href: 'https://training.flyindycenter.com' },
   { name: 'Library', href: 'https://library.flyindycenter.com' },
 ]
 

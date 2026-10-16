@@ -29,7 +29,7 @@ describe('the Indy Center group in the sidebar', () => {
       ]),
     ).toEqual([
       ['Community (opens in a new tab)', 'https://flyindycenter.com', '_blank'],
-      ['Training (opens in a new tab)', 'https://training.flyindycenter.com', '_blank'],
+      ['Training Tools (opens in a new tab)', 'https://training.flyindycenter.com', '_blank'],
       ['Library (opens in a new tab)', 'https://library.flyindycenter.com', '_blank'],
     ])
     for (const link of links) expect(link.getAttribute('rel')).toBe('noopener noreferrer')
