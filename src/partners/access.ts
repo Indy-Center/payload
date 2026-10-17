@@ -5,17 +5,11 @@
  * reaches it and drafts never leak.
  */
 import type { Access, CollectionConfig } from 'payload'
-import { isCmsAdmin } from '@/cms-admin'
-import type { User } from '@/payload-types'
+import { mayActAs, type RoleHolder } from '@/cms-admin'
 
 export const PARTNERS_EDITOR = 'partners:editor'
 
-type Person = Pick<User, 'roles'> | null | undefined
-
-const editorsOnly: Access = ({ req }) => {
-  const user = req.user as Person
-  return isCmsAdmin(user) || Boolean(user?.roles?.includes(PARTNERS_EDITOR))
-}
+const editorsOnly: Access = ({ req }) => mayActAs(req.user as RoleHolder, PARTNERS_EDITOR)
 
 export const partnersAccess: CollectionConfig['access'] = {
   read: editorsOnly,

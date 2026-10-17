@@ -1,5 +1,5 @@
 import type { Access, CollectionConfig, FieldAccess, PayloadRequest, Where } from 'payload'
-import { CMS_ADMIN, isCmsAdmin } from '@/cms-admin'
+import { mayActAs, rolesActingAs } from '@/cms-admin'
 import type { User } from '@/payload-types'
 import { idOf } from './ids'
 
@@ -15,7 +15,7 @@ import { idOf } from './ids'
  * mistaken click must not take it away. Tasks and scenarios are retired instead.
  *
  * The rules read only `user.roles` and `user.cid`. For now those are fields on the CMS's own
- * accounts that only the Training Admin sets; once the CMS signs in through identity (DEV-219)
+ * accounts that only the Training Admin and the CMS admin set; once the CMS signs in through identity (DEV-219)
  * they come from identity, and only sign-in changes.
  */
 export const ROLES = ['training:admin', 'training:lead'] as const
@@ -24,13 +24,10 @@ type Person = Pick<User, 'roles' | 'cid'> | null | undefined
 const person = (req: PayloadRequest) => req.user as Person
 
 /** The Training Admin, or the CMS admin. */
-export const canAdministerTraining = (user: Person) =>
-  isCmsAdmin(user) || Boolean(user?.roles?.includes('training:admin'))
+export const canAdministerTraining = (user: Person) => mayActAs(user, 'training:admin')
 
 /** The Training Admin, a lead instructor, or the CMS admin. */
-export const isStaff = (user: Person) =>
-  isCmsAdmin(user) ||
-  Boolean(user?.roles?.some((role) => (ROLES as readonly string[]).includes(role)))
+export const isStaff = (user: Person) => mayActAs(user, ...ROLES)
 
 /** Ids of the courses that name this user's CID as an author. */
 async function authoredCourseIds(req: PayloadRequest): Promise<string[]> {
@@ -140,7 +137,7 @@ export const trainingAdministratorsField: FieldAccess = async ({ req }) => {
   if (!req.user) return false
   const admins = await req.payload.count({
     collection: 'users',
-    where: { roles: { in: ['training:admin', CMS_ADMIN] } },
+    where: { roles: { in: rolesActingAs('training:admin') } },
     req,
   })
   return admins.totalDocs === 0
