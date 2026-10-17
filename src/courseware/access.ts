@@ -1,4 +1,5 @@
 import type { Access, CollectionConfig, FieldAccess, PayloadRequest, Where } from 'payload'
+import { CMS_ADMIN, isCmsAdmin } from '@/cms-admin'
 import type { User } from '@/payload-types'
 import { idOf } from './ids'
 
@@ -6,7 +7,7 @@ import { idOf } from './ids'
  * Who may do what in courseware (decisions 0018, 0022, 0026, 0039).
  *
  * - The Training Admin (`training:admin`) and lead instructors (`training:lead`) do everything:
- *   edit and publish, keep the task list, retire, and manage CMS accounts.
+ *   edit and publish, keep the task list, retire, and manage CMS accounts. So does the CMS admin.
  * - A course author, named by CID on a course, edits that course's drafts, lesson plans and
  *   scenarios, and nothing else. They cannot publish or retire.
  *
@@ -22,10 +23,13 @@ export const ROLES = ['training:admin', 'training:lead'] as const
 type Person = Pick<User, 'roles' | 'cid'> | null | undefined
 const person = (req: PayloadRequest) => req.user as Person
 
-export const isTrainingAdmin = (user: Person) => Boolean(user?.roles?.includes('training:admin'))
+/** The Training Admin, or the CMS admin. */
+export const isTrainingAdmin = (user: Person) =>
+  isCmsAdmin(user) || Boolean(user?.roles?.includes('training:admin'))
 
-/** The Training Admin or a lead instructor. */
+/** The Training Admin, a lead instructor, or the CMS admin. */
 export const isStaff = (user: Person) =>
+  isCmsAdmin(user) ||
   Boolean(user?.roles?.some((role) => (ROLES as readonly string[]).includes(role)))
 
 /** Ids of the courses that name this user's CID as an author. */
@@ -125,15 +129,15 @@ export const userAccess: CollectionConfig['access'] = {
 }
 
 /**
- * Roles and CID are set by the Training Admin alone, or by anyone signed in while no account
- * holds `training:admin` yet, so that the first one can be given it.
+ * Roles and CID are set by the Training Admin or the CMS admin, or by anyone signed in while no
+ * account holds either role yet, so that the first one can be given it.
  */
 export const trainingAdminField: FieldAccess = async ({ req }) => {
   if (isTrainingAdmin(person(req))) return true
   if (!req.user) return false
   const admins = await req.payload.count({
     collection: 'users',
-    where: { roles: { contains: 'training:admin' } },
+    where: { roles: { in: ['training:admin', CMS_ADMIN] } },
     req,
   })
   return admins.totalDocs === 0
