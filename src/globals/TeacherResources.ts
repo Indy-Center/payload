@@ -30,6 +30,11 @@ export const TeacherResources: GlobalConfig = {
     {
       name: 'resources',
       type: 'array',
+      admin: {
+        components: {
+          RowLabel: '/components/admin/TeacherResourceRowLabel#TeacherResourceRowLabel',
+        },
+      },
       fields: [
         { name: 'title', type: 'text', required: true },
         // Plain text: training-tools draws it as text, never as HTML.
