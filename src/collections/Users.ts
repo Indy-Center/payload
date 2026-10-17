@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { CMS_ADMIN } from '@/cms-admin'
-import { ROLES, trainingAdminField, userAccess } from '@/courseware/access'
+import { ROLES, trainingAdministratorsField, userAccess } from '@/courseware/access'
 import { PARTNERS_EDITOR } from '@/partners/access'
 
 /**
@@ -22,7 +22,7 @@ export const Users: CollectionConfig = {
       label: 'VATSIM CID',
       type: 'text',
       index: true,
-      access: { create: trainingAdminField, update: trainingAdminField },
+      access: { create: trainingAdministratorsField, update: trainingAdministratorsField },
       admin: { className: 'cid', description: 'Matches course authors named on a course.' },
     },
     {
@@ -31,7 +31,7 @@ export const Users: CollectionConfig = {
       hasMany: true,
       options: [CMS_ADMIN, ...ROLES, PARTNERS_EDITOR].map((role) => ({ label: role, value: role })),
       defaultValue: [],
-      access: { create: trainingAdminField, update: trainingAdminField },
+      access: { create: trainingAdministratorsField, update: trainingAdministratorsField },
       admin: {
         description:
           'cms:admin may do everything; training:admin is the Training Admin; training:lead a lead instructor; partners:editor edits the community site’s partners.',

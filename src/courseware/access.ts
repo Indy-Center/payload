@@ -135,7 +135,7 @@ export const userAccess: CollectionConfig['access'] = {
  * Roles and CID are set by the Training Admin or the CMS admin, or by anyone signed in while no
  * account holds either role yet, so that the first one can be given it.
  */
-export const trainingAdminField: FieldAccess = async ({ req }) => {
+export const trainingAdministratorsField: FieldAccess = async ({ req }) => {
   if (canAdministerTraining(person(req))) return true
   if (!req.user) return false
   const admins = await req.payload.count({
