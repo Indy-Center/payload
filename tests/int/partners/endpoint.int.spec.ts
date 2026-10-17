@@ -1,5 +1,3 @@
-// @vitest-environment node
-// Uploads are checked with `instanceof Uint8Array`, which jsdom's own globals fail.
 import type { Payload } from 'payload'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { PartnersDocument } from '@/partners/document'
