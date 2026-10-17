@@ -120,7 +120,10 @@ export const scenarioAccess = authoredAccess({
 const selfOrStaff: Access = ({ req }) =>
   isStaff(person(req)) || (req.user ? { id: { equals: req.user.id } } : false)
 
-/** CMS accounts are managed by the Training Admin and leads; anyone may read and edit their own. */
+/**
+ * CMS accounts are managed by the Training Admin, leads and the CMS admin; anyone may read and edit
+ * their own.
+ */
 export const userAccess: CollectionConfig['access'] = {
   read: selfOrStaff,
   create: staffOnly,

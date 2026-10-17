@@ -5,8 +5,8 @@ import { PARTNERS_EDITOR } from '@/partners/access'
 
 /**
  * The CMS's own accounts. Until the CMS signs in through identity (DEV-219), `cid` and `roles`
- * stand in for what identity will say; only the Training Admin and the CMS admin set them. Course authors are not
- * given accounts until then (decisions 0036, 0037).
+ * stand in for what identity will say; only the Training Admin and the CMS admin set them. Course
+ * authors are not given accounts until then (decisions 0036, 0037).
  */
 export const Users: CollectionConfig = {
   slug: 'users',
