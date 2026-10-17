@@ -55,6 +55,20 @@ describe('the CMS admin', () => {
     expect(docs.map((doc) => doc.name)).toEqual(['Example Tools'])
   })
 
+  it('deletes partners', async () => {
+    const category = await payload.create({
+      collection: 'partner-categories',
+      data: { name: 'Developers', blurb: 'People who build tools.' },
+    })
+    const partner = await payload.create({
+      collection: 'partners',
+      data: { name: 'Example Tools', category: category.id, status: 'draft' },
+    })
+
+    await payload.delete({ collection: 'partners', id: partner.id, ...as(cmsAdmin) })
+    expect(await payload.count({ collection: 'partners' })).toEqual({ totalDocs: 0 })
+  })
+
   it('edits courseware', async () => {
     const task = await payload.create({
       collection: 'tasks',
@@ -68,6 +82,82 @@ describe('the CMS admin', () => {
       ...as(cmsAdmin),
     })
     expect(updated.retired).toBe(true)
+  })
+
+  it('edits lesson plans and scenarios, and retires a scenario', async () => {
+    const course = await payload.create({
+      collection: 'courses',
+      data: { code: 'X-TWR', title: 'Example Tower' },
+    })
+    const draft = await payload.create({
+      collection: 'course-versions',
+      data: { course: course.id, number: 1, status: 'draft' },
+    })
+    const plan = await payload.create({
+      collection: 'lesson-plans',
+      data: { courseVersion: draft.id, title: 'Radio' },
+      ...as(cmsAdmin),
+    })
+    const renamed = await payload.update({
+      collection: 'lesson-plans',
+      id: plan.id,
+      data: { title: 'Radio work' },
+      ...as(cmsAdmin),
+    })
+    const scenario = await payload.create({
+      collection: 'scenarios',
+      data: { course: course.id, name: 'Quiet', airport: 'KXYZ', position: 'XYZ_TWR', mode: 'sim' },
+      ...as(cmsAdmin),
+    })
+    const retired = await payload.update({
+      collection: 'scenarios',
+      id: scenario.id,
+      data: { retired: true },
+      ...as(cmsAdmin),
+    })
+
+    expect(renamed.title).toBe('Radio work')
+    expect(retired.retired).toBe(true)
+  })
+
+  it('publishes a course version', async () => {
+    const course = await payload.create({
+      collection: 'courses',
+      data: { code: 'X-TWR', title: 'Example Tower' },
+    })
+    const draft = await payload.create({
+      collection: 'course-versions',
+      data: { course: course.id, number: 1, status: 'draft' },
+    })
+    const scale = await payload.create({
+      collection: 'grading-scales',
+      data: { name: 'Two point', points: [{ label: 'No' }, { label: 'Yes' }] },
+    })
+    const task = await payload.create({ collection: 'tasks', data: { name: 'Readbacks' } })
+    const plan = await payload.create({
+      collection: 'lesson-plans',
+      data: {
+        courseVersion: draft.id,
+        code: 'X-TWR-1',
+        title: 'Radio',
+        minimum: 2,
+        theoryItems: [{ task: task.id }],
+      },
+    })
+
+    const published = await payload.update({
+      collection: 'course-versions',
+      id: draft.id,
+      data: {
+        gradingScale: scale.id,
+        defaultMinimum: 2,
+        modules: [{ title: 'Tower', lessonPlans: [plan.id] }],
+        status: 'published',
+      },
+      ...as(cmsAdmin),
+    })
+
+    expect(published.status).toBe('published')
   })
 
   it('edits teacher resources', async () => {
@@ -96,10 +186,48 @@ describe('the CMS admin', () => {
     await payload.delete({ collection: 'users', id: created.id, ...as(cmsAdmin) })
     expect(await payload.count({ collection: 'users' })).toEqual({ totalDocs: 2 })
   })
+
+  it('gives the cms:admin and training:admin roles', async () => {
+    const updated = await payload.update({
+      collection: 'users',
+      id: nobody.id,
+      data: { roles: ['cms:admin', 'training:admin'] },
+      ...as(cmsAdmin),
+    })
+    expect(updated.roles).toEqual(['cms:admin', 'training:admin'])
+  })
 })
 
 describe('roles, once a CMS admin exists', () => {
   it('are no longer open to any signed-in account', async () => {
+    const updated = await payload.update({
+      collection: 'users',
+      id: nobody.id,
+      data: { roles: ['cms:admin'] },
+      ...as(nobody),
+    })
+    expect(updated.roles).toEqual([])
+  })
+})
+
+describe('roles, while no account is the CMS admin', () => {
+  beforeEach(async () => {
+    await payload.delete({ collection: 'users', id: cmsAdmin.id })
+  })
+
+  it('are open to any signed-in account while nobody holds an admin role', async () => {
+    const updated = await payload.update({
+      collection: 'users',
+      id: nobody.id,
+      data: { roles: ['cms:admin'] },
+      ...as(nobody),
+    })
+    expect(updated.roles).toEqual(['cms:admin'])
+  })
+
+  it('are closed once a Training Admin exists', async () => {
+    await account('training-admin@example.com', ['training:admin'])
+
     const updated = await payload.update({
       collection: 'users',
       id: nobody.id,
