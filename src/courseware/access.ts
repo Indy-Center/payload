@@ -24,7 +24,7 @@ type Person = Pick<User, 'roles' | 'cid'> | null | undefined
 const person = (req: PayloadRequest) => req.user as Person
 
 /** The Training Admin, or the CMS admin. */
-export const isTrainingAdmin = (user: Person) =>
+export const canAdministerTraining = (user: Person) =>
   isCmsAdmin(user) || Boolean(user?.roles?.includes('training:admin'))
 
 /** The Training Admin, a lead instructor, or the CMS admin. */
@@ -136,7 +136,7 @@ export const userAccess: CollectionConfig['access'] = {
  * account holds either role yet, so that the first one can be given it.
  */
 export const trainingAdminField: FieldAccess = async ({ req }) => {
-  if (isTrainingAdmin(person(req))) return true
+  if (canAdministerTraining(person(req))) return true
   if (!req.user) return false
   const admins = await req.payload.count({
     collection: 'users',

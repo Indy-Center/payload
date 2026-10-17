@@ -1,5 +1,5 @@
 import type { Access } from 'payload'
-import { isTrainingAdmin } from '@/courseware/access'
+import { canAdministerTraining } from '@/courseware/access'
 import type { User } from '@/payload-types'
 
 /**
@@ -7,4 +7,4 @@ import type { User } from '@/payload-types'
  * Admin and the CMS admin alone. training-tools reads it through `GET /api/training/*`, past access.
  */
 export const trainingAdminOnly: Access = ({ req }) =>
-  isTrainingAdmin(req.user as Pick<User, 'roles'> | null)
+  canAdministerTraining(req.user as Pick<User, 'roles'> | null)
