@@ -96,6 +96,19 @@ jobs:
           ENV_COMMUNITY_API_TOKEN: ${{ secrets.ENV_COMMUNITY_API_TOKEN }}
           ENV_TRAINING_API_TOKEN: ${{ secrets.ENV_TRAINING_API_TOKEN }}
         run: |
+          # An empty setting usually means its secret is missing or misnamed (the workflow can't tell
+          # which), so name each one on the run. The settings deploy/.env.example marks Required stop
+          # the deploy; the rest are optional by design and only warn.
+          for key in $(jq -rn 'env | to_entries[] | select(.key | startswith("ENV_")) | select(.value == "") | .key'); do
+            case $key in
+              ENV_PAYLOAD_SECRET|ENV_POSTGRES_PASSWORD)
+                echo "::error title=Required setting is empty::$key is empty: set the repo secret $key"
+                failed=1 ;;
+              *) echo "::warning title=Setting is empty::$key is empty, so ${key#ENV_} is left out of .env" ;;
+            esac
+          done
+          [ -z "${failed:-}" ]
+
           # Values are single-quoted so Compose takes them literally, $ and # included. So a value can't
           # contain a single quote or a newline; if one does, this fails before anything reaches the box.
           # Unset settings arrive empty and are left out, so the app's own defaults apply.
