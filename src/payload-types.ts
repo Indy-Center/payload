@@ -160,9 +160,9 @@ export interface User {
    */
   cid?: string | null;
   /**
-   * training:admin is the Training Admin; training:lead a lead instructor; partners:editor edits the community site’s partners.
+   * cms:admin may do everything; training:admin is the Training Admin; training:lead a lead instructor; partners:editor edits the community site’s partners.
    */
-  roles?: ('training:admin' | 'training:lead' | 'partners:editor')[] | null;
+  roles?: ('cms:admin' | 'training:admin' | 'training:lead' | 'partners:editor')[] | null;
   updatedAt: string;
   createdAt: string;
   email: string;

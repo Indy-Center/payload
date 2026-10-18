@@ -1,5 +1,5 @@
 import type { GlobalConfig, TextFieldSingleValidation } from 'payload'
-import { trainingAdminOnly } from '@/training/access'
+import { trainingAdministratorsOnly } from '@/training/access'
 import { TEACHER_RESOURCE_ICONS } from '@/training/icons'
 
 /**
@@ -18,14 +18,14 @@ const httpsAddress: TextFieldSingleValidation = (value) => {
 
 /**
  * The links every teacher sees on training-tools' `/teach` (training-app decision 0036). Only the
- * Training Admin sees or edits them; training-tools reads them through `GET
+ * Training Admin and the CMS admin see or edit them; training-tools reads them through `GET
  * /api/training/resources`.
  */
 export const TeacherResources: GlobalConfig = {
   slug: 'teacher-resources',
   label: 'Teacher resources',
   admin: { group: 'Training' },
-  access: { read: trainingAdminOnly, update: trainingAdminOnly },
+  access: { read: trainingAdministratorsOnly, update: trainingAdministratorsOnly },
   fields: [
     {
       name: 'resources',

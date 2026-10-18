@@ -1,4 +1,5 @@
 import type { Access, CollectionConfig, FieldAccess, PayloadRequest, Where } from 'payload'
+import { mayActAs, rolesActingAs } from '@/cms-admin'
 import type { User } from '@/payload-types'
 import { idOf } from './ids'
 
@@ -6,7 +7,7 @@ import { idOf } from './ids'
  * Who may do what in courseware (decisions 0018, 0022, 0026, 0039).
  *
  * - The Training Admin (`training:admin`) and lead instructors (`training:lead`) do everything:
- *   edit and publish, keep the task list, retire, and manage CMS accounts.
+ *   edit and publish, keep the task list, retire, and manage CMS accounts. So does the CMS admin.
  * - A course author, named by CID on a course, edits that course's drafts, lesson plans and
  *   scenarios, and nothing else. They cannot publish or retire.
  *
@@ -14,7 +15,7 @@ import { idOf } from './ids'
  * mistaken click must not take it away. Tasks and scenarios are retired instead.
  *
  * The rules read only `user.roles` and `user.cid`. For now those are fields on the CMS's own
- * accounts that only the Training Admin sets; once the CMS signs in through identity (DEV-219)
+ * accounts that only the Training Admin and the CMS admin set; once the CMS signs in through identity (DEV-219)
  * they come from identity, and only sign-in changes.
  */
 export const ROLES = ['training:admin', 'training:lead'] as const
@@ -22,11 +23,11 @@ export const ROLES = ['training:admin', 'training:lead'] as const
 type Person = Pick<User, 'roles' | 'cid'> | null | undefined
 const person = (req: PayloadRequest) => req.user as Person
 
-export const isTrainingAdmin = (user: Person) => Boolean(user?.roles?.includes('training:admin'))
+/** The Training Admin, or the CMS admin. */
+export const canAdministerTraining = (user: Person) => mayActAs(user, 'training:admin')
 
-/** The Training Admin or a lead instructor. */
-export const isStaff = (user: Person) =>
-  Boolean(user?.roles?.some((role) => (ROLES as readonly string[]).includes(role)))
+/** The Training Admin, a lead instructor, or the CMS admin. */
+export const isStaff = (user: Person) => mayActAs(user, ...ROLES)
 
 /** Ids of the courses that name this user's CID as an author. */
 async function authoredCourseIds(req: PayloadRequest): Promise<string[]> {
@@ -116,7 +117,10 @@ export const scenarioAccess = authoredAccess({
 const selfOrStaff: Access = ({ req }) =>
   isStaff(person(req)) || (req.user ? { id: { equals: req.user.id } } : false)
 
-/** CMS accounts are managed by the Training Admin and leads; anyone may read and edit their own. */
+/**
+ * CMS accounts are managed by the Training Admin, leads and the CMS admin; anyone may read and edit
+ * their own.
+ */
 export const userAccess: CollectionConfig['access'] = {
   read: selfOrStaff,
   create: staffOnly,
@@ -125,15 +129,15 @@ export const userAccess: CollectionConfig['access'] = {
 }
 
 /**
- * Roles and CID are set by the Training Admin alone, or by anyone signed in while no account
- * holds `training:admin` yet, so that the first one can be given it.
+ * Roles and CID are set by the Training Admin or the CMS admin, or by anyone signed in while no
+ * account holds either role yet, so that the first one can be given it.
  */
-export const trainingAdminField: FieldAccess = async ({ req }) => {
-  if (isTrainingAdmin(person(req))) return true
+export const trainingAdministratorsField: FieldAccess = async ({ req }) => {
+  if (canAdministerTraining(person(req))) return true
   if (!req.user) return false
   const admins = await req.payload.count({
     collection: 'users',
-    where: { roles: { contains: 'training:admin' } },
+    where: { roles: { in: rolesActingAs('training:admin') } },
     req,
   })
   return admins.totalDocs === 0
