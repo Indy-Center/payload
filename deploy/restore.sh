@@ -9,6 +9,9 @@
 # is lost. The CMS is stopped while it runs. Uploaded files are left alone: they live in R2 (or
 # the media volumes), never in the database, and Payload never overwrites an upload, so the
 # restored database still finds every file it names.
+
+# The single-quoted commands below are expanded inside the db container, not here.
+# shellcheck disable=SC2016
 set -euo pipefail
 
 backup="${1:?usage: bash restore.sh <path to payload.tar>}"
@@ -20,8 +23,11 @@ cd "$(dirname "$0")"
 
 say() { echo "restore.sh: $*"; }
 
-# Removes the copy of the backup from the db container however this script ends.
-trap 'docker compose exec -T db rm -rf /tmp/restore < /dev/null || true' EXIT
+# Where the backup is unpacked inside the db container. Commands run there by in_db get it as
+# $RESTORE_DIR. It is removed however this script ends.
+work=/tmp/restore
+in_db() { docker compose exec -T -e RESTORE_DIR="$work" db "$@"; }
+trap 'in_db rm -rf "$work" < /dev/null || true' EXIT
 
 # 1. Make sure the database is running (after a rebuild it may not be yet), then unpack the
 #    backup inside it and check the dump is readable, all before the CMS is touched. A bad file
@@ -30,10 +36,9 @@ say "starting the database if it isn't running"
 docker compose up -d --wait db
 say "checking $backup"
 unreadable() { say "$backup isn't a readable backup from backup.sh; nothing was changed" >&2; exit 1; }
-docker compose exec -T db sh -c 'rm -rf /tmp/restore && mkdir /tmp/restore && tar -x -C /tmp/restore' \
+in_db sh -c 'rm -rf "$RESTORE_DIR" && mkdir "$RESTORE_DIR" && tar -x -C "$RESTORE_DIR"' \
   < "$backup" || unreadable
-docker compose exec -T db pg_restore --list /tmp/restore/payload.dump < /dev/null > /dev/null \
-  || unreadable
+in_db pg_restore --list "$work/payload.dump" < /dev/null > /dev/null || unreadable
 
 # 2. Stop the CMS, so nothing writes to the database while it is replaced.
 say "stopping the CMS"
@@ -45,12 +50,12 @@ docker compose stop app
 #    This runs against the "postgres" database, since the one being replaced can't be dropped
 #    while connected to it.
 say "replacing the database"
-if ! docker compose exec -T db sh -c '
+if ! in_db sh -c '
   set -eu
   dropdb -U "$POSTGRES_USER" --maintenance-db=postgres --force --if-exists "$POSTGRES_DB"
   createdb -U "$POSTGRES_USER" --maintenance-db=postgres --owner="$POSTGRES_USER" "$POSTGRES_DB"
   pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --no-owner --single-transaction --exit-on-error \
-    /tmp/restore/payload.dump
+    "$RESTORE_DIR/payload.dump"
 ' < /dev/null; then
   # Started against an empty database, the CMS would offer its first-admin sign-up to anyone,
   # so it stays stopped until a restore succeeds.
