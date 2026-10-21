@@ -42,11 +42,13 @@ It holds Indy Center's **courseware**: courses, their versions, modules and less
 - `src/components/admin/`: the admin's custom components: the logo and shield, the Indy Center links and the sidebar footer that `branding.ts` adds, and the teacher resources' row label. After adding one, run `npm run generate:importmap` and commit `src/app/(payload)/admin/importMap.js`.
 - `public/`: the favicons, served from the site root.
 - `tests/int/`: tests that run against a real database.
+- `tests/backup/round-trip.sh`: backs up, wipes and restores the running stack, and checks the content came back. CI runs it; it throws the stack's data away, so never on the VPS.
 - `Dockerfile`: builds the image the VPS runs.
 - `deploy/`: everything deployed to `/home/deploy/apps/payload/` on the VPS, and nothing else.
   - `docker-compose.yml`: the app, its Postgres database, their volumes and the Traefik labels.
   - `.env.example`: the runtime settings the deploy writes to `.env`.
-- `.github/workflows/ci.yml`: two jobs side by side. One runs format, lint, types and tests; the other checks the compose file, builds the image and starts the whole stack on the runner. This goes against [CI shape](https://tech.flyindycenter.com/patterns/ci-shape/), which runs the compose check after the project's own checks: the page was written before a stack like this one, whose image builds from source without anything the checks produce. Side by side, a typo still fails the pull request, only sooner.
+  - `backup.sh` and `restore.sh`: the backup recipe the backup runner runs, and its reverse (see [Backups](#backups)).
+- `.github/workflows/ci.yml`: two jobs side by side. One runs format, lint, types and tests; the other checks the compose file, builds the image, starts the whole stack on the runner, and runs the backup round trip. This goes against [CI shape](https://tech.flyindycenter.com/patterns/ci-shape/), which runs the compose check after the project's own checks: the page was written before a stack like this one, whose image builds from source without anything the checks produce. Side by side, a typo still fails the pull request, only sooner.
 - `.github/workflows/build-and-deploy.yml`: runs CI, pushes the image to `ghcr.io/indy-center/payload`, then rsyncs `deploy/` to the VPS and runs `docker compose up -d` over SSH.
 
 ## Courseware
@@ -96,7 +98,7 @@ The admin is Payload's own, rethemed to sit beside the other Indy Center apps: t
 
 ## Data
 
-The Postgres database lives in the `payload_db-data` Docker volume on the VPS, named after the repository. It is not backed up yet. Renaming the repository starts the app on a new, empty volume.
+The Postgres database lives in the `payload_db-data` Docker volume on the VPS, named after the repository. It is backed up every 6 hours (see [Backups](#backups)). Renaming the repository starts the app on a new, empty volume.
 
 Every record's id is a version 7 UUID, not a counter, so an id stored by another system (training-tools, Jira) means the same record in every copy of the database.
 
@@ -110,6 +112,24 @@ Uploads live in two Cloudflare R2 buckets:
 Don't put anything in `media` that shouldn't be public, including images for pages that aren't published yet. Files over 10 MB are refused.
 
 A bucket is used once all of its `R2_*` settings are present (`deploy/.env.example`). Without them that collection's uploads go to the `payload_media` or `payload_private-media` volume instead, which is what CI and local development do. Files aren't moved when a bucket is switched on or off: uploads made before the switch stop resolving.
+
+## Backups
+
+The VPS's backup runner, deployed from [docker-infrastructure](https://github.com/Indy-Center/docker-infrastructure#backups), backs the CMS up every 6 hours. It runs this repository's recipe, `deploy/backup.sh`, then encrypts the file it writes and sends it to the R2 bucket `indy-center-backups`. The schedule and how long copies are kept are set there, in its `schedule.conf`, not here.
+
+- **The database.** `backup.sh` writes one file, `payload.tar`, while the CMS stays up. It holds `payload.dump`, the whole database from `pg_dump` (including `payload_migrations`, so a restore brings back its schema version), and `row-counts.tsv`, each table's row count from the same moment. The runner's weekly restore check loads the dump into a throwaway database and expects at least those counts.
+- **Uploads.** They aren't in `payload.tar`. Each night the runner adds any new files in `payload-media` and `payload-private` to its media copy, which never deletes, so a database from any backup still finds its files. Uploads kept in the `payload_media` and `payload_private-media` volumes, when the buckets aren't configured, aren't backed up.
+
+**To restore**, follow [Recover one app](https://tech.flyindycenter.com/operations/recover-one-app/) on the docs site: it picks and decrypts a backup with the runner's helpers, then runs `restore.sh`. In short, as `deploy` on the VPS:
+
+```bash
+cd ~/apps/payload
+bash restore.sh /path/to/payload.tar
+```
+
+It checks the file, stops the CMS, replaces the whole database with the backup's, and starts the CMS again. Anything saved since that backup is lost. Uploads are left alone. If loading the backup fails, it leaves the CMS stopped: started on an empty database, the CMS would let anyone create the first admin account.
+
+The round trip (add content, back up, wipe, restore, check) runs in CI on every pull request, so a change that breaks either script fails there. To run it locally, build the image (`docker build -t ghcr.io/indy-center/payload:latest .`), create the network (`docker network create traefik-shared`), start the stack in `deploy/` with `PAYLOAD_SECRET` and `POSTGRES_PASSWORD` set to any test values and `docker compose up -d`, then run `bash tests/backup/round-trip.sh`. It throws the stack's data away.
 
 ## Local development
 
