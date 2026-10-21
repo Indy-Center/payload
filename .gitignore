@@ -27,6 +27,23 @@ npm-debug.log*
 /media
 /private-media
 
+# Courseware stays out of this public repository. VATUSA's import sheets, as CSV or spreadsheets:
+# only the made-up test fixtures are committed.
+*.csv
+*.xlsx
+*.xls
+*.ods
+!/tests/int/courseware/fixtures/sheets/*.csv
+/sheets/
+# Content exports, and backups fetched for a restore (deploy/backup.sh writes payload.tar)
+/exports/
+/backups/
+*.dump
+*.sql
+*.tar
+*.tar.gz
+*.age
+
 # AI assistant files
 .ai/
 .claude/
