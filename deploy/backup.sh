@@ -13,10 +13,13 @@
 #                      and expects at least these counts.
 #
 # The CMS stays up throughout. Uploaded files are not in it: they live in R2, and the runner's
-# media copy keeps them. Encrypting, uploading and pruning are the runner's job, not this script's.
+# media copy keeps them (uploads in the local media volumes, used only when R2 isn't configured,
+# aren't backed up). Encrypting, uploading and pruning are the runner's job, not this script's.
 #
 #   bash backup.sh <empty folder>
 set -euo pipefail
+# The archive is the whole database, password hashes included: only its owner may read it.
+umask 077
 
 out="${1:?usage: bash backup.sh <empty folder>}"
 [ -d "$out" ] || { echo "backup.sh: $out is not a folder" >&2; exit 1; }
@@ -74,8 +77,11 @@ SH
 )
 
 # Write to a temporary name and rename once complete, so a failure never leaves a partial archive
-# where the runner would take it for a backup.
+# where the runner would take it for a backup, even when the runner stops this script.
+trap 'rm -f "$out/payload.tar.partial"' EXIT
+trap 'exit 143' TERM
+trap 'exit 130' INT
 docker compose exec -T db sh -c "$dump_in_container" > "$out/payload.tar.partial" < /dev/null \
-  || { rm -f "$out/payload.tar.partial"; echo "backup.sh: the database dump failed" >&2; exit 1; }
+  || { echo "backup.sh: the database dump failed" >&2; exit 1; }
 mv "$out/payload.tar.partial" "$out/payload.tar"
 echo "backup.sh: wrote $out/payload.tar ($(du -h "$out/payload.tar" | cut -f1))"
