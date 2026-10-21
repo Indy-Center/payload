@@ -77,7 +77,10 @@ echo "--- Lose the database: remove the stack and its volumes, and start it empt
 docker compose down --volumes
 docker compose up -d --wait
 # The empty database has no account yet; this request also runs the migrations on it.
-wait_for_app | grep -q '"initialized":false' || fail "the wiped database still has an account"
+init="$(wait_for_app)"
+grep -q '"initialized":false' <<< "$init" || fail "the wiped database still has an account"
+# Then remove it all again, as on a rebuilt VPS: restore.sh starts from no containers at all.
+docker compose down --volumes
 
 echo "--- Restore"
 bash restore.sh "$work/out/payload.tar" || fail "restore.sh exited $?"

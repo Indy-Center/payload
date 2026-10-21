@@ -72,7 +72,8 @@ rm -f restore-failed
 # 4. Start the CMS again, and wait up to 3 minutes for it to answer from the restored database.
 #    Its first request also runs any migrations newer than the backup, which can take a while.
 say "starting the CMS"
-docker compose start app
+# up, not start: after a rebuild there is no app container yet to start.
+docker compose up -d app
 for _ in $(seq 90); do
   if docker compose exec -T app node -e '
     fetch("http://127.0.0.1:3000/api/users/init")
