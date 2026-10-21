@@ -120,14 +120,30 @@ The VPS's backup runner, deployed from [docker-infrastructure](https://github.co
 - **The database.** `backup.sh` writes one file, `payload.tar`, while the CMS stays up. It holds `payload.dump`, the whole database from `pg_dump` (including `payload_migrations`, so a restore brings back its schema version), and `row-counts.tsv`, each table's row count from the same moment. The runner's weekly restore check loads the dump into a throwaway database and expects at least those counts.
 - **Uploads.** They aren't in `payload.tar`. Each night the runner adds any new files in `payload-media` and `payload-private` to its media copy, which never deletes, so a database from any backup still finds its files. Uploads kept in the `payload_media` and `payload_private-media` volumes, when the buckets aren't configured, aren't backed up.
 
-**To restore**, follow [Recover one app](https://tech.flyindycenter.com/operations/recover-one-app/) on the docs site: it picks and decrypts a backup with the runner's helpers, then runs `restore.sh`. In short, as `deploy` on the VPS:
+**To restore**, as `deploy` on the VPS. A "Recover one app" runbook, with helper commands for these steps, is coming to the docs site's Operations section; until then:
 
 ```bash
+# The runner's own rclone and age, and its R2 key.
+export PATH=~/backup-runner/bin:$PATH RCLONE_CONFIG=~/backup-runner/secrets/rclone.conf
+
+# 1. Pick a backup. Names start with their UTC time; frequent/ has the last 14 days,
+#    daily/ and monthly/ go further back.
+rclone lsf r2:indy-center-backups/frequent/payload/
+
+# 2. Fetch it and decrypt it with the runner's age key.
+mkdir -p ~/restore-payload
+rclone copy r2:indy-center-backups/frequent/payload/<name>.age ~/restore-payload/
+age -d -i ~/backup-runner/secrets/age.key -o ~/restore-payload/payload.tar ~/restore-payload/<name>.age
+
+# 3. Restore it, then delete the unencrypted copy.
 cd ~/apps/payload
-bash restore.sh /path/to/payload.tar
+bash restore.sh ~/restore-payload/payload.tar
+rm -rf ~/restore-payload
 ```
 
-It checks the file, stops the CMS, replaces the whole database with the backup's, and starts the CMS again. Anything saved since that backup is lost. Uploads are left alone. If loading the backup fails, it leaves the CMS stopped: started on an empty database, the CMS would let anyone create the first admin account.
+`restore.sh` checks the file, stops the CMS, replaces the whole database with the backup's, and starts the CMS again. Anything saved since that backup is lost. Uploads are left alone.
+
+If loading the backup fails, it leaves the CMS stopped, because started on an empty database the CMS would let anyone create the first admin account. It also leaves a `restore-failed` file in `~/apps/payload/`, and while that is there **Build and Deploy** fails before touching the box. Don't start the CMS or deploy by hand until a restore succeeds: fix the cause and run `restore.sh` again, which removes the file.
 
 The round trip (add content, back up, wipe, restore, check) runs in CI on every pull request, so a change that breaks either script fails there. To run it locally, build the image (`docker build -t ghcr.io/indy-center/payload:latest .`), create the network (`docker network create traefik-shared`), start the stack in `deploy/` with `PAYLOAD_SECRET` and `POSTGRES_PASSWORD` set to any test values and `docker compose up -d`, then run `bash tests/backup/round-trip.sh`. It throws the stack's data away.
 
