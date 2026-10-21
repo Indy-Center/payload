@@ -5,6 +5,9 @@
 #   payload.tar
 #     payload.dump     the whole database, from pg_dump in its custom format. It includes the
 #                      payload_migrations table, so a restore brings back its schema version too.
+#                      It also sets every table's owner to the payload role, so loading it
+#                      anywhere without that role (a scratch database, the restore check) needs
+#                      `pg_restore --no-owner`, or a payload role created first.
 #     row-counts.tsv   each table and its number of rows, one "table<TAB>rows" line each, taken
 #                      from the same moment as the dump. The weekly restore check loads the dump
 #                      and expects at least these counts.
