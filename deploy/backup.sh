@@ -17,6 +17,8 @@ set -euo pipefail
 
 out="${1:?usage: bash backup.sh <empty folder>}"
 [ -d "$out" ] || { echo "backup.sh: $out is not a folder" >&2; exit 1; }
+# Made absolute before the cd below, so a folder given relative to where it was called still works.
+out="$(cd "$out" && pwd)"
 
 # Run from this script's folder, so `docker compose` finds this app's compose file.
 cd "$(dirname "$0")"
