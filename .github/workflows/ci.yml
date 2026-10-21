@@ -131,3 +131,8 @@ jobs:
               })
               .catch((err) => { console.error(err); process.exit(1); });
           "
+
+      # deploy/backup.sh and restore.sh, as the backup runner uses them: add content, back up, lose
+      # the database, restore, and check the content is back. Last, since it throws the data away.
+      - name: Backup and restore round trip
+        run: bash tests/backup/round-trip.sh
