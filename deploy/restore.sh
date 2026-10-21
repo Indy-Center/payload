@@ -40,8 +40,12 @@ in_db sh -c 'rm -rf "$RESTORE_DIR" && mkdir "$RESTORE_DIR" && tar -x -C "$RESTOR
   < "$backup" || unreadable
 in_db pg_restore --list "$work/payload.dump" < /dev/null > /dev/null || unreadable
 
-# 2. Stop the CMS, so nothing writes to the database while it is replaced.
+# 2. Stop the CMS, so nothing writes to the database while it is replaced. From here until the
+#    load succeeds, the restore-failed marker in this folder stops the deploy (build-and-deploy.yml)
+#    starting the CMS on a missing or half-loaded database. It stays if this script fails or is
+#    interrupted.
 say "stopping the CMS"
+touch restore-failed
 docker compose stop app
 
 # 3. Replace the database: drop it (closing any connections left), create it empty, and load the
@@ -58,10 +62,12 @@ if ! in_db sh -c '
     "$RESTORE_DIR/payload.dump"
 ' < /dev/null; then
   # Started against an empty database, the CMS would offer its first-admin sign-up to anyone,
-  # so it stays stopped until a restore succeeds.
-  say "the restore failed, so the CMS is left stopped. Fix the cause and run restore.sh again" >&2
+  # so it stays stopped until a restore succeeds, and deploys refuse to start it.
+  say "the restore failed, so the CMS is left stopped, and deploys will refuse to start it." >&2
+  say "Fix the cause and run restore.sh again. Don't start the CMS by hand on this database." >&2
   exit 1
 fi
+rm -f restore-failed
 
 # 4. Start the CMS again, and wait up to 3 minutes for it to answer from the restored database.
 #    Its first request also runs any migrations newer than the backup, which can take a while.

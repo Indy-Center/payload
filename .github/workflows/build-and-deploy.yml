@@ -72,9 +72,19 @@ jobs:
             BatchMode yes
           EOF
 
-      # --delete removes files dropped from deploy/; excluded files (.env) are never deleted.
+      # deploy/restore.sh leaves a restore-failed marker while the database is missing or half
+      # loaded. Starting the CMS on it would open first-admin sign-up to anyone, so don't deploy.
+      - name: No unfinished restore
+        run: |
+          if ssh vps "test -e apps/$APP/restore-failed"; then
+            echo "::error title=Unfinished restore::A restore of the CMS failed or is running. Finish it with deploy/restore.sh (README, Backups), then re-run this deploy."
+            exit 1
+          fi
+
+      # --delete removes files dropped from deploy/; excluded files (.env, the restore marker) are
+      # never deleted.
       - name: Sync deploy/ to ~/apps/<app>/
-        run: rsync -rlz --delete --exclude=.env --exclude=.env.example deploy/ "vps:apps/$APP/"
+        run: rsync -rlz --delete --exclude=.env --exclude=.env.example --exclude=restore-failed deploy/ "vps:apps/$APP/"
 
       # Writes ~/apps/<app>/.env from the ENV_* settings listed below: ENV_<NAME> becomes NAME='value'.
       # The deploy owns that file and rewrites it every time, so a value changes by updating its secret

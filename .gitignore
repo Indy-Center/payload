@@ -43,6 +43,8 @@ npm-debug.log*
 *.tar
 *.tar.gz
 *.age
+# Left by a failed restore (deploy/restore.sh); it stops the deploy
+/deploy/restore-failed
 
 # AI assistant files
 .ai/
