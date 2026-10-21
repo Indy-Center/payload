@@ -56,7 +56,8 @@ api POST /api/partner-categories "{\"name\":\"$category\",\"blurb\":\"Made by th
 
 echo "--- Back up"
 mkdir "$work/out"
-bash backup.sh "$work/out" || fail "backup.sh exited $?"
+# Called from elsewhere with a relative folder, as a person might.
+(cd "$work" && bash "$OLDPWD/backup.sh" out) || fail "backup.sh exited $?"
 files="$(ls -A "$work/out")"
 [ "$files" = payload.tar ] || fail "backup.sh should write payload.tar alone, but wrote: ${files:-nothing}"
 
@@ -80,9 +81,11 @@ wait_for_app | grep -q '"initialized":false' || fail "the wiped database still h
 
 echo "--- Restore"
 bash restore.sh "$work/out/payload.tar" || fail "restore.sh exited $?"
+[ ! -e restore-failed ] || fail "restore.sh succeeded but left its restore-failed marker"
 
+# restore.sh only returns once the app answers, so no waiting here.
 echo "--- The content is back"
-wait_for_app | grep -q '"initialized":true' || fail "/api/users/init says no account exists"
+api GET /api/users/init | grep -q '"initialized":true' || fail "/api/users/init says no account exists"
 token="$(api POST /api/users/login "{\"email\":\"$email\",\"password\":\"$password\"}" | jq -r .token)" \
   || fail "the restored account can't sign in"
 api GET /api/partner-categories '' "$token" | jq -e --arg name "$category" \
