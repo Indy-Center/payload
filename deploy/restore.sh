@@ -63,10 +63,11 @@ if ! in_db sh -c '
   exit 1
 fi
 
-# 4. Start the CMS again, and wait for it to answer from the restored database.
+# 4. Start the CMS again, and wait up to 3 minutes for it to answer from the restored database.
+#    Its first request also runs any migrations newer than the backup, which can take a while.
 say "starting the CMS"
 docker compose start app
-for _ in $(seq 30); do
+for _ in $(seq 90); do
   if docker compose exec -T app node -e '
     fetch("http://127.0.0.1:3000/api/users/init")
       .then((res) => process.exit(res.ok ? 0 : 1))
@@ -77,5 +78,5 @@ for _ in $(seq 30); do
   fi
   sleep 2
 done
-say "the database was restored, but the CMS hasn't answered in a minute: see docker compose logs app" >&2
+say "the database was restored, but the CMS hasn't answered in 3 minutes: see docker compose logs app" >&2
 exit 1
