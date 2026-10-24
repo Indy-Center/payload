@@ -140,7 +140,7 @@ describe('the one-document course version', () => {
     expect(status).toBe(404)
   })
 
-  it('refuses a request without the library credential', async () => {
+  it('refuses a request with no credential or a wrong one', async () => {
     await courseWithVersion('published')
 
     const none = await callEndpoint(payload, '/courseware/courses/X-TWR/current', { token: null })
