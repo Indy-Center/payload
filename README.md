@@ -27,7 +27,7 @@ It holds Indy Center's **courseware**: courses, their versions, modules and less
 - `next.config.ts`: the Next.js config, including the redirect from `/` to `/admin`.
 - `src/collections/`: one file per collection.
 - `src/collections/courseware/`: the courseware collections.
-- `src/courseware/`: the rules they share: who may do what (`access.ts`), the task tree and its numbers, expanding a parent task into rows, publishing and the frozen shape, the reads for the library, and the framework import.
+- `src/courseware/`: the rules they share: who may do what (`access.ts`), the task tree and its numbers, expanding a parent task into rows, publishing and the frozen shape, the reads for the library and training-tools, and the framework import.
 - `src/collections/partners/`: the partner categories and partners collections.
 - `src/partners/`: who may edit partners (`access.ts`), the rules for their logo, banner and gallery (`images.ts`), their links and member perks (`links.ts`), what publishing needs (`publishing.ts`), and the community site's read and its shape.
 - `src/globals/`: one file per Global: Teacher resources.
