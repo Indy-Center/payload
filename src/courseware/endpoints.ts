@@ -9,10 +9,15 @@ import {
 
 /**
  * Whether the request carries the library's server credential, `LIBRARY_API_TOKEN`, as a bearer
- * token. These reads include teacher notes and course authors, so they are for the library's
- * server alone.
+ * token. These reads include teacher notes and course authors, so they are for servers alone.
  */
 const fromLibrary = (req: PayloadRequest) => hasBearerToken(req, process.env.LIBRARY_API_TOKEN)
+
+/**
+ * Whether the request carries training-tools' server credential, `TRAINING_API_TOKEN`. Each app
+ * reads with its own key, so a read accepts it only if training-tools makes that read.
+ */
+const fromTraining = (req: PayloadRequest) => hasBearerToken(req, process.env.TRAINING_API_TOKEN)
 
 const notFound = () => Response.json({ error: 'Not found' }, { status: 404 })
 
@@ -37,7 +42,7 @@ export const coursewareEndpoints: Endpoint[] = [
     path: '/courseware/courses/:code/:which',
     method: 'get',
     handler: async (req) => {
-      if (!fromLibrary(req)) return unauthorized()
+      if (!fromLibrary(req) && !fromTraining(req)) return unauthorized()
       const { code, which } = req.routeParams as { code: string; which: string }
       if (which !== 'current' && which !== 'draft') return notFound()
 

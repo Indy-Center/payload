@@ -2,6 +2,9 @@ import type { Payload } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { callEndpoint, paragraph, resetDatabase, testPayload } from './helpers'
 
+const TRAINING_TOKEN = 'test-training-token'
+process.env.TRAINING_API_TOKEN = TRAINING_TOKEN
+
 let payload: Payload
 
 beforeAll(async () => {
@@ -148,6 +151,19 @@ describe('the one-document course version', () => {
     expect(none.status).toBe(401)
     expect(wrong.status).toBe(401)
   })
+
+  it("answers training-tools' credential as it does the library's", async () => {
+    const { version } = await courseWithVersion('published')
+
+    const fromLibrary = await callEndpoint(payload, '/courseware/courses/X-TWR/current')
+    const fromTraining = await callEndpoint(payload, '/courseware/courses/X-TWR/current', {
+      token: TRAINING_TOKEN,
+    })
+
+    expect(fromTraining.status).toBe(200)
+    expect(fromTraining.body.version).toMatchObject({ id: version.id, status: 'published' })
+    expect(fromTraining.body).toEqual(fromLibrary.body)
+  })
 })
 
 describe('the course list', () => {
@@ -188,6 +204,19 @@ describe('the course list', () => {
   it('refuses a request without the library credential', async () => {
     const { status } = await callEndpoint(payload, '/courseware/courses', { token: null })
     expect(status).toBe(401)
+  })
+})
+
+describe('the reads training-tools does not make', () => {
+  it("refuse training-tools' credential", async () => {
+    await courseWithVersion('published')
+
+    for (const path of ['/courseware/courses', '/courseware/catalogue']) {
+      expect(await callEndpoint(payload, path, { token: TRAINING_TOKEN })).toEqual({
+        status: 401,
+        body: { error: 'Unauthorized' },
+      })
+    }
   })
 })
 
