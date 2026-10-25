@@ -187,7 +187,7 @@ npm test               # needs the local database
 
 Before the first deploy:
 
-1. An org admin adds this repository to the organization's `VANDERBILT_*` variables and secrets (all four).
+1. An org admin adds this repository to the organization's four settings for the server it runs on, named by `SERVER` at the top of `build-and-deploy.yml`: `ALEXANDRIA_HOST`, `ALEXANDRIA_DEPLOY_USER`, `ALEXANDRIA_DEPLOY_SSH_KEY` and `ALEXANDRIA_KNOWN_HOSTS`. The deploy's first step names any it can't see.
 2. Set the repository's `ENV_*` secrets and variables; `deploy/.env.example` describes each one. Keep the source copies in 1Password.
 3. If the VPS can't pull the image, GHCR created the package private. Make `ghcr.io/indy-center/payload` public in the package's settings and re-run the workflow.
 4. Open <https://cms.flyindycenter.com/admin> straight away and create the first admin account. Until someone does, anyone who finds the address can.
