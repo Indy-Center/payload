@@ -175,5 +175,9 @@ jobs:
 
       # Payload connects to its database and runs new migrations on the first request, not at start,
       # so a container that stays up proves neither. This request does, through Traefik.
+      # It goes to the server just deployed to, not wherever DNS points: while the CMS moves between
+      # servers, DNS still names the old one.
       - name: App answers from its database
-        run: curl -fsS --retry 6 --retry-delay 10 --retry-all-errors "$URL/api/users/init"
+        env:
+          HOST: ${{ vars[format('{0}_HOST', env.SERVER)] }}
+        run: curl -fsS --retry 6 --retry-delay 10 --retry-all-errors --connect-to "::$HOST:" "$URL/api/users/init"
