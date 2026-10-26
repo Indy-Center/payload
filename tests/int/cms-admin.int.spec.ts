@@ -106,7 +106,13 @@ describe('the CMS admin', () => {
     })
     const scenario = await payload.create({
       collection: 'scenarios',
-      data: { course: course.id, name: 'Quiet', airport: 'KXYZ', position: 'XYZ_TWR', mode: 'sim' },
+      data: {
+        course: course.id,
+        name: 'Quiet',
+        airport: 'KXYZ',
+        studentPosition: 'XYZ_TWR',
+        mode: 'sim',
+      },
       ...as(cmsAdmin),
     })
     const retired = await payload.update({

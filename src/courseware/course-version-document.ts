@@ -177,8 +177,9 @@ function scenario(record: ScenarioRecord, tree: TaskTree): Scenario {
     id: record.id,
     name: record.name,
     airport: record.airport,
-    position: record.position,
-    difficulty: record.difficulty ?? '',
+    studentPosition: record.studentPosition,
+    teacherPosition: record.teacherPosition || null,
+    difficulty: record.difficulty ?? null,
     mode: record.mode,
     retired: record.retired ?? false,
     practicalTasks: (record.practicalTasks ?? []).map((row) => ({

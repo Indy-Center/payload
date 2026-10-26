@@ -12,6 +12,7 @@ import * as migration_20261016_173341_teacher_resources from './20261016_173341_
 import * as migration_20261016_180115_teacher_resource_descriptions_and_icons from './20261016_180115_teacher_resource_descriptions_and_icons';
 import * as migration_20261017_194306_cms_admin_role from './20261017_194306_cms_admin_role';
 import * as migration_20261026_014802_sources_replace_references from './20261026_014802_sources_replace_references';
+import * as migration_20261026_021707_scenario_positions_and_difficulty from './20261026_021707_scenario_positions_and_difficulty';
 
 export const migrations = [
   {
@@ -82,6 +83,11 @@ export const migrations = [
   {
     up: migration_20261026_014802_sources_replace_references.up,
     down: migration_20261026_014802_sources_replace_references.down,
-    name: '20261026_014802_sources_replace_references'
+    name: '20261026_014802_sources_replace_references',
+  },
+  {
+    up: migration_20261026_021707_scenario_positions_and_difficulty.up,
+    down: migration_20261026_021707_scenario_positions_and_difficulty.down,
+    name: '20261026_021707_scenario_positions_and_difficulty'
   },
 ];
