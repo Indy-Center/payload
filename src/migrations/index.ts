@@ -16,6 +16,7 @@ import * as migration_20261026_021707_scenario_positions_and_difficulty from './
 import * as migration_20261026_024810_course_enrolment_facts from './20261026_024810_course_enrolment_facts';
 import * as migration_20261026_030346_credentials from './20261026_030346_credentials';
 import * as migration_20261026_032117_course_prerequisites_and_credential_issued from './20261026_032117_course_prerequisites_and_credential_issued';
+import * as migration_20261026_034520_edition_numbers from './20261026_034520_edition_numbers';
 
 export const migrations = [
   {
@@ -106,6 +107,11 @@ export const migrations = [
   {
     up: migration_20261026_032117_course_prerequisites_and_credential_issued.up,
     down: migration_20261026_032117_course_prerequisites_and_credential_issued.down,
-    name: '20261026_032117_course_prerequisites_and_credential_issued'
+    name: '20261026_032117_course_prerequisites_and_credential_issued',
+  },
+  {
+    up: migration_20261026_034520_edition_numbers.up,
+    down: migration_20261026_034520_edition_numbers.down,
+    name: '20261026_034520_edition_numbers'
   },
 ];
