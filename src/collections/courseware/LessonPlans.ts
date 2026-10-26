@@ -2,7 +2,7 @@ import type { CollectionConfig, FilterOptions, Where } from 'payload'
 import { lexicalEditor, UploadFeature } from '@payloadcms/richtext-lexical'
 import { lessonPlanAccess } from '@/courseware/access'
 import { idOf } from '@/courseware/ids'
-import { refuseLessonPlanShapeChange } from '@/courseware/publishing'
+import { refuseAuthorsLessonPlanStructure } from '@/courseware/structure'
 import { expandTaskRows, pickableTask } from '@/courseware/task-rows'
 
 /**
@@ -41,7 +41,11 @@ export const LessonPlans: CollectionConfig = {
   hooks: {
     beforeChange: [
       async ({ data, operation, originalDoc, req }) => {
-        await refuseLessonPlanShapeChange(req, data, operation === 'update' ? originalDoc : null)
+        await refuseAuthorsLessonPlanStructure(
+          req,
+          data,
+          operation === 'update' ? originalDoc : null,
+        )
         if (operation === 'create' && data.minimum == null && data.courseVersion) {
           const version = await req.payload.findByID({
             collection: 'course-versions',
