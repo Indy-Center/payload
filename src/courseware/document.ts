@@ -68,8 +68,27 @@ export type LessonPlan = {
 
 export type Module = { id: string; title: string; description: string; lessonPlans: LessonPlan[] }
 
+export type PositionType = 'DEL' | 'GND' | 'TWR' | 'APP' | 'DEP' | 'CTR' | 'FSS'
+
 export type CourseVersionDocument = {
-  course: { id: string; code: string; title: string; authors: string[] }
+  /** The course, with what a student must do before enrolling and what it involves (0054). */
+  course: {
+    id: string
+    code: string
+    title: string
+    authors: string[]
+    prerequisitesNote: string
+    /** Hours counted across all the listed position types together; null when none is asked. */
+    consolidation: { hours: number; positionTypes: PositionType[] } | null
+    /** The rating exam the course ends in. */
+    ratingExam: 'S1' | 'S2' | 'S3' | 'C1' | null
+    /** The VATUSA Academy exam a student passes before training. */
+    academyExam: 'S2' | 'S3' | 'C1' | null
+    estimatedWeeks: { min: number; max: number } | null
+    examOptional: boolean
+    /** An https link. */
+    moodleUrl: string | null
+  }
   version: {
     id: string
     number: number
@@ -77,7 +96,8 @@ export type CourseVersionDocument = {
     description: string
     /** Minutes. */
     time: number | null
-    academyRequired: boolean
+    /** What a student must do to finish this edition. */
+    completionStandard: string
     updatedAt: string
   }
   scale: { id: string; name: string; points: GradePoint[] } | null

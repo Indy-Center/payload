@@ -13,6 +13,7 @@ import * as migration_20261016_180115_teacher_resource_descriptions_and_icons fr
 import * as migration_20261017_194306_cms_admin_role from './20261017_194306_cms_admin_role';
 import * as migration_20261026_014802_sources_replace_references from './20261026_014802_sources_replace_references';
 import * as migration_20261026_021707_scenario_positions_and_difficulty from './20261026_021707_scenario_positions_and_difficulty';
+import * as migration_20261026_024810_course_enrolment_facts from './20261026_024810_course_enrolment_facts';
 
 export const migrations = [
   {
@@ -88,6 +89,11 @@ export const migrations = [
   {
     up: migration_20261026_021707_scenario_positions_and_difficulty.up,
     down: migration_20261026_021707_scenario_positions_and_difficulty.down,
-    name: '20261026_021707_scenario_positions_and_difficulty'
+    name: '20261026_021707_scenario_positions_and_difficulty',
+  },
+  {
+    up: migration_20261026_024810_course_enrolment_facts.up,
+    down: migration_20261026_024810_course_enrolment_facts.down,
+    name: '20261026_024810_course_enrolment_facts'
   },
 ];

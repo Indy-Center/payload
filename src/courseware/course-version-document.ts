@@ -140,6 +140,23 @@ export async function buildCourseVersionDocument(
       code: course.code,
       title: course.title,
       authors: course.authors ?? [],
+      prerequisitesNote: course.prerequisitesNote ?? '',
+      // Saving keeps hours and position types together, so hours alone say whether it is set.
+      consolidation:
+        course.consolidation?.hours != null
+          ? {
+              hours: course.consolidation.hours,
+              positionTypes: course.consolidation.positionTypes ?? [],
+            }
+          : null,
+      ratingExam: course.ratingExam === 'none' ? null : (course.ratingExam ?? null),
+      academyExam: course.academyExam === 'none' ? null : (course.academyExam ?? null),
+      estimatedWeeks:
+        course.estimatedWeeks?.min != null && course.estimatedWeeks.max != null
+          ? { min: course.estimatedWeeks.min, max: course.estimatedWeeks.max }
+          : null,
+      examOptional: course.examOptional ?? false,
+      moodleUrl: course.moodleUrl || null,
     },
     version: {
       id: version.id,
@@ -147,7 +164,7 @@ export async function buildCourseVersionDocument(
       status: version.status,
       description: version.description ?? '',
       time: version.time ?? null,
-      academyRequired: version.academyRequired ?? false,
+      completionStandard: version.completionStandard ?? '',
       updatedAt: version.updatedAt,
     },
     scale: scale ? { id: scale.id, name: scale.name, points } : null,
