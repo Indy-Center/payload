@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { courseVersionAccess, staffOnlyField } from '@/courseware/access'
 import { idOf } from '@/courseware/ids'
-import { refuseUnpublishable, refuseVersionShapeChange } from '@/courseware/publishing'
+import { refuseScaleChange, refuseUnpublishable } from '@/courseware/publishing'
 
 export const CourseVersions: CollectionConfig = {
   slug: 'course-versions',
@@ -14,7 +14,7 @@ export const CourseVersions: CollectionConfig = {
   hooks: {
     beforeChange: [
       async ({ data, originalDoc, req }) => {
-        refuseVersionShapeChange(data, originalDoc)
+        refuseScaleChange(data, originalDoc)
         if (data.status === 'published' && originalDoc?.status !== 'published') {
           await refuseUnpublishable(req, data)
         }
@@ -74,7 +74,7 @@ export const CourseVersions: CollectionConfig = {
       admin: {
         position: 'sidebar',
         description:
-          'Choose Published and save to publish: the version is checked, becomes the course’s current version, and its shape is frozen.',
+          'Choose Published and save to publish: the version is checked, becomes the course’s current version, and its grading scale is fixed.',
       },
     },
     { name: 'description', type: 'textarea' },

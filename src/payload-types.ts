@@ -488,7 +488,7 @@ export interface CourseVersion {
   course: string | Course;
   number: number;
   /**
-   * Choose Published and save to publish: the version is checked, becomes the course’s current version, and its shape is frozen.
+   * Choose Published and save to publish: the version is checked, becomes the course’s current version, and its grading scale is fixed.
    */
   status: 'draft' | 'published';
   description?: string | null;

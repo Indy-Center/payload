@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { scenarioAccess, staffOnlyField } from '@/courseware/access'
 import { hideRetiredUnlessAsked } from '@/courseware/retired'
+import { refuseAuthorsScenarioStructure } from '@/courseware/structure'
 import { expandTaskRows, pickableTask } from '@/courseware/task-rows'
 
 /**
@@ -31,7 +32,8 @@ export const Scenarios: CollectionConfig = {
   access: scenarioAccess,
   hooks: {
     beforeChange: [
-      async ({ data, originalDoc, req }) => {
+      async ({ data, operation, originalDoc, req }) => {
+        await refuseAuthorsScenarioStructure(req, data, operation === 'update' ? originalDoc : null)
         data.practicalTasks = await expandTaskRows(
           req,
           data.practicalTasks,
