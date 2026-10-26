@@ -72,7 +72,7 @@ export interface Config {
     'private-media': PrivateMedia;
     frameworks: Framework;
     competencies: Competency;
-    references: Reference;
+    sources: Source;
     tasks: Task;
     'grading-scales': GradingScale;
     courses: Course;
@@ -97,7 +97,7 @@ export interface Config {
     'private-media': PrivateMediaSelect<false> | PrivateMediaSelect<true>;
     frameworks: FrameworksSelect<false> | FrameworksSelect<true>;
     competencies: CompetenciesSelect<false> | CompetenciesSelect<true>;
-    references: ReferencesSelect<false> | ReferencesSelect<true>;
+    sources: SourcesSelect<false> | SourcesSelect<true>;
     tasks: TasksSelect<false> | TasksSelect<true>;
     'grading-scales': GradingScalesSelect<false> | GradingScalesSelect<true>;
     courses: CoursesSelect<false> | CoursesSelect<true>;
@@ -306,17 +306,13 @@ export interface Competency {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "references".
+ * via the `definition` "sources".
  */
-export interface Reference {
+export interface Source {
   id: string;
   name: string;
   edition?: string | null;
-  url?: string | null;
-  /**
-   * Uploaded documents are public.
-   */
-  document?: (string | null) | Media;
+  url: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -350,9 +346,9 @@ export interface Task {
     | null;
   citations?:
     | {
-        reference: string | Reference;
+        source: string | Source;
         /**
-         * Where in the reference, such as 3-7-2.
+         * Where in the source, such as 3-7-2.
          */
         section?: string | null;
         id?: string | null;
@@ -670,8 +666,8 @@ export interface PayloadLockedDocument {
         value: string | Competency;
       } | null)
     | ({
-        relationTo: 'references';
-        value: string | Reference;
+        relationTo: 'sources';
+        value: string | Source;
       } | null)
     | ({
         relationTo: 'tasks';
@@ -886,13 +882,12 @@ export interface CompetenciesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "references_select".
+ * via the `definition` "sources_select".
  */
-export interface ReferencesSelect<T extends boolean = true> {
+export interface SourcesSelect<T extends boolean = true> {
   name?: T;
   edition?: T;
   url?: T;
-  document?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -916,7 +911,7 @@ export interface TasksSelect<T extends boolean = true> {
   citations?:
     | T
     | {
-        reference?: T;
+        source?: T;
         section?: T;
         id?: T;
       };

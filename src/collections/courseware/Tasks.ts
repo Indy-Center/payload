@@ -84,11 +84,11 @@ export const Tasks: CollectionConfig = {
       name: 'citations',
       type: 'array',
       fields: [
-        { name: 'reference', type: 'relationship', relationTo: 'references', required: true },
+        { name: 'source', type: 'relationship', relationTo: 'sources', required: true },
         {
           name: 'section',
           type: 'text',
-          admin: { description: 'Where in the reference, such as 3-7-2.' },
+          admin: { description: 'Where in the source, such as 3-7-2.' },
         },
       ],
     },
