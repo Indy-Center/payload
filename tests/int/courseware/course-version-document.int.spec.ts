@@ -29,7 +29,7 @@ async function courseWithVersion(status: 'draft' | 'published' = 'draft') {
       status: 'draft',
       description: 'The first edition',
       time: 600,
-      academyRequired: true,
+      completionStandard: 'Pass every lesson plan.',
     },
   })
   const first = await payload.create({
@@ -91,14 +91,22 @@ describe('the one-document course version', () => {
       code: 'X-TWR',
       title: 'Example Tower',
       authors: ['1000001'],
+      prerequisitesNote: '',
+      consolidation: null,
+      ratingExam: null,
+      academyExam: null,
+      estimatedWeeks: null,
+      examOptional: false,
+      moodleUrl: null,
     })
-    expect(body.version).toMatchObject({
+    expect(body.version).toEqual({
       id: version.id,
       number: 1,
       status: 'draft',
       description: 'The first edition',
       time: 600,
-      academyRequired: true,
+      completionStandard: 'Pass every lesson plan.',
+      updatedAt: expect.any(String),
     })
     expect(body.modules).toHaveLength(1)
     expect(body.modules[0]).toMatchObject({ title: 'Tower', description: 'Working the tower' })
@@ -114,6 +122,39 @@ describe('the one-document course version', () => {
       isExam: false,
     })
     expect(body.modules[0].lessonPlans[1].bodyHtml).toContain('Read about runways.')
+  })
+
+  it("carries the course's enrolment facts, exams as their rating", async () => {
+    const { course } = await courseWithVersion()
+    await payload.update({
+      collection: 'courses',
+      id: course.id,
+      data: {
+        prerequisitesNote: 'Read the example policy first.',
+        consolidation: { hours: 12, positionTypes: ['GND', 'TWR'] },
+        ratingExam: 'S2',
+        academyExam: 'S3',
+        estimatedWeeks: { min: 4, max: 8 },
+        examOptional: true,
+        moodleUrl: 'https://moodle.example.com/course/1',
+      },
+    })
+
+    const { body } = await callEndpoint(payload, '/courseware/courses/X-TWR/draft')
+
+    expect(body.course).toEqual({
+      id: course.id,
+      code: 'X-TWR',
+      title: 'Example Tower',
+      authors: ['1000001'],
+      prerequisitesNote: 'Read the example policy first.',
+      consolidation: { hours: 12, positionTypes: ['GND', 'TWR'] },
+      ratingExam: 'S2',
+      academyExam: 'S3',
+      estimatedWeeks: { min: 4, max: 8 },
+      examOptional: true,
+      moodleUrl: 'https://moodle.example.com/course/1',
+    })
   })
 
   it('has no current version until one is published', async () => {

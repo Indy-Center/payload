@@ -79,7 +79,12 @@ export const CourseVersions: CollectionConfig = {
     },
     { name: 'description', type: 'textarea' },
     { name: 'time', type: 'number', min: 0, admin: { description: 'Minutes.' } },
-    { name: 'academyRequired', type: 'checkbox', defaultValue: false },
+    {
+      name: 'completionStandard',
+      label: 'Completion standard',
+      type: 'textarea',
+      admin: { description: 'What a student must do to finish this edition.' },
+    },
     { name: 'gradingScale', type: 'relationship', relationTo: 'grading-scales' },
     {
       name: 'defaultMinimum',

@@ -395,6 +395,37 @@ export interface Course {
    */
   authors?: string[] | null;
   /**
+   * Anything a student must do before enrolling that can’t be said otherwise, such as a policy to read.
+   */
+  prerequisitesNote?: string | null;
+  /**
+   * Optional. Hours on these position types, counted together, such as 30 hours on GND or TWR.
+   */
+  consolidation?: {
+    hours?: number | null;
+    positionTypes?: ('DEL' | 'GND' | 'TWR' | 'APP' | 'DEP' | 'CTR' | 'FSS')[] | null;
+  };
+  /**
+   * The rating exam the course ends in.
+   */
+  ratingExam?: ('none' | 'S1' | 'S2' | 'S3' | 'C1') | null;
+  /**
+   * The VATUSA Academy exam a student passes before training.
+   */
+  academyExam?: ('none' | 'S2' | 'S3' | 'C1') | null;
+  /**
+   * Optional. How long the course usually runs.
+   */
+  estimatedWeeks?: {
+    min?: number | null;
+    max?: number | null;
+  };
+  /**
+   * The course can finish without its exam.
+   */
+  examOptional?: boolean | null;
+  moodleUrl?: string | null;
+  /**
    * Set by publishing a version. The library shows this one.
    */
   currentVersion?: (string | null) | CourseVersion;
@@ -419,7 +450,10 @@ export interface CourseVersion {
    * Minutes.
    */
   time?: number | null;
-  academyRequired?: boolean | null;
+  /**
+   * What a student must do to finish this edition.
+   */
+  completionStandard?: string | null;
   gradingScale?: (string | null) | GradingScale;
   /**
    * The point on the scale, counted from 1 (the lowest). New lesson plans start from it.
@@ -950,6 +984,23 @@ export interface CoursesSelect<T extends boolean = true> {
   code?: T;
   title?: T;
   authors?: T;
+  prerequisitesNote?: T;
+  consolidation?:
+    | T
+    | {
+        hours?: T;
+        positionTypes?: T;
+      };
+  ratingExam?: T;
+  academyExam?: T;
+  estimatedWeeks?:
+    | T
+    | {
+        min?: T;
+        max?: T;
+      };
+  examOptional?: T;
+  moodleUrl?: T;
   currentVersion?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -965,7 +1016,7 @@ export interface CourseVersionsSelect<T extends boolean = true> {
   status?: T;
   description?: T;
   time?: T;
-  academyRequired?: T;
+  completionStandard?: T;
   gradingScale?: T;
   defaultMinimum?: T;
   modules?:
