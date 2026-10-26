@@ -7,7 +7,7 @@
  * - `GET /api/courseware/courses/:code/current` or `/draft` is one whole course version, or a 404
  *   when the course has none.
  * - `GET /api/courseware/catalogue` is the task tree, frameworks, competencies and sources,
- *   for task and competency pages.
+ *   for task and competency pages, and the credentials Indy issues.
  *
  * Teacher notes and course authors are included. The library decides what each reader sees;
  * nothing here is ever sent to a browser as it stands.
@@ -131,6 +131,25 @@ export type Source = {
   url: string
 }
 
+/** A VATSIM controller rating that can bring a certification with it on arrival. */
+export type ArrivalRating = 'S1' | 'S2' | 'S3' | 'C1' | 'C3' | 'I1' | 'I3'
+
+/** A certification or endorsement Indy issues (decision 0054). */
+export type Credential = {
+  id: string
+  /** Such as `S-GC` or `T2-CTR`. */
+  code: string
+  kind: 'certification' | 'endorsement'
+  name: string
+  description: string
+  /** A certification's place on the ladder, higher above lower; null for an endorsement. */
+  rank: number | null
+  /** The ratings that grant a certification on arrival; empty for an endorsement. */
+  grantedOnArrival: ArrivalRating[]
+  /** No longer issued, though records may still name it. */
+  retired: boolean
+}
+
 export type CatalogueTask = {
   id: string
   number: string
@@ -150,6 +169,8 @@ export type Catalogue = {
   frameworks: Framework[]
   competencies: Competency[]
   sources: Source[]
+  /** Certifications by rank, then endorsements by code, retired ones included. */
+  credentials: Credential[]
   /** In tree order: each task follows its parent, siblings in their order. */
   tasks: CatalogueTask[]
 }

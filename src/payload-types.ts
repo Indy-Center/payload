@@ -73,6 +73,7 @@ export interface Config {
     frameworks: Framework;
     competencies: Competency;
     sources: Source;
+    credentials: Credential;
     tasks: Task;
     'grading-scales': GradingScale;
     courses: Course;
@@ -98,6 +99,7 @@ export interface Config {
     frameworks: FrameworksSelect<false> | FrameworksSelect<true>;
     competencies: CompetenciesSelect<false> | CompetenciesSelect<true>;
     sources: SourcesSelect<false> | SourcesSelect<true>;
+    credentials: CredentialsSelect<false> | CredentialsSelect<true>;
     tasks: TasksSelect<false> | TasksSelect<true>;
     'grading-scales': GradingScalesSelect<false> | GradingScalesSelect<true>;
     courses: CoursesSelect<false> | CoursesSelect<true>;
@@ -313,6 +315,37 @@ export interface Source {
   name: string;
   edition?: string | null;
   url: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "credentials".
+ */
+export interface Credential {
+  id: string;
+  /**
+   * Such as S-GC or T2-CTR.
+   */
+  code: string;
+  kind: 'certification' | 'endorsement';
+  /**
+   * Without the code.
+   */
+  name: string;
+  description?: string | null;
+  /**
+   * Certifications only: its place on the ladder, higher above lower. No two share one.
+   */
+  rank?: number | null;
+  /**
+   * Certifications only: the VATSIM ratings that bring this certification with them.
+   */
+  grantedOnArrival?: ('S1' | 'S2' | 'S3' | 'C1' | 'C3' | 'I1' | 'I3')[] | null;
+  /**
+   * Retired credentials stay where they are named but are no longer issued.
+   */
+  retired?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -711,6 +744,10 @@ export interface PayloadLockedDocument {
         value: string | Source;
       } | null)
     | ({
+        relationTo: 'credentials';
+        value: string | Credential;
+      } | null)
+    | ({
         relationTo: 'tasks';
         value: string | Task;
       } | null)
@@ -929,6 +966,21 @@ export interface SourcesSelect<T extends boolean = true> {
   name?: T;
   edition?: T;
   url?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "credentials_select".
+ */
+export interface CredentialsSelect<T extends boolean = true> {
+  code?: T;
+  kind?: T;
+  name?: T;
+  description?: T;
+  rank?: T;
+  grantedOnArrival?: T;
+  retired?: T;
   updatedAt?: T;
   createdAt?: T;
 }
