@@ -1,4 +1,4 @@
-import type { Block, Field, TextFieldSingleValidation } from 'payload'
+import type { Block, Field, PopulateType, TextFieldSingleValidation } from 'payload'
 import {
   BlocksFeature,
   EXPERIMENTAL_TableFeature,
@@ -9,13 +9,29 @@ import {
 } from '@payloadcms/richtext-lexical'
 
 /**
- * The editor lesson plan bodies are written in. Its blocks are `@indy-center/svelte`'s, whose `RichText` draws the body: each block's
+ * The editor lesson plan bodies are written in, and what the course-version document fills into
+ * them. Its blocks are `@indy-center/svelte`'s, whose `RichText` draws the body: each block's
  * fields are its component's props, written here by hand from design-system's documents 02
  * (decision 0011 for citations). The library's type test catches drift.
  */
 
 /** The collection a citation's source is a record of. */
 export const SOURCES = 'references'
+
+/**
+ * What a linked record carries in the course-version document: only the fields the page draws.
+ * Server-side reads skip access checks, so without this a link could carry a whole record to the
+ * browser. Payload selects by collection, so a source's attached file carries the media fields.
+ */
+export const BODY_POPULATE = {
+  'lesson-plans': { code: true, title: true },
+  // Payload makes `url` from `filename`, so a file's url needs its name.
+  media: { url: true, filename: true, alt: true, width: true, height: true, sizes: true },
+  [SOURCES]: { name: true, edition: true, url: true, document: true },
+} satisfies PopulateType
+
+/** Deep enough to fill in a citation's source and the file attached to it. */
+export const BODY_DEPTH = 2
 
 const CONTROLLER_RATINGS = [
   'INAC',

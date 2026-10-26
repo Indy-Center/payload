@@ -1,0 +1,1161 @@
+{
+  "root": {
+    "type": "root",
+    "format": "",
+    "indent": 0,
+    "version": 1,
+    "children": [
+      {
+        "tag": "h2",
+        "type": "heading",
+        "format": "",
+        "indent": 0,
+        "version": 1,
+        "children": [
+          {
+            "mode": "normal",
+            "text": "Runways",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 0,
+            "version": 1
+          }
+        ],
+        "direction": "ltr"
+      },
+      {
+        "tag": "h3",
+        "type": "heading",
+        "format": "",
+        "indent": 0,
+        "version": 1,
+        "children": [
+          {
+            "mode": "normal",
+            "text": "In use",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 0,
+            "version": 1
+          }
+        ],
+        "direction": "ltr"
+      },
+      {
+        "tag": "h4",
+        "type": "heading",
+        "format": "",
+        "indent": 0,
+        "version": 1,
+        "children": [
+          {
+            "mode": "normal",
+            "text": "At night",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 0,
+            "version": 1
+          }
+        ],
+        "direction": "ltr"
+      },
+      {
+        "type": "paragraph",
+        "format": "",
+        "indent": 0,
+        "version": 1,
+        "children": [
+          {
+            "mode": "normal",
+            "text": "Bold",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 1,
+            "version": 1
+          },
+          {
+            "mode": "normal",
+            "text": " italic",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 2,
+            "version": 1
+          },
+          {
+            "mode": "normal",
+            "text": " struck",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 4,
+            "version": 1
+          },
+          {
+            "mode": "normal",
+            "text": " underlined",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 8,
+            "version": 1
+          },
+          {
+            "mode": "normal",
+            "text": " code",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 16,
+            "version": 1
+          },
+          {
+            "mode": "normal",
+            "text": " sub",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 32,
+            "version": 1
+          },
+          {
+            "mode": "normal",
+            "text": " super",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 64,
+            "version": 1
+          },
+          { "type": "linebreak", "version": 1 },
+          {
+            "mode": "normal",
+            "text": "After a break.",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 0,
+            "version": 1
+          }
+        ],
+        "direction": "ltr",
+        "textStyle": "",
+        "textFormat": 0
+      },
+      {
+        "type": "paragraph",
+        "format": "center",
+        "indent": 0,
+        "version": 1,
+        "children": [
+          {
+            "mode": "normal",
+            "text": "Centred.",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 0,
+            "version": 1
+          }
+        ],
+        "direction": "ltr",
+        "textStyle": "",
+        "textFormat": 0
+      },
+      {
+        "type": "paragraph",
+        "format": "end",
+        "indent": 0,
+        "version": 1,
+        "children": [
+          {
+            "mode": "normal",
+            "text": "To the end.",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 0,
+            "version": 1
+          }
+        ],
+        "direction": "ltr",
+        "textStyle": "",
+        "textFormat": 0
+      },
+      {
+        "type": "paragraph",
+        "format": "justify",
+        "indent": 0,
+        "version": 1,
+        "children": [
+          {
+            "mode": "normal",
+            "text": "Justified.",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 0,
+            "version": 1
+          }
+        ],
+        "direction": "ltr",
+        "textStyle": "",
+        "textFormat": 0
+      },
+      {
+        "tag": "ul",
+        "type": "list",
+        "start": 1,
+        "format": "",
+        "indent": 0,
+        "version": 1,
+        "children": [
+          {
+            "type": "listitem",
+            "value": 1,
+            "format": "",
+            "indent": 0,
+            "version": 1,
+            "children": [
+              {
+                "mode": "normal",
+                "text": "One",
+                "type": "text",
+                "style": "",
+                "detail": 0,
+                "format": 0,
+                "version": 1
+              }
+            ],
+            "direction": "ltr"
+          },
+          {
+            "type": "listitem",
+            "value": 2,
+            "format": "",
+            "indent": 0,
+            "version": 1,
+            "children": [
+              {
+                "tag": "ul",
+                "type": "list",
+                "start": 1,
+                "format": "",
+                "indent": 0,
+                "version": 1,
+                "children": [
+                  {
+                    "type": "listitem",
+                    "value": 1,
+                    "format": "",
+                    "indent": 0,
+                    "version": 1,
+                    "children": [
+                      {
+                        "mode": "normal",
+                        "text": "One, nested",
+                        "type": "text",
+                        "style": "",
+                        "detail": 0,
+                        "format": 0,
+                        "version": 1
+                      }
+                    ],
+                    "direction": "ltr"
+                  }
+                ],
+                "listType": "bullet",
+                "direction": "ltr"
+              }
+            ],
+            "direction": "ltr"
+          }
+        ],
+        "listType": "bullet",
+        "direction": "ltr"
+      },
+      {
+        "tag": "ol",
+        "type": "list",
+        "start": 1,
+        "format": "",
+        "indent": 0,
+        "version": 1,
+        "children": [
+          {
+            "type": "listitem",
+            "value": 1,
+            "format": "",
+            "indent": 0,
+            "version": 1,
+            "children": [
+              {
+                "mode": "normal",
+                "text": "First",
+                "type": "text",
+                "style": "",
+                "detail": 0,
+                "format": 0,
+                "version": 1
+              }
+            ],
+            "direction": "ltr"
+          },
+          {
+            "type": "listitem",
+            "value": 2,
+            "format": "",
+            "indent": 0,
+            "version": 1,
+            "children": [
+              {
+                "mode": "normal",
+                "text": "Second",
+                "type": "text",
+                "style": "",
+                "detail": 0,
+                "format": 0,
+                "version": 1
+              }
+            ],
+            "direction": "ltr"
+          }
+        ],
+        "listType": "number",
+        "direction": "ltr"
+      },
+      {
+        "tag": "ul",
+        "type": "list",
+        "start": 1,
+        "format": "",
+        "indent": 0,
+        "version": 1,
+        "children": [
+          {
+            "type": "listitem",
+            "value": 1,
+            "format": "",
+            "indent": 0,
+            "checked": true,
+            "version": 1,
+            "children": [
+              {
+                "mode": "normal",
+                "text": "Ticked",
+                "type": "text",
+                "style": "",
+                "detail": 0,
+                "format": 0,
+                "version": 1
+              }
+            ],
+            "direction": "ltr"
+          },
+          {
+            "type": "listitem",
+            "value": 2,
+            "format": "",
+            "indent": 0,
+            "checked": false,
+            "version": 1,
+            "children": [
+              {
+                "mode": "normal",
+                "text": "Not ticked",
+                "type": "text",
+                "style": "",
+                "detail": 0,
+                "format": 0,
+                "version": 1
+              }
+            ],
+            "direction": "ltr"
+          }
+        ],
+        "listType": "check",
+        "direction": "ltr"
+      },
+      {
+        "type": "paragraph",
+        "format": "",
+        "indent": 0,
+        "version": 1,
+        "children": [
+          {
+            "id": "6718a0c0e1f2a3b4c5d6e711",
+            "type": "link",
+            "fields": { "url": "https://example.com/", "newTab": true, "linkType": "custom" },
+            "format": "",
+            "indent": 0,
+            "version": 3,
+            "children": [
+              {
+                "mode": "normal",
+                "text": "Out",
+                "type": "text",
+                "style": "",
+                "detail": 0,
+                "format": 0,
+                "version": 1
+              }
+            ],
+            "direction": "ltr"
+          },
+          {
+            "mode": "normal",
+            "text": " and ",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 0,
+            "version": 1
+          },
+          {
+            "id": "6718a0c0e1f2a3b4c5d6e712",
+            "type": "link",
+            "fields": {
+              "doc": {
+                "value": { "id": "<plan-id>", "code": "X-TWR-0", "title": "Before" },
+                "relationTo": "lesson-plans"
+              },
+              "newTab": false,
+              "linkType": "internal"
+            },
+            "format": "",
+            "indent": 0,
+            "version": 3,
+            "children": [
+              {
+                "mode": "normal",
+                "text": "In",
+                "type": "text",
+                "style": "",
+                "detail": 0,
+                "format": 0,
+                "version": 1
+              }
+            ],
+            "direction": "ltr"
+          }
+        ],
+        "direction": "ltr",
+        "textStyle": "",
+        "textFormat": 0
+      },
+      {
+        "type": "quote",
+        "format": "",
+        "indent": 0,
+        "version": 1,
+        "children": [
+          {
+            "mode": "normal",
+            "text": "Quoted.",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 0,
+            "version": 1
+          }
+        ],
+        "direction": "ltr"
+      },
+      { "type": "horizontalrule", "version": 1 },
+      {
+        "id": "6718a0c0e1f2a3b4c5d6e713",
+        "type": "upload",
+        "value": {
+          "id": "<media-id>",
+          "alt": "An example image",
+          "url": "/api/media/file/runway.png",
+          "filename": "runway.png",
+          "width": 800,
+          "height": 600,
+          "sizes": {
+            "logo": {
+              "url": "/api/media/file/runway-256x192.png",
+              "width": 256,
+              "height": 192,
+              "mimeType": "image/png",
+              "filesize": null,
+              "filename": "runway-256x192.png"
+            },
+            "banner": {
+              "url": null,
+              "width": null,
+              "height": null,
+              "mimeType": null,
+              "filesize": null,
+              "filename": null
+            },
+            "thumbnail": {
+              "url": "/api/media/file/runway-400x300.png",
+              "width": 400,
+              "height": 300,
+              "mimeType": "image/png",
+              "filesize": null,
+              "filename": "runway-400x300.png"
+            },
+            "large": {
+              "url": null,
+              "width": null,
+              "height": null,
+              "mimeType": null,
+              "filesize": null,
+              "filename": null
+            }
+          }
+        },
+        "fields": null,
+        "format": "",
+        "version": 3,
+        "relationTo": "media"
+      },
+      {
+        "type": "table",
+        "format": "",
+        "indent": 0,
+        "version": 1,
+        "children": [
+          {
+            "type": "tablerow",
+            "format": "",
+            "indent": 0,
+            "version": 1,
+            "children": [
+              {
+                "type": "tablecell",
+                "format": "",
+                "indent": 0,
+                "colSpan": 1,
+                "rowSpan": 1,
+                "version": 1,
+                "children": [
+                  {
+                    "type": "paragraph",
+                    "format": "",
+                    "indent": 0,
+                    "version": 1,
+                    "children": [
+                      {
+                        "mode": "normal",
+                        "text": "Runway",
+                        "type": "text",
+                        "style": "",
+                        "detail": 0,
+                        "format": 0,
+                        "version": 1
+                      }
+                    ],
+                    "direction": "ltr",
+                    "textStyle": "",
+                    "textFormat": 0
+                  }
+                ],
+                "direction": "ltr",
+                "headerState": 1,
+                "backgroundColor": null
+              },
+              {
+                "type": "tablecell",
+                "format": "",
+                "indent": 0,
+                "colSpan": 1,
+                "rowSpan": 1,
+                "version": 1,
+                "children": [
+                  {
+                    "type": "paragraph",
+                    "format": "",
+                    "indent": 0,
+                    "version": 1,
+                    "children": [
+                      {
+                        "mode": "normal",
+                        "text": "Use",
+                        "type": "text",
+                        "style": "",
+                        "detail": 0,
+                        "format": 0,
+                        "version": 1
+                      }
+                    ],
+                    "direction": "ltr",
+                    "textStyle": "",
+                    "textFormat": 0
+                  }
+                ],
+                "direction": "ltr",
+                "headerState": 1,
+                "backgroundColor": null
+              }
+            ],
+            "direction": "ltr"
+          },
+          {
+            "type": "tablerow",
+            "format": "",
+            "indent": 0,
+            "version": 1,
+            "children": [
+              {
+                "type": "tablecell",
+                "format": "",
+                "indent": 0,
+                "colSpan": 1,
+                "rowSpan": 1,
+                "version": 1,
+                "children": [
+                  {
+                    "type": "paragraph",
+                    "format": "",
+                    "indent": 0,
+                    "version": 1,
+                    "children": [
+                      {
+                        "mode": "normal",
+                        "text": "5L",
+                        "type": "text",
+                        "style": "",
+                        "detail": 0,
+                        "format": 0,
+                        "version": 1
+                      }
+                    ],
+                    "direction": "ltr",
+                    "textStyle": "",
+                    "textFormat": 0
+                  }
+                ],
+                "direction": "ltr",
+                "headerState": 2,
+                "backgroundColor": null
+              },
+              {
+                "type": "tablecell",
+                "format": "",
+                "indent": 0,
+                "colSpan": 1,
+                "rowSpan": 1,
+                "version": 1,
+                "children": [
+                  {
+                    "type": "paragraph",
+                    "format": "",
+                    "indent": 0,
+                    "version": 1,
+                    "children": [
+                      {
+                        "mode": "normal",
+                        "text": "Arrivals",
+                        "type": "text",
+                        "style": "",
+                        "detail": 0,
+                        "format": 0,
+                        "version": 1
+                      }
+                    ],
+                    "direction": "ltr",
+                    "textStyle": "",
+                    "textFormat": 0
+                  }
+                ],
+                "direction": "ltr",
+                "headerState": 0,
+                "backgroundColor": null
+              }
+            ],
+            "direction": "ltr"
+          },
+          {
+            "type": "tablerow",
+            "format": "",
+            "indent": 0,
+            "version": 1,
+            "children": [
+              {
+                "type": "tablecell",
+                "format": "",
+                "indent": 0,
+                "colSpan": 1,
+                "rowSpan": 1,
+                "version": 1,
+                "children": [
+                  {
+                    "type": "paragraph",
+                    "format": "",
+                    "indent": 0,
+                    "version": 1,
+                    "children": [
+                      {
+                        "mode": "normal",
+                        "text": "Both",
+                        "type": "text",
+                        "style": "",
+                        "detail": 0,
+                        "format": 0,
+                        "version": 1
+                      }
+                    ],
+                    "direction": "ltr",
+                    "textStyle": "",
+                    "textFormat": 0
+                  }
+                ],
+                "direction": "ltr",
+                "headerState": 2,
+                "backgroundColor": null
+              },
+              {
+                "type": "tablecell",
+                "format": "",
+                "indent": 0,
+                "colSpan": 1,
+                "rowSpan": 1,
+                "version": 1,
+                "children": [
+                  {
+                    "type": "paragraph",
+                    "format": "",
+                    "indent": 0,
+                    "version": 1,
+                    "children": [
+                      {
+                        "mode": "normal",
+                        "text": "Departures at night",
+                        "type": "text",
+                        "style": "",
+                        "detail": 0,
+                        "format": 0,
+                        "version": 1
+                      }
+                    ],
+                    "direction": "ltr",
+                    "textStyle": "",
+                    "textFormat": 0
+                  }
+                ],
+                "direction": "ltr",
+                "headerState": 0,
+                "backgroundColor": null
+              }
+            ],
+            "direction": "ltr"
+          },
+          {
+            "type": "tablerow",
+            "format": "",
+            "indent": 0,
+            "version": 1,
+            "children": [
+              {
+                "type": "tablecell",
+                "format": "",
+                "indent": 0,
+                "colSpan": 2,
+                "rowSpan": 1,
+                "version": 1,
+                "children": [
+                  {
+                    "type": "paragraph",
+                    "format": "",
+                    "indent": 0,
+                    "version": 1,
+                    "children": [
+                      {
+                        "mode": "normal",
+                        "text": "Merged across",
+                        "type": "text",
+                        "style": "",
+                        "detail": 0,
+                        "format": 0,
+                        "version": 1
+                      }
+                    ],
+                    "direction": "ltr",
+                    "textStyle": "",
+                    "textFormat": 0
+                  }
+                ],
+                "direction": "ltr",
+                "headerState": 0,
+                "backgroundColor": null
+              }
+            ],
+            "direction": "ltr"
+          }
+        ],
+        "colWidths": [120, 120],
+        "direction": "ltr"
+      },
+      {
+        "type": "block",
+        "fields": {
+          "id": "6718a0c0e1f2a3b4c5d6e721",
+          "label": "See also",
+          "level": "reference",
+          "content": {
+            "root": {
+              "type": "root",
+              "format": "",
+              "indent": 0,
+              "version": 1,
+              "children": [
+                {
+                  "type": "paragraph",
+                  "format": "",
+                  "indent": 0,
+                  "version": 1,
+                  "children": [
+                    {
+                      "mode": "normal",
+                      "text": "Wake turbulence: ",
+                      "type": "text",
+                      "style": "",
+                      "detail": 0,
+                      "format": 0,
+                      "version": 1
+                    },
+                    {
+                      "type": "inlineBlock",
+                      "fields": {
+                        "at": "2-1-20",
+                        "id": "6718a0c0e1f2a3b4c5d6e722",
+                        "source": {
+                          "id": "<source-id>",
+                          "name": "JO 0000.00",
+                          "edition": "A",
+                          "url": "https://example.com/order",
+                          "document": {
+                            "id": "<pdf-id>",
+                            "alt": "The order",
+                            "url": "/api/media/file/order.pdf",
+                            "filename": "order.pdf",
+                            "width": null,
+                            "height": null,
+                            "sizes": {
+                              "logo": {
+                                "url": null,
+                                "width": null,
+                                "height": null,
+                                "mimeType": null,
+                                "filesize": null,
+                                "filename": null
+                              },
+                              "banner": {
+                                "url": null,
+                                "width": null,
+                                "height": null,
+                                "mimeType": null,
+                                "filesize": null,
+                                "filename": null
+                              },
+                              "thumbnail": {
+                                "url": null,
+                                "width": null,
+                                "height": null,
+                                "mimeType": null,
+                                "filesize": null,
+                                "filename": null
+                              },
+                              "large": {
+                                "url": null,
+                                "width": null,
+                                "height": null,
+                                "mimeType": null,
+                                "filesize": null,
+                                "filename": null
+                              }
+                            }
+                          }
+                        },
+                        "blockType": "citation"
+                      },
+                      "version": 1
+                    }
+                  ],
+                  "direction": "ltr",
+                  "textStyle": "",
+                  "textFormat": 0
+                }
+              ],
+              "direction": "ltr"
+            }
+          },
+          "blockName": "",
+          "blockType": "callout"
+        },
+        "format": "",
+        "version": 2
+      },
+      {
+        "type": "block",
+        "fields": {
+          "id": "6718a0c0e1f2a3b4c5d6e723",
+          "content": {
+            "root": {
+              "type": "root",
+              "format": "",
+              "indent": 0,
+              "version": 1,
+              "children": [
+                {
+                  "type": "paragraph",
+                  "format": "",
+                  "indent": 0,
+                  "version": 1,
+                  "children": [
+                    {
+                      "mode": "normal",
+                      "text": "Because.",
+                      "type": "text",
+                      "style": "",
+                      "detail": 0,
+                      "format": 0,
+                      "version": 1
+                    }
+                  ],
+                  "direction": "ltr",
+                  "textStyle": "",
+                  "textFormat": 0
+                }
+              ],
+              "direction": "ltr"
+            }
+          },
+          "summary": "Why?",
+          "blockName": "",
+          "blockType": "disclosure"
+        },
+        "format": "",
+        "version": 2
+      },
+      {
+        "type": "paragraph",
+        "format": "",
+        "indent": 0,
+        "version": 1,
+        "children": [
+          {
+            "type": "inlineBlock",
+            "fields": {
+              "id": "6718a0c0e1f2a3b4c5d6e731",
+              "show": ["shortName", "frequency"],
+              "airport": { "code": "KIND", "name": "Example International" },
+              "callsign": "IND_CTR",
+              "airportAt": "under",
+              "blockType": "position"
+            },
+            "version": 1
+          },
+          {
+            "mode": "normal",
+            "text": " on ",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 0,
+            "version": 1
+          },
+          {
+            "type": "inlineBlock",
+            "fields": {
+              "id": "6718a0c0e1f2a3b4c5d6e732",
+              "value": "128.225",
+              "blockType": "frequency"
+            },
+            "version": 1
+          },
+          {
+            "mode": "normal",
+            "text": " or ",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 0,
+            "version": 1
+          },
+          {
+            "type": "inlineBlock",
+            "fields": {
+              "id": "6718a0c0e1f2a3b4c5d6e733",
+              "callsign": "IND_CTR",
+              "blockType": "frequency"
+            },
+            "version": 1
+          },
+          {
+            "mode": "normal",
+            "text": " at ",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 0,
+            "version": 1
+          },
+          {
+            "type": "inlineBlock",
+            "fields": {
+              "id": "6718a0c0e1f2a3b4c5d6e734",
+              "nameAt": "tooltip",
+              "airport": { "code": "KIND", "name": "Example International" },
+              "blockType": "airport",
+              "focusable": true
+            },
+            "version": 1
+          },
+          {
+            "mode": "normal",
+            "text": ", ",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 0,
+            "version": 1
+          },
+          {
+            "type": "inlineBlock",
+            "fields": {
+              "id": "6718a0c0e1f2a3b4c5d6e735",
+              "kind": "controller",
+              "rating": "S3",
+              "blockType": "rating"
+            },
+            "version": 1
+          },
+          {
+            "mode": "normal",
+            "text": ", ",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 0,
+            "version": 1
+          },
+          {
+            "type": "inlineBlock",
+            "fields": {
+              "id": "6718a0c0e1f2a3b4c5d6e736",
+              "kind": "pilot",
+              "rating": "IR",
+              "blockType": "rating"
+            },
+            "version": 1
+          },
+          {
+            "mode": "normal",
+            "text": ", ",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 0,
+            "version": 1
+          },
+          {
+            "type": "inlineBlock",
+            "fields": {
+              "id": "6718a0c0e1f2a3b4c5d6e737",
+              "category": "IFR",
+              "blockType": "flightCategory"
+            },
+            "version": 1
+          },
+          {
+            "mode": "normal",
+            "text": ", ",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 0,
+            "version": 1
+          },
+          {
+            "type": "inlineBlock",
+            "fields": {
+              "id": "6718a0c0e1f2a3b4c5d6e738",
+              "end": "0300",
+              "value": "2300",
+              "blockType": "time"
+            },
+            "version": 1
+          },
+          {
+            "mode": "normal",
+            "text": ", ",
+            "type": "text",
+            "style": "",
+            "detail": 0,
+            "format": 0,
+            "version": 1
+          },
+          {
+            "type": "inlineBlock",
+            "fields": {
+              "at": "3-7-2",
+              "id": "6718a0c0e1f2a3b4c5d6e739",
+              "source": {
+                "id": "<source-id>",
+                "name": "JO 0000.00",
+                "edition": "A",
+                "url": "https://example.com/order",
+                "document": {
+                  "id": "<pdf-id>",
+                  "alt": "The order",
+                  "url": "/api/media/file/order.pdf",
+                  "filename": "order.pdf",
+                  "width": null,
+                  "height": null,
+                  "sizes": {
+                    "logo": {
+                      "url": null,
+                      "width": null,
+                      "height": null,
+                      "mimeType": null,
+                      "filesize": null,
+                      "filename": null
+                    },
+                    "banner": {
+                      "url": null,
+                      "width": null,
+                      "height": null,
+                      "mimeType": null,
+                      "filesize": null,
+                      "filename": null
+                    },
+                    "thumbnail": {
+                      "url": null,
+                      "width": null,
+                      "height": null,
+                      "mimeType": null,
+                      "filesize": null,
+                      "filename": null
+                    },
+                    "large": {
+                      "url": null,
+                      "width": null,
+                      "height": null,
+                      "mimeType": null,
+                      "filesize": null,
+                      "filename": null
+                    }
+                  }
+                }
+              },
+              "blockType": "citation"
+            },
+            "version": 1
+          }
+        ],
+        "direction": "ltr",
+        "textStyle": "",
+        "textFormat": 0
+      }
+    ],
+    "direction": "ltr"
+  }
+}
