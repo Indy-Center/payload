@@ -3,19 +3,34 @@ import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
 /**
  * References become sources, and a source loses its "Indy document" upload (decision 0053).
  * The tables are renamed rather than recreated, so every source and citation keeps its id.
- * A source with an uploaded document stops the migration, so no file is dropped silently.
+ * A source with an uploaded document stops the migration, so no file is dropped silently, and
+ * so does one with no link at all, which a source now needs. Each is named.
  */
 export async function up({ db }: MigrateUpArgs): Promise<void> {
-  const { rows } = await db.execute<{ name: string }>(
-    sql`SELECT "name" FROM "references" WHERE "document_id" IS NOT NULL ORDER BY "name"`,
-  )
-  if (rows.length > 0) {
-    throw new Error(
+  const names = async (where: ReturnType<typeof sql>) =>
+    (
+      await db.execute<{ name: string }>(
+        sql`SELECT "name" FROM "references" WHERE ${where} ORDER BY "name"`,
+      )
+    ).rows.map((row) => row.name)
+  const withDocuments = await names(sql`"document_id" IS NOT NULL`)
+  const withoutLinks = await names(sql`"document_id" IS NULL AND coalesce("url", '') = ''`)
+
+  const faults = []
+  if (withDocuments.length > 0) {
+    faults.push(
       `These sources have an uploaded Indy document, which sources no longer keep: ` +
-        `${rows.map((row) => row.name).join(', ')}. ` +
+        `${withDocuments.join(', ')}. ` +
         `Give each an https link in place of its document and clear the upload, then migrate again.`,
     )
   }
+  if (withoutLinks.length > 0) {
+    faults.push(
+      `These sources have no link, which sources now need: ${withoutLinks.join(', ')}. ` +
+        `Give each an https link, then migrate again.`,
+    )
+  }
+  if (faults.length > 0) throw new Error(faults.join(' '))
 
   await db.execute(sql`
   ALTER TABLE "references" DROP CONSTRAINT "references_document_id_media_id_fk";
