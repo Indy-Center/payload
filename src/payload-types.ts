@@ -428,6 +428,15 @@ export interface Course {
    */
   authors?: string[] | null;
   /**
+   * Credentials a student holds before enrolling. Every row must be met; a row is met by holding any one of its credentials.
+   */
+  prerequisites?:
+    | {
+        anyOf: (string | Credential)[];
+        id?: string | null;
+      }[]
+    | null;
+  /**
    * Anything a student must do before enrolling that can’t be said otherwise, such as a policy to read.
    */
   prerequisitesNote?: string | null;
@@ -458,6 +467,10 @@ export interface Course {
    */
   examOptional?: boolean | null;
   moodleUrl?: string | null;
+  /**
+   * What finishing the course earns. Each credential is issued by one course.
+   */
+  credentialIssued?: (string | null) | Credential;
   /**
    * Set by publishing a version. The library shows this one.
    */
@@ -1036,6 +1049,12 @@ export interface CoursesSelect<T extends boolean = true> {
   code?: T;
   title?: T;
   authors?: T;
+  prerequisites?:
+    | T
+    | {
+        anyOf?: T;
+        id?: T;
+      };
   prerequisitesNote?: T;
   consolidation?:
     | T
@@ -1053,6 +1072,7 @@ export interface CoursesSelect<T extends boolean = true> {
       };
   examOptional?: T;
   moodleUrl?: T;
+  credentialIssued?: T;
   currentVersion?: T;
   updatedAt?: T;
   createdAt?: T;
