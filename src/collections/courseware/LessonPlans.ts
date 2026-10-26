@@ -1,8 +1,8 @@
 import type { CollectionConfig, FilterOptions, Where } from 'payload'
-import { lexicalEditor, UploadFeature } from '@payloadcms/richtext-lexical'
 import { lessonPlanAccess } from '@/courseware/access'
 import { idOf } from '@/courseware/ids'
 import { refuseLessonPlanShapeChange } from '@/courseware/publishing'
+import { lessonPlanBodyEditor } from '@/courseware/rich-text'
 import { expandTaskRows, pickableTask } from '@/courseware/task-rows'
 
 /**
@@ -76,13 +76,7 @@ export const LessonPlans: CollectionConfig = {
     {
       name: 'body',
       type: 'richText',
-      // Images go to the public media store, where the library can show them.
-      editor: lexicalEditor({
-        features: ({ defaultFeatures }) => [
-          ...defaultFeatures.filter((feature) => feature.key !== 'upload'),
-          UploadFeature({ enabledCollections: ['media'] }),
-        ],
-      }),
+      editor: lessonPlanBodyEditor,
     },
     { name: 'time', type: 'number', min: 0, admin: { description: 'Minutes.' } },
     { name: 'isExam', label: 'Exam', type: 'checkbox', defaultValue: false },
