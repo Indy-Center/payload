@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { courseVersionAccess, staffOnlyField } from '@/courseware/access'
+import { numberEdition } from '@/courseware/editions'
 import { idOf } from '@/courseware/ids'
 import { refuseScaleChange, refuseUnpublishable } from '@/courseware/publishing'
 
@@ -11,9 +12,13 @@ export const CourseVersions: CollectionConfig = {
     group: 'Training',
   },
   access: courseVersionAccess,
+  // Two editions of one course never share a number (decision 0056).
+  indexes: [{ fields: ['course', 'number'], unique: true }],
   hooks: {
     beforeChange: [
-      async ({ data, originalDoc, req }) => {
+      async ({ data, operation, originalDoc, req }) => {
+        // On create `originalDoc` is empty, or the version being duplicated.
+        await numberEdition(req, data, operation === 'update' ? originalDoc! : null)
         refuseScaleChange(data, originalDoc)
         if (data.status === 'published' && originalDoc?.status !== 'published') {
           await refuseUnpublishable(req, data)
@@ -41,7 +46,7 @@ export const CourseVersions: CollectionConfig = {
       type: 'text',
       admin: { hidden: true },
       hooks: {
-        // A readable name for pickers and lists: "S-GC v2".
+        // A readable name for pickers and lists: "S-GC edition 2".
         beforeChange: [
           async ({ data, req }) => {
             if (!data?.course) return undefined
@@ -52,13 +57,25 @@ export const CourseVersions: CollectionConfig = {
               depth: 0,
               req,
             })
-            return `${course.code} v${data.number}`
+            return `${course.code} edition ${data.number}`
           },
         ],
       },
     },
     { name: 'course', type: 'relationship', relationTo: 'courses', required: true, index: true },
-    { name: 'number', type: 'number', required: true, min: 1 },
+    {
+      name: 'number',
+      label: 'Edition',
+      type: 'number',
+      required: true,
+      min: 1,
+      // Numbered on save (`numberEdition`), so the form may hold none yet.
+      validate: () => true as const,
+      admin: {
+        readOnly: true,
+        description: 'Numbered when the edition is first saved: one more than the course’s last.',
+      },
+    },
     {
       name: 'status',
       type: 'select',

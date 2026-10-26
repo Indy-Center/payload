@@ -486,6 +486,9 @@ export interface CourseVersion {
   id: string;
   title?: string | null;
   course: string | Course;
+  /**
+   * Numbered when the edition is first saved: one more than the course’s last.
+   */
   number: number;
   /**
    * Choose Published and save to publish: the version is checked, becomes the course’s current version, and its grading scale is fixed.
