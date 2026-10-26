@@ -14,6 +14,7 @@ import { LessonPlans } from './collections/courseware/LessonPlans'
 import { Frameworks } from './collections/courseware/Frameworks'
 import { Competencies } from './collections/courseware/Competencies'
 import { Sources } from './collections/courseware/Sources'
+import { Credentials } from './collections/courseware/Credentials'
 import { Tasks } from './collections/courseware/Tasks'
 import { GradingScales } from './collections/courseware/GradingScales'
 import { Scenarios } from './collections/courseware/Scenarios'
@@ -44,6 +45,7 @@ export default buildConfig({
     Frameworks,
     Competencies,
     Sources,
+    Credentials,
     Tasks,
     GradingScales,
     Courses,

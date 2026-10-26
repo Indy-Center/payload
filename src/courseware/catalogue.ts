@@ -1,16 +1,20 @@
 import type { PayloadRequest } from 'payload'
-import type { Catalogue, CatalogueTask } from './document'
+import type { Catalogue, CatalogueTask, Credential } from './document'
 import { idOf } from './ids'
 import { loadTaskTree, type TaskTree } from './task-tree'
 
-/** The task tree, frameworks, competencies and sources, for task and competency pages. */
+/**
+ * The task tree, frameworks, competencies and sources, for task and competency pages, and the
+ * credentials Indy issues.
+ */
 export async function buildCatalogue(req: PayloadRequest): Promise<Catalogue> {
   const { payload } = req
-  const [tree, frameworks, competencies, sources] = await Promise.all([
+  const [tree, frameworks, competencies, sources, credentials] = await Promise.all([
     loadTaskTree(req),
     payload.find({ collection: 'frameworks', sort: 'name', pagination: false, depth: 0, req }),
     payload.find({ collection: 'competencies', pagination: false, depth: 0, req }),
     payload.find({ collection: 'sources', sort: 'name', pagination: false, depth: 0, req }),
+    payload.find({ collection: 'credentials', pagination: false, depth: 0, req }),
   ])
 
   return {
@@ -39,6 +43,18 @@ export async function buildCatalogue(req: PayloadRequest): Promise<Catalogue> {
       edition: source.edition ?? '',
       url: source.url,
     })),
+    credentials: credentials.docs
+      .map((credential) => ({
+        id: credential.id,
+        code: credential.code,
+        kind: credential.kind,
+        name: credential.name,
+        description: credential.description ?? '',
+        rank: credential.rank ?? null,
+        grantedOnArrival: credential.grantedOnArrival ?? [],
+        retired: credential.retired ?? false,
+      }))
+      .sort(compareCredentials),
     tasks: tree.inOrder.map((task) => catalogueTask(tree, task.id)),
   }
 }
@@ -59,6 +75,12 @@ function catalogueTask(tree: TaskTree, id: string): CatalogueTask {
     mappings,
     citations: task.citations,
   }
+}
+
+/** Certifications up the ladder, then endorsements by code. */
+function compareCredentials(a: Credential, b: Credential): number {
+  if (a.kind !== b.kind) return a.kind === 'certification' ? -1 : 1
+  return (a.rank ?? Infinity) - (b.rank ?? Infinity) || a.code.localeCompare(b.code)
 }
 
 /** Orders "2.1.10" after "2.1.9", and "2.1.3a" after "2.1.3". */

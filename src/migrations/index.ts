@@ -14,6 +14,7 @@ import * as migration_20261017_194306_cms_admin_role from './20261017_194306_cms
 import * as migration_20261026_014802_sources_replace_references from './20261026_014802_sources_replace_references';
 import * as migration_20261026_021707_scenario_positions_and_difficulty from './20261026_021707_scenario_positions_and_difficulty';
 import * as migration_20261026_024810_course_enrolment_facts from './20261026_024810_course_enrolment_facts';
+import * as migration_20261026_030346_credentials from './20261026_030346_credentials';
 
 export const migrations = [
   {
@@ -94,6 +95,11 @@ export const migrations = [
   {
     up: migration_20261026_024810_course_enrolment_facts.up,
     down: migration_20261026_024810_course_enrolment_facts.down,
-    name: '20261026_024810_course_enrolment_facts'
+    name: '20261026_024810_course_enrolment_facts',
+  },
+  {
+    up: migration_20261026_030346_credentials.up,
+    down: migration_20261026_030346_credentials.down,
+    name: '20261026_030346_credentials'
   },
 ];
