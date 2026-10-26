@@ -218,6 +218,14 @@ describe('the reads training-tools does not make', () => {
       })
     }
   })
+
+  it("refuse training-tools' credential on a draft version", async () => {
+    await courseWithVersion('draft')
+
+    expect(
+      await callEndpoint(payload, '/courseware/courses/X-TWR/draft', { token: TRAINING_TOKEN }),
+    ).toEqual({ status: 401, body: { error: 'Unauthorized' } })
+  })
 })
 
 describe('retire, never delete', () => {

@@ -42,8 +42,9 @@ export const coursewareEndpoints: Endpoint[] = [
     path: '/courseware/courses/:code/:which',
     method: 'get',
     handler: async (req) => {
-      if (!fromLibrary(req) && !fromTraining(req)) return unauthorized()
       const { code, which } = req.routeParams as { code: string; which: string }
+      // training-tools grades from published versions only, so its key never opens a draft.
+      if (!fromLibrary(req) && !(which === 'current' && fromTraining(req))) return unauthorized()
       if (which !== 'current' && which !== 'draft') return notFound()
 
       const found = await findCourseVersion(req, code, which)
