@@ -3,14 +3,14 @@ import type { Catalogue, CatalogueTask } from './document'
 import { idOf } from './ids'
 import { loadTaskTree, type TaskTree } from './task-tree'
 
-/** The task tree, frameworks, competencies and references, for task and competency pages. */
+/** The task tree, frameworks, competencies and sources, for task and competency pages. */
 export async function buildCatalogue(req: PayloadRequest): Promise<Catalogue> {
   const { payload } = req
-  const [tree, frameworks, competencies, references] = await Promise.all([
+  const [tree, frameworks, competencies, sources] = await Promise.all([
     loadTaskTree(req),
     payload.find({ collection: 'frameworks', sort: 'name', pagination: false, depth: 0, req }),
     payload.find({ collection: 'competencies', pagination: false, depth: 0, req }),
-    payload.find({ collection: 'references', sort: 'name', pagination: false, depth: 1, req }),
+    payload.find({ collection: 'sources', sort: 'name', pagination: false, depth: 0, req }),
   ])
 
   return {
@@ -33,13 +33,11 @@ export async function buildCatalogue(req: PayloadRequest): Promise<Catalogue> {
         pairedGcapCode: competency.pairedGcapCode ?? '',
       }))
       .sort((a, b) => compareSourceIds(a.sourceId, b.sourceId)),
-    references: references.docs.map((reference) => ({
-      id: reference.id,
-      name: reference.name,
-      edition: reference.edition ?? '',
-      url:
-        reference.url ||
-        (typeof reference.document === 'object' ? (reference.document?.url ?? null) : null),
+    sources: sources.docs.map((source) => ({
+      id: source.id,
+      name: source.name,
+      edition: source.edition ?? '',
+      url: source.url,
     })),
     tasks: tree.inOrder.map((task) => catalogueTask(tree, task.id)),
   }

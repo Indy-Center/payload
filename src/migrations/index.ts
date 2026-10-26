@@ -11,6 +11,7 @@ import * as migration_20261015_040842_partner_links from './20261015_040842_part
 import * as migration_20261016_173341_teacher_resources from './20261016_173341_teacher_resources';
 import * as migration_20261016_180115_teacher_resource_descriptions_and_icons from './20261016_180115_teacher_resource_descriptions_and_icons';
 import * as migration_20261017_194306_cms_admin_role from './20261017_194306_cms_admin_role';
+import * as migration_20261026_014802_sources_replace_references from './20261026_014802_sources_replace_references';
 
 export const migrations = [
   {
@@ -76,6 +77,11 @@ export const migrations = [
   {
     up: migration_20261017_194306_cms_admin_role.up,
     down: migration_20261017_194306_cms_admin_role.down,
-    name: '20261017_194306_cms_admin_role'
+    name: '20261017_194306_cms_admin_role',
+  },
+  {
+    up: migration_20261026_014802_sources_replace_references.up,
+    down: migration_20261026_014802_sources_replace_references.down,
+    name: '20261026_014802_sources_replace_references'
   },
 ];

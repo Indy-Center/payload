@@ -6,7 +6,7 @@
  * - `GET /api/courseware/courses` lists every course with the version numbers it has.
  * - `GET /api/courseware/courses/:code/current` or `/draft` is one whole course version, or a 404
  *   when the course has none.
- * - `GET /api/courseware/catalogue` is the task tree, frameworks, competencies and references,
+ * - `GET /api/courseware/catalogue` is the task tree, frameworks, competencies and sources,
  *   for task and competency pages.
  *
  * Teacher notes and course authors are included. The library decides what each reader sees;
@@ -100,12 +100,13 @@ export type Competency = {
   pairedGcapCode: string
 }
 
-export type Reference = {
+/** An outside document tasks cite (decision 0053). */
+export type Source = {
   id: string
   name: string
   edition: string
-  /** A link, or the URL of an Indy document in the public media store. */
-  url: string | null
+  /** An https link. */
+  url: string
 }
 
 export type CatalogueTask = {
@@ -120,13 +121,13 @@ export type CatalogueTask = {
    * `fromTaskId` is the task the mapping is written on: this task's id, or an ancestor's.
    */
   mappings: { competencyId: string; fromTaskId: string }[]
-  citations: { referenceId: string; section: string }[]
+  citations: { sourceId: string; section: string }[]
 }
 
 export type Catalogue = {
   frameworks: Framework[]
   competencies: Competency[]
-  references: Reference[]
+  sources: Source[]
   /** In tree order: each task follows its parent, siblings in their order. */
   tasks: CatalogueTask[]
 }
