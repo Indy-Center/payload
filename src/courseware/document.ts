@@ -88,6 +88,13 @@ export type CourseVersionDocument = {
     examOptional: boolean
     /** An https link. */
     moodleUrl: string | null
+    /**
+     * Credential codes a student holds before enrolling. Every row must be met; a row is met by
+     * holding any one of its credentials. Retired credentials stay named.
+     */
+    prerequisites: { anyOf: string[] }[]
+    /** The code of the credential finishing the course earns; no other course issues it. */
+    credentialIssued: string | null
   }
   version: {
     id: string

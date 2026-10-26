@@ -98,6 +98,8 @@ describe('the one-document course version', () => {
       estimatedWeeks: null,
       examOptional: false,
       moodleUrl: null,
+      prerequisites: [],
+      credentialIssued: null,
     })
     expect(body.version).toEqual({
       id: version.id,
@@ -154,6 +156,8 @@ describe('the one-document course version', () => {
       estimatedWeeks: { min: 4, max: 8 },
       examOptional: true,
       moodleUrl: 'https://moodle.example.com/course/1',
+      prerequisites: [],
+      credentialIssued: null,
     })
   })
 

@@ -133,6 +133,10 @@ export async function buildCourseVersionDocument(
   }))
   const point = (position: number | null | undefined) =>
     points.find((candidate) => candidate.position === position) ?? null
+  const codeOf = await loadCredentialCodes(req, [
+    ...(course.prerequisites ?? []).flatMap((row) => row.anyOf ?? []),
+    course.credentialIssued,
+  ])
 
   return {
     course: {
@@ -157,6 +161,10 @@ export async function buildCourseVersionDocument(
           : null,
       examOptional: course.examOptional ?? false,
       moodleUrl: course.moodleUrl || null,
+      prerequisites: (course.prerequisites ?? []).map((row) => ({
+        anyOf: (row.anyOf ?? []).map(codeOf).filter((code): code is string => code !== null),
+      })),
+      credentialIssued: codeOf(course.credentialIssued),
     },
     version: {
       id: version.id,
@@ -182,6 +190,27 @@ export async function buildCourseVersionDocument(
         })),
     })),
   }
+}
+
+/** Looks up the codes of the named credentials, retired ones included. */
+async function loadCredentialCodes(
+  req: PayloadRequest,
+  named: (string | { id: string } | null | undefined)[],
+): Promise<(credential: string | { id: string } | null | undefined) => string | null> {
+  const ids = [...new Set(named.map(idOf).filter((id): id is string => id !== null))]
+  const { docs } =
+    ids.length === 0
+      ? { docs: [] }
+      : await req.payload.find({
+          collection: 'credentials',
+          where: { id: { in: ids } },
+          select: { code: true },
+          pagination: false,
+          depth: 0,
+          req,
+        })
+  const codes = new Map(docs.map((credential) => [credential.id, credential.code]))
+  return (credential) => codes.get(idOf(credential) ?? '') ?? null
 }
 
 function taskRef(tree: TaskTree, task: string | { id: string }): TaskRef {

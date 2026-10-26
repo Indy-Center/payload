@@ -1,6 +1,14 @@
-import type { CollectionConfig, NumberFieldValidation, SelectFieldValidation } from 'payload'
-import { number, select } from 'payload/shared'
+import type {
+  CollectionConfig,
+  FilterOptions,
+  NumberFieldValidation,
+  RelationshipFieldValidation,
+  SelectFieldValidation,
+  Where,
+} from 'payload'
+import { number, relationship, select } from 'payload/shared'
 import { staffAccess } from '@/courseware/access'
+import { idOf } from '@/courseware/ids'
 
 const POSITION_TYPES = ['DEL', 'GND', 'TWR', 'APP', 'DEP', 'CTR', 'FSS'] as const
 
@@ -44,8 +52,69 @@ const mostWeeks: NumberFieldValidation = (value, options) => {
 }
 
 /**
+ * Credential pickers leave out retired credentials, other than those the course already names: a
+ * course that required or issued a credential before it was retired still saves.
+ */
+const pickableCredential: FilterOptions = async ({ id, req }) => {
+  const live: Where = { retired: { not_equals: true } }
+  if (!id) return live
+  const stored = await req.payload.findByID({
+    collection: 'courses',
+    id,
+    depth: 0,
+    disableErrors: true,
+    req,
+  })
+  const named = [
+    ...(stored?.prerequisites ?? []).flatMap((row) => row.anyOf ?? []),
+    stored?.credentialIssued,
+  ]
+    .map((credential) => idOf(credential))
+    .filter((credential): credential is string => credential !== null)
+  return named.length === 0 ? live : { or: [live, { id: { in: named } }] }
+}
+
+const prerequisiteRow: RelationshipFieldValidation = (value, options) => {
+  if (!Array.isArray(value) || value.length === 0)
+    return 'A prerequisite row names at least one credential. Remove the row if it is empty.'
+  return relationship(value, options)
+}
+
+/** A credential is issued by one course at most (0054), so finishing never grants it twice. */
+const oneCoursePerCredential: RelationshipFieldValidation = async (value, options) => {
+  const valid = await relationship(value, options)
+  if (valid !== true) return valid
+  const credentialId = typeof value === 'string' ? value : null
+  if (!credentialId) return true
+
+  const { payload } = options.req
+  const { docs } = await payload.find({
+    collection: 'courses',
+    where: {
+      and: [
+        { credentialIssued: { equals: credentialId } },
+        ...(options.id ? [{ id: { not_equals: options.id } }] : []),
+      ],
+    },
+    limit: 1,
+    depth: 0,
+    pagination: false,
+    req: options.req,
+  })
+  if (docs.length === 0) return true
+  const credential = await payload.findByID({
+    collection: 'credentials',
+    id: credentialId,
+    depth: 0,
+    req: options.req,
+  })
+  return `${docs[0].code} already issues ${credential.code}. A credential is issued by one course only.`
+}
+
+/**
  * A course across all its editions. Besides its code, title and authors, it says what a student
- * must do before enrolling and what the course involves (decision 0054). These enrolment facts
+ * must hold and do before enrolling, what the course involves and what finishing it earns
+ * (decision 0054). A course may have no editions, such as one earned on Moodle. These enrolment facts
  * are policy: they change at any time without a new edition, and only the Training Admin and
  * leads change them, as they do the rest of the course; course authors read them.
  */
@@ -79,6 +148,27 @@ export const Courses: CollectionConfig = {
       },
       validate: (value: string[] | null | undefined) =>
         (value ?? []).every((cid) => /^\d+$/.test(cid)) || 'A course author is a CID: digits only.',
+    },
+    {
+      name: 'prerequisites',
+      type: 'array',
+      labels: { singular: 'Prerequisite', plural: 'Prerequisites' },
+      admin: {
+        description:
+          'Credentials a student holds before enrolling. Every row must be met; a row is met by holding any one of its credentials.',
+      },
+      fields: [
+        {
+          name: 'anyOf',
+          label: 'Holds one of these',
+          type: 'relationship',
+          relationTo: 'credentials',
+          hasMany: true,
+          required: true,
+          filterOptions: pickableCredential,
+          validate: prerequisiteRow,
+        },
+      ],
     },
     {
       name: 'prerequisitesNote',
@@ -168,6 +258,18 @@ export const Courses: CollectionConfig = {
       type: 'text',
       validate: (value: string | null | undefined) =>
         !value || value.startsWith('https://') || 'A link starts with https://.',
+    },
+    {
+      name: 'credentialIssued',
+      label: 'Credential issued',
+      type: 'relationship',
+      relationTo: 'credentials',
+      unique: true,
+      filterOptions: pickableCredential,
+      validate: oneCoursePerCredential,
+      admin: {
+        description: 'What finishing the course earns. Each credential is issued by one course.',
+      },
     },
     {
       name: 'currentVersion',
