@@ -110,7 +110,13 @@ describe('a course author', () => {
     })
     const scenario = await payload.create({
       collection: 'scenarios',
-      data: { course: own.id, name: 'Quiet', airport: 'KXYZ', position: 'XYZ_TWR', mode: 'sim' },
+      data: {
+        course: own.id,
+        name: 'Quiet',
+        airport: 'KXYZ',
+        studentPosition: 'XYZ_TWR',
+        mode: 'sim',
+      },
       ...as(author),
     })
 
@@ -154,7 +160,7 @@ describe('a course author', () => {
           course: other.id,
           name: 'Not mine',
           airport: 'KXYZ',
-          position: 'XYZ_APP',
+          studentPosition: 'XYZ_APP',
           mode: 'sim',
         },
         ...as(author),
@@ -170,7 +176,13 @@ describe('a course author', () => {
     })
     const scenario = await payload.create({
       collection: 'scenarios',
-      data: { course: own.id, name: 'Mine', airport: 'KXYZ', position: 'XYZ_TWR', mode: 'sim' },
+      data: {
+        course: own.id,
+        name: 'Mine',
+        airport: 'KXYZ',
+        studentPosition: 'XYZ_TWR',
+        mode: 'sim',
+      },
     })
 
     for (const move of [
@@ -244,7 +256,13 @@ describe('a course author', () => {
     const { own } = await courses()
     const scenario = await payload.create({
       collection: 'scenarios',
-      data: { course: own.id, name: 'Quiet', airport: 'KXYZ', position: 'XYZ_TWR', mode: 'sim' },
+      data: {
+        course: own.id,
+        name: 'Quiet',
+        airport: 'KXYZ',
+        studentPosition: 'XYZ_TWR',
+        mode: 'sim',
+      },
     })
 
     await payload.update({

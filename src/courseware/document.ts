@@ -41,9 +41,11 @@ export type Scenario = {
   id: string
   name: string
   airport: string
-  /** VATUSA's format, such as `IND_GND`. */
-  position: string
-  difficulty: string
+  /** VATUSA's format, perhaps with a sector part, such as `IND_GND` or `IND_83_CTR`. */
+  studentPosition: string
+  /** As `studentPosition`; null when the teacher works no position. */
+  teacherPosition: string | null
+  difficulty: 'easy' | 'medium' | 'hard' | null
   mode: 'live' | 'sim'
   retired: boolean
   practicalTasks: PracticalTask[]

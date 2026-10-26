@@ -500,16 +500,23 @@ export interface LessonPlan {
 export interface Scenario {
   id: string;
   course: string | Course;
+  /**
+   * As it is named in ATCTrainer, so teachers can find it there.
+   */
   name: string;
   /**
    * Such as KIND.
    */
   airport: string;
   /**
-   * In VATUSA’s format, such as IND_GND or IND_1_TWR.
+   * In VATUSA’s format, such as IND_GND or IND_83_CTR.
    */
-  position: string;
-  difficulty?: string | null;
+  studentPosition: string;
+  /**
+   * If the teacher works one. In VATUSA’s format, such as IND_GND or IND_83_CTR.
+   */
+  teacherPosition?: string | null;
+  difficulty?: ('easy' | 'medium' | 'hard') | null;
   mode: 'sim' | 'live';
   /**
    * Adding a task that has tasks beneath it adds a row for each of them when you save.
@@ -1004,7 +1011,8 @@ export interface ScenariosSelect<T extends boolean = true> {
   course?: T;
   name?: T;
   airport?: T;
-  position?: T;
+  studentPosition?: T;
+  teacherPosition?: T;
   difficulty?: T;
   mode?: T;
   practicalTasks?:
