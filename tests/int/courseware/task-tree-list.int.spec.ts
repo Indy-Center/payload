@@ -126,6 +126,31 @@ describe('the Tasks list', () => {
     ])
   })
 
+  it('gives a course author, who holds no staff role, the numbered tree too', async () => {
+    await seedTree()
+    const author = await payload.create({
+      collection: 'users',
+      data: { email: 'author@example.com', password: 'example-password', cid: '1000002' },
+    })
+    await payload.create({
+      collection: 'courses',
+      data: { code: 'X-TWR', title: 'Example Tower', authors: [author.cid!] },
+    })
+    const req = await createLocalReq({ user: { ...author, collection: 'users' } }, payload)
+
+    const result = await loadTaskTreeList(req)
+
+    expect(shown(result)).toEqual([
+      '1 Radio',
+      '  1.1 Readbacks',
+      '2 Ground',
+      '  2.1 Taxi',
+      '    2.1.1 Taxi to runway',
+      '    2.1.3 Taxi via route',
+      '  2.2 Crossings',
+    ])
+  })
+
   it('is read as the person signed in, so no one signed out sees the tree', async () => {
     await seedTree()
     const signedOut = await createLocalReq({}, payload)
