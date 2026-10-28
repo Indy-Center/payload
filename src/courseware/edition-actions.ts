@@ -43,10 +43,7 @@ export async function inTransaction<T>(req: PayloadRequest, work: () => Promise<
 }
 
 /** The course's draft edition, if it has one. A course has one at a time. */
-export async function findDraft(
-  req: PayloadRequest,
-  courseId: string,
-): Promise<CourseVersion | null> {
+async function findDraft(req: PayloadRequest, courseId: string): Promise<CourseVersion | null> {
   const { docs } = await req.payload.find({
     collection: 'course-versions',
     where: { course: { equals: courseId }, status: { equals: 'draft' } },
@@ -54,6 +51,8 @@ export async function findDraft(
     limit: 1,
     depth: 0,
     req,
+    user: req.user,
+    overrideAccess: false,
   })
   return docs[0] ?? null
 }

@@ -12,7 +12,15 @@ const range = ({ min, max }: Weeks) => (min === max ? `${min}` : `${min}–${max
 export async function EstimatedLength({ id, data, req }: UIFieldServerProps) {
   const course = (data ?? {}) as Partial<Course>
   const stored = id
-    ? await req.payload.findByID({ collection: 'courses', id, depth: 0, disableErrors: true, req })
+    ? await req.payload.findByID({
+        collection: 'courses',
+        id,
+        depth: 0,
+        disableErrors: true,
+        req,
+        user: req.user,
+        overrideAccess: false,
+      })
     : null
   const worked = stored ? await workedOutWeeks(req, stored) : null
   const override = overrideOf(course)
