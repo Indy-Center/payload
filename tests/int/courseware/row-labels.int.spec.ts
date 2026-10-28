@@ -27,15 +27,22 @@ describe('what a row says', () => {
   })
 
   it('names a citation by source, place and, when there is one, title', () => {
-    expect(rowLabel('citation', { source: 's1', section: '3-7-2' }, lookup)?.text).toBe(
+    expect(rowLabel('citation', { source: 's1', place: '3-7-2' }, lookup)?.text).toBe(
       'JO 7110.65BB 3-7-2',
     )
-    expect(rowLabel('citation', { source: 's2', section: '4-2.b' }, lookup)?.text).toBe(
+    expect(rowLabel('citation', { source: 's2', place: '4-2.b' }, lookup)?.text).toBe(
       'KIND SOP 2026-03 4-2.b',
     )
     expect(
-      rowLabel('citation', { source: 's1', section: '3-7-2', title: ' Taxi ' }, lookup)?.text,
+      rowLabel('citation', { source: 's1', place: '3-7-2', title: ' Taxi ' }, lookup)?.text,
     ).toBe('JO 7110.65BB 3-7-2 · Taxi')
+    expect(
+      rowLabel(
+        'citation',
+        { source: 's1', place: '3-7-2', title: 'Taxi and ground movement operations' },
+        lookup,
+      )?.text,
+    ).toBe('JO 7110.65BB 3-7-2 · Taxi and ground movement operations')
     expect(rowLabel('citation', { source: 's1' }, lookup)?.text).toBe('JO 7110.65BB')
   })
 
@@ -67,7 +74,7 @@ describe('what a row says', () => {
   it('says nothing for an empty row or before the lookup arrives', () => {
     expect(rowLabel('mapping', {}, lookup)).toBeNull()
     expect(rowLabel('mapping', { competency: 'c1' }, null)).toBeNull()
-    expect(rowLabel('citation', { section: '3-7-2' }, lookup)).toBeNull()
+    expect(rowLabel('citation', { place: '3-7-2' }, lookup)).toBeNull()
     expect(rowLabel('point', { label: '  ' }, null)).toBeNull()
     expect(rowLabel('module', {}, null)).toBeNull()
     expect(rowLabel('theoryItem', { task: 'gone' }, lookup)).toBeNull()

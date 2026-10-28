@@ -40,8 +40,6 @@ const idOf = (value: Id) => (value && typeof value === 'object' ? value.id : (va
 export type RowData = {
   competency?: Id
   source?: Id
-  /** Ticket 19 renames this to `place` and adds `title`; see `citationLabel`. */
-  section?: string | null
   place?: string | null
   title?: string | null
   label?: string | null
@@ -57,9 +55,7 @@ const clean = (value: string | null | undefined) => value?.trim() || ''
 function citationLabel(row: RowData, lookup: RowLabelLookup): RowLabelText | null {
   const source = lookup.sources[idOf(row.source) ?? '']
   if (!source) return null
-  // Ticket 19 renames `section` to `place` and adds `title`: change the next line to
-  // `const place = clean(row.place)`, and the title below is read from `row.title` already.
-  const place = clean(row.section)
+  const place = clean(row.place)
   const title = clean(row.title)
   const where = [source.name, clean(source.edition), place].filter(Boolean).join(' ')
   return { text: title ? `${where} · ${title}` : where }
