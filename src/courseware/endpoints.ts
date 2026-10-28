@@ -1,6 +1,7 @@
 import type { Endpoint, PayloadRequest } from 'payload'
 import { hasBearerToken, unauthorized } from '@/bearer-token'
 import { buildCatalogue } from './catalogue'
+import { buildCompetencyTree } from './competency-tree'
 import { buildRowLabelLookup } from './row-labels'
 import {
   buildCourseList,
@@ -38,6 +39,21 @@ export const coursewareEndpoints: Endpoint[] = [
     handler: async (req) => {
       if (!fromLibrary(req)) return unauthorized()
       return Response.json(await buildCatalogue(req))
+    },
+  },
+  {
+    // The admin's Competencies list, for the signed-in person: not one of the reads for other apps.
+    path: '/courseware/competency-tree',
+    method: 'get',
+    handler: async (req) => {
+      if (!req.user) return unauthorized()
+      const param = (name: string) =>
+        typeof req.query?.[name] === 'string' ? (req.query[name] as string) : undefined
+      const tree = await buildCompetencyTree(req, {
+        edition: param('edition'),
+        search: param('search'),
+      })
+      return tree ? Response.json(tree) : notFound()
     },
   },
   {

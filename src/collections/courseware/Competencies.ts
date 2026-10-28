@@ -12,11 +12,22 @@ export const Competencies: CollectionConfig = {
     useAsTitle: 'label',
     defaultColumns: ['sourceId', 'title', 'framework'],
     group: 'Training',
+    // One tab per framework edition, each a tree, in place of Payload's table.
+    components: {
+      views: { list: { Component: '/components/admin/CompetenciesList#CompetenciesList' } },
+    },
   },
   access: staffAccess,
   indexes: [{ fields: ['framework', 'sourceId'], unique: true }],
   fields: [
-    { name: 'framework', type: 'relationship', relationTo: 'frameworks', required: true },
+    {
+      name: 'framework',
+      type: 'relationship',
+      relationTo: 'frameworks',
+      required: true,
+      // Editions are not edited from the admin (see Frameworks).
+      admin: { allowCreate: false, allowEdit: false },
+    },
     { name: 'sourceId', type: 'text', required: true, admin: { description: 'Such as 2.1.3a.' } },
     { name: 'title', type: 'text', required: true },
     { name: 'text', type: 'textarea', admin: { description: 'Empty for a heading.' } },
