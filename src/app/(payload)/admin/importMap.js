@@ -1,3 +1,6 @@
+import { CompetencyImportNote as CompetencyImportNote_d7fd06c8daddf06d97b50efa71d3475e } from '../../../components/admin/CompetencyPage'
+import { CompetencyRelations as CompetencyRelations_d7fd06c8daddf06d97b50efa71d3475e } from '../../../components/admin/CompetencyPage'
+import { NoSaveButton as NoSaveButton_177a01f20de7a41d5daf6bf44c99ff1e } from '../../../components/admin/NoSaveButton'
 import { CompetenciesList as CompetenciesList_650d8d1f11cf3d8633778927c6d86719 } from '../../../components/admin/CompetenciesList'
 import { TaskNextNumber as TaskNextNumber_0211a6250198a4675f43eb4eea370e9c } from '../../../components/admin/TaskNextNumber'
 import { TaskChildrenField as TaskChildrenField_d7e1983a8e592ae236bacc1d9466ecd3 } from '../../../components/admin/TaskChildrenField'
@@ -40,6 +43,9 @@ import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc056
 
 /** @type import('payload').ImportMap */
 export const importMap = {
+  "/components/admin/CompetencyPage#CompetencyImportNote": CompetencyImportNote_d7fd06c8daddf06d97b50efa71d3475e,
+  "/components/admin/CompetencyPage#CompetencyRelations": CompetencyRelations_d7fd06c8daddf06d97b50efa71d3475e,
+  "/components/admin/NoSaveButton#NoSaveButton": NoSaveButton_177a01f20de7a41d5daf6bf44c99ff1e,
   "/components/admin/CompetenciesList#CompetenciesList": CompetenciesList_650d8d1f11cf3d8633778927c6d86719,
   "/components/admin/TaskNextNumber#TaskNextNumber": TaskNextNumber_0211a6250198a4675f43eb4eea370e9c,
   "/components/admin/TaskChildrenField#TaskChildrenField": TaskChildrenField_d7e1983a8e592ae236bacc1d9466ecd3,
