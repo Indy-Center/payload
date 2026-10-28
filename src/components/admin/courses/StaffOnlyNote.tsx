@@ -4,7 +4,7 @@ import { isStaff } from '@/courseware/access'
 import type { User } from '@/payload-types'
 
 /**
- * The line a course author sees over the Details tab, which they read but cannot change: a
+ * The line a course author sees on Details, after code and title, which they read but cannot change: a
  * course's fields are the Training Admin's and leads' (0054, ticket 07).
  */
 export function StaffOnlyNote({ req }: UIFieldServerProps) {

@@ -194,14 +194,6 @@ export const Courses: CollectionConfig = {
   // only lay the form out: the stored data and the API keep their shape.
   fields: [
     {
-      name: 'staffOnlyNote',
-      type: 'ui',
-      admin: {
-        components: { Field: '/components/admin/courses/StaffOnlyNote#StaffOnlyNote' },
-        disableListColumn: true,
-      },
-    },
-    {
       type: 'row',
       fields: [
         {
@@ -214,6 +206,15 @@ export const Courses: CollectionConfig = {
         },
         { name: 'title', type: 'text', required: true },
       ],
+    },
+    {
+      // For a course author only, after the course's code and title.
+      name: 'staffOnlyNote',
+      type: 'ui',
+      admin: {
+        components: { Field: '/components/admin/courses/StaffOnlyNote#StaffOnlyNote' },
+        disableListColumn: true,
+      },
     },
     {
       name: 'authors',
