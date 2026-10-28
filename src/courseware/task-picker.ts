@@ -1,6 +1,7 @@
 import type { Endpoint, PayloadRequest } from 'payload'
 import { unauthorized } from '@/bearer-token'
-import { loadTaskTree, type TaskTree } from './task-tree'
+import { idOf } from './ids'
+import { buildTaskTree, loadTaskTree, type TaskTree } from './task-tree'
 
 /** A task as a picker offers it: "2.2.1 Taxi to runway". */
 export type TaskOption = { id: string; number: string; label: string }
@@ -59,6 +60,35 @@ export async function loadTaskOptions(
   return { options, selected }
 }
 
+/**
+ * One task's number, for its page title: the tree read with only what numbering needs (each
+ * task's parent and sort key), not its mappings and citations. Null for a task that isn't there.
+ */
+export async function loadTaskNumber(req: PayloadRequest, id: string): Promise<string | null> {
+  const { docs } = await req.payload.find({
+    collection: 'tasks',
+    depth: 0,
+    pagination: false,
+    overrideAccess: false,
+    user: req.user,
+    select: { parent: true, _order: true },
+    req,
+  })
+  const tree = buildTaskTree(
+    docs.map((task) => ({
+      id: task.id,
+      name: '',
+      description: '',
+      parentId: idOf(task.parent),
+      retired: false,
+      order: task._order ?? '',
+      competencyIds: [],
+      citations: [],
+    })),
+  )
+  return tree.get(id) ? tree.number(id) : null
+}
+
 /** `admin.components` for a relationship to tasks: the numbered picker, `TaskPicker`. */
 export const taskPickerComponents = ({ excludeSelf = false }: { excludeSelf?: boolean } = {}) => ({
   Field: {
@@ -84,6 +114,18 @@ export const taskPickerEndpoints: Endpoint[] = [
           exclude: text('exclude'),
         }),
       )
+    },
+  },
+  {
+    // A task page's title (TaskTitle): its number alone, as `{ number }`.
+    path: '/courseware/tasks/:id/number',
+    method: 'get',
+    handler: async (req) => {
+      if (!req.user) return unauthorized()
+      const { id } = req.routeParams as { id: string }
+      const number = await loadTaskNumber(req, id)
+      if (number === null) return Response.json({ error: 'Not found' }, { status: 404 })
+      return Response.json({ number })
     },
   },
 ]

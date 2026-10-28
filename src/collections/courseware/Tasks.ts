@@ -58,16 +58,15 @@ export const Tasks: CollectionConfig = {
         // The numbered tree in place of Payload's flat list, Columns and Filters with it.
         list: { Component: '/components/admin/TaskTreeListView#TaskTreeListView' },
       },
+      edit: {
+        // Puts the number before the name in the page title and breadcrumb; shows nothing itself.
+        // A document slot rather than a field, so it stays mounted through a save.
+        beforeDocumentControls: ['/components/admin/TaskTitle#TaskTitle'],
+      },
     },
   },
   access: staffAccess,
   fields: [
-    {
-      // Puts the number before the name in the page title and breadcrumb; shows nothing itself.
-      name: 'numberedTitle',
-      type: 'ui',
-      admin: { components: { Field: '/components/admin/TaskTitle#TaskTitle' } },
-    },
     {
       // In the "Add child" drawer: the number the new task will get.
       name: 'nextNumber',

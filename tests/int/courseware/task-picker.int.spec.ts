@@ -141,3 +141,29 @@ describe('the task picker', () => {
     expect(status).toBe(401)
   })
 })
+
+describe('a task page’s number', () => {
+  const numberOf = (id: string) =>
+    callEndpoint(payload, `/courseware/tasks/${id}/number`, { token: null, user: author })
+
+  it('is read from the tree, and follows a new parent', async () => {
+    const { radio, runway } = await seedTree()
+
+    expect((await numberOf(runway.id)).body).toEqual({ number: '2.2.1' })
+
+    await payload.update({ collection: 'tasks', id: runway.id, data: { parent: radio.id } })
+
+    // Its sort key is older than Readbacks', so it goes first under Radio.
+    expect((await numberOf(runway.id)).body).toEqual({ number: '1.1' })
+  })
+
+  it('answers 404 for a task that does not exist, and 401 to anyone not signed in', async () => {
+    const { runway } = await seedTree()
+
+    expect((await numberOf('no-such-task')).status).toBe(404)
+    const signedOut = await callEndpoint(payload, `/courseware/tasks/${runway.id}/number`, {
+      token: null,
+    })
+    expect(signedOut.status).toBe(401)
+  })
+})
