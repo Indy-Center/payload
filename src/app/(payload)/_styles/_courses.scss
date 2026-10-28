@@ -3,6 +3,46 @@
 // length and the line a course author sees; and the Courses list's tabs and Credentials table.
 // Theme-neutral: Payload's own elevation, success and warning colours flip for dark.
 
+// The Courses list's tabs, Courses and Credentials. They wrap rather than scroll the page sideways.
+.course-list-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--base) * 0.25);
+  margin-bottom: var(--base);
+  border-bottom: 1px solid var(--theme-border-color);
+
+  &__tab {
+    padding: calc(var(--base) * 0.4) calc(var(--base) * 0.75);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    color: var(--theme-elevation-500);
+    text-decoration: none;
+
+    &[aria-current='page'] {
+      border-bottom-color: var(--indy-link);
+      color: var(--theme-text);
+      font-weight: 600;
+    }
+  }
+}
+
+.credentials-tab {
+  padding-bottom: calc(var(--base) * 2);
+
+  &__retired {
+    margin: 0 0 var(--base);
+  }
+
+  // On a phone the table scrolls inside its box; the page does not.
+  &__table {
+    overflow-x: auto;
+
+    .edition-tag {
+      margin-inline-start: calc(var(--base) * 0.4);
+    }
+  }
+}
+
 // Details: "Worked out from edition 2: 10–12 weeks", read like a field.
 .estimated-length {
   p {

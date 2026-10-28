@@ -169,6 +169,8 @@ export const Courses: CollectionConfig = {
     hideAPIURL: true,
     components: {
       views: {
+        // Two tabs, Courses and Credentials; Credentials are kept from here, not the nav.
+        list: { Component: '/components/admin/courses/CoursesListView#CoursesListView' },
         edit: {
           default: { tab: { label: 'Details', order: 100 } },
           content: {
