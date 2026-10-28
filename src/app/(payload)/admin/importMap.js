@@ -1,3 +1,4 @@
+import { CredentialCell as CredentialCell_6f77df66545adeb6b7e4f2ebec0bfcdc } from '../../../components/admin/courses/CredentialCell'
 import { EditionCell as EditionCell_4739f25f5aa938351f26a42268769d3e } from '../../../components/admin/courses/EditionCell'
 import { CourseContentView as CourseContentView_5e7875f4b67a6148b148358c2ba6917f } from '../../../components/admin/courses/CourseContentView'
 import { CourseHistoryView as CourseHistoryView_9a7e571f00fe5a32a5b3133430fa87d8 } from '../../../components/admin/courses/CourseHistoryView'
@@ -34,6 +35,7 @@ import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc056
 
 /** @type import('payload').ImportMap */
 export const importMap = {
+  "/components/admin/courses/CredentialCell#CredentialCell": CredentialCell_6f77df66545adeb6b7e4f2ebec0bfcdc,
   "/components/admin/courses/EditionCell#EditionCell": EditionCell_4739f25f5aa938351f26a42268769d3e,
   "/components/admin/courses/CourseContentView#CourseContentView": CourseContentView_5e7875f4b67a6148b148358c2ba6917f,
   "/components/admin/courses/CourseHistoryView#CourseHistoryView": CourseHistoryView_9a7e571f00fe5a32a5b3133430fa87d8,

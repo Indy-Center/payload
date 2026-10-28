@@ -291,6 +291,7 @@ export const Courses: CollectionConfig = {
       validate: oneCoursePerCredential,
       admin: {
         description: 'What finishing the course earns. Each credential is issued by one course.',
+        components: { Cell: '/components/admin/courses/CredentialCell#CredentialCell' },
       },
     },
     {
