@@ -331,13 +331,53 @@ describe('taking a lesson plan out of its module and putting it back', () => {
     expect((await outline(version.id))[0]).toEqual(['Theory', [one.id, two.id, spare.id]])
   })
 
-  it('refuses a module that is not in the plan’s edition', async () => {
-    const { one } = await edition()
+  it('refuses a module of another edition of the same course', async () => {
+    const { course, version, one, two, three } = await edition('published')
+    const other = await payload.create({
+      collection: 'course-versions',
+      depth: 0,
+      data: { course: course.id, number: 2, status: 'draft', modules: [{ title: 'Elsewhere' }] },
+    })
+    const elsewhere = other.modules![0].id!
 
-    const { status, body } = await place(one.id, 'not-a-module', lead)
+    const { status, body } = await place(one.id, elsewhere, lead)
 
     expect(status).toBe(400)
     expect(body.errors).toEqual([{ message: 'That module is not in X-TWR edition 1.' }])
+    expect(await outline(version.id)).toEqual([
+      ['Theory', [one.id, two.id]],
+      ['Sim', [three.id]],
+    ])
+    expect(await outline(other.id)).toEqual([['Elsewhere', []]])
+  })
+
+  it('writes only the modules’ lesson plans: module ids, descriptions and the edition’s fields stay', async () => {
+    const { version, theory, sim, one, two, three } = await edition()
+    expect(version.gradingScale).toEqual(expect.any(String))
+
+    expect((await move(two.id, 'up', author)).status).toBe(200)
+    expect((await place(three.id, theory, author)).status).toBe(200)
+
+    const after: CourseVersion = await payload.findByID({
+      collection: 'course-versions',
+      id: version.id,
+      depth: 0,
+    })
+    expect(after).toMatchObject({
+      status: 'draft',
+      gradingScale: version.gradingScale,
+      defaultMinimum: 2,
+    })
+    expect(
+      after.modules!.map(({ id, title, description }) => ({ id, title, description })),
+    ).toEqual([
+      { id: theory, title: 'Theory', description: null },
+      { id: sim, title: 'Sim', description: 'In the sim' },
+    ])
+    expect(after.modules!.map((module) => module.lessonPlans)).toEqual([
+      [two.id, one.id, three.id],
+      [],
+    ])
   })
 
   it('is refused to a course author in a published edition', async () => {
