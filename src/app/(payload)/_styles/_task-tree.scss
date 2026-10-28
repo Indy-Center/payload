@@ -130,3 +130,45 @@ span.task-tree__toggle {
     display: none;
   }
 }
+
+// A task's page: its children (src/components/admin/TaskChildren.tsx), in the same table.
+.task-children {
+  max-width: 100%;
+}
+
+.task-children__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.task-children__title {
+  margin: 0;
+}
+
+.task-children__beneath {
+  margin-inline-start: 0.5rem;
+  color: var(--theme-elevation-500);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.task-children__retired {
+  margin: 0.5rem 0 0;
+  color: var(--theme-elevation-500);
+  font-size: 0.875rem;
+}
+
+// The "Add child" drawer's line above its fields.
+.task-next-number {
+  margin-bottom: var(--base);
+  padding: 0.75rem 1rem;
+  border-radius: var(--style-radius-s);
+  background: var(--theme-elevation-100);
+}
+
+.task-next-number__number {
+  font-family: var(--font-mono);
+}
