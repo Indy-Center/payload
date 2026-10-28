@@ -9,7 +9,7 @@ export const ARRIVAL_RATINGS = ['S1', 'S2', 'S3', 'C1', 'C3', 'I1', 'I3'] as con
 type Siblings = Record<string, unknown> | undefined
 const isEndorsement = (siblingData: unknown) => (siblingData as Siblings)?.kind === 'endorsement'
 
-const rank: NumberFieldValidation = async (value, options) => {
+export const rank: NumberFieldValidation = async (value, options) => {
   const valid = number(value, options)
   if (valid !== true) return valid
   const hasRank = value !== null && value !== undefined
@@ -22,6 +22,9 @@ const rank: NumberFieldValidation = async (value, options) => {
       : true
   }
 
+  // The admin form runs validators in the browser, where there is no database to ask; the
+  // server checks again on save.
+  if (!options.req?.payload) return true
   const { docs } = await options.req.payload.find({
     collection: 'credentials',
     where: {
@@ -41,7 +44,7 @@ const rank: NumberFieldValidation = async (value, options) => {
     : `${docs[0].code} already has rank ${value}. Each certification has its own rank.`
 }
 
-const grantedOnArrival: SelectFieldValidation = async (value, options) => {
+export const grantedOnArrival: SelectFieldValidation = async (value, options) => {
   const valid = select(value, options)
   if (valid !== true) return valid
   const ratings = (value ?? []) as string[]
@@ -49,7 +52,9 @@ const grantedOnArrival: SelectFieldValidation = async (value, options) => {
   if (isEndorsement(options.siblingData))
     return 'Only a certification is granted on arrival. Clear the ratings for an endorsement.'
 
-  // Each VATSIM rating brings one certification, so training-tools can map it back.
+  // Each VATSIM rating brings one certification, so training-tools can map it back. The browser
+  // has no database to ask; the server checks again on save.
+  if (!options.req?.payload) return true
   const { docs } = await options.req.payload.find({
     collection: 'credentials',
     where: {

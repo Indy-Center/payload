@@ -1,5 +1,6 @@
 import { Forbidden, ValidationError, type Payload } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { ARRIVAL_RATINGS, grantedOnArrival, rank } from '@/collections/courseware/Credentials'
 import type { Credential, User } from '@/payload-types'
 import { callEndpoint, resetDatabase, testPayload } from './helpers'
 
@@ -358,6 +359,29 @@ describe('credentials', () => {
       }),
     )
     expect(errors).toEqual([{ path: 'grantedOnArrival', message: expect.any(String) }])
+  })
+})
+
+describe('the admin form’s own checks', () => {
+  // The form runs a field's validator in the browser, where the request can translate but has no
+  // `payload` to query. Such a validator must pass and leave the real check to the server.
+  const browserReq = { t: (key: string) => key }
+
+  it('pass the rank and arrival rules where there is no database to ask', async () => {
+    const siblingData = { kind: 'certification' }
+    const rankOptions = { req: browserReq, siblingData, path: ['rank'] }
+    const ratingOptions = {
+      req: browserReq,
+      siblingData,
+      path: ['grantedOnArrival'],
+      hasMany: true,
+      options: [...ARRIVAL_RATINGS],
+    }
+
+    // @ts-expect-error -- only the options these validators read are given
+    expect(await rank(1, rankOptions)).toBe(true)
+    // @ts-expect-error -- only the options these validators read are given
+    expect(await grantedOnArrival(['S1'], ratingOptions)).toBe(true)
   })
 })
 

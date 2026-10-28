@@ -88,6 +88,9 @@ const prerequisiteRow: RelationshipFieldValidation = async (value, options) => {
     return 'A prerequisite row names at least one credential. Remove the row if it is empty.'
   const valid = await relationship(value, options)
   if (valid !== true) return valid
+  // The admin form runs validators in the browser, where there is no database to ask for a
+  // credential's code; the server checks again on save.
+  if (!options.req?.payload) return true
 
   const data = options.data as Partial<Course>
   const credentialsOf = (row: { anyOf?: unknown } | undefined) =>
@@ -122,6 +125,8 @@ const oneCoursePerCredential: RelationshipFieldValidation = async (value, option
   if (valid !== true) return valid
   const credentialId = typeof value === 'string' ? value : null
   if (!credentialId) return true
+  // No database in the browser; the server checks again on save.
+  if (!options.req?.payload) return true
 
   const { payload } = options.req
   const { docs } = await payload.find({
