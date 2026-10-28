@@ -37,6 +37,14 @@ export type TaskGridBatch = {
 export type TaskGridRefusal = { row?: string; message: string }
 
 /**
+ * The Tasks collection refuses any save of a task whose parent is retired, so the grid locks such
+ * a row and the save refuses it with this reason rather than Payload's bare one.
+ */
+export const PARENT_RETIRED = 'Its parent is retired. Un-retire the parent first.'
+/** A new task under a task the same batch retires would be hidden with it at once. */
+export const PARENT_RETIRING = 'Its parent is being retired. Keep the parent or remove this task.'
+
+/**
  * The siblings whose sort keys a new order leaves alone: the longest run, in the new order, whose
  * keys already rise. Every other sibling, and every new one (no key), is given a new key.
  */

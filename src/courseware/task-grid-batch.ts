@@ -8,7 +8,14 @@ import {
 } from 'payload'
 import type { User } from '@/payload-types'
 import { isStaff } from './access'
-import { siblingKeys, type GridTask, type TaskGridBatch, type TaskGridRefusal } from './task-grid'
+import {
+  PARENT_RETIRED,
+  PARENT_RETIRING,
+  siblingKeys,
+  type GridTask,
+  type TaskGridBatch,
+  type TaskGridRefusal,
+} from './task-grid'
 import { loadTaskTree } from './task-tree'
 
 /**
@@ -74,27 +81,26 @@ type Write = {
 /**
  * Saves the grid's batch, so that the answer names every refused row, not only the first. A
  * refused save rolls back the whole transaction (Payload's operations do so themselves), so the
- * batch is written in passes: each in a fresh transaction, stopping at the first refused row,
- * which the next pass leaves out with any new task beneath it. Once a pass meets no new refusal,
- * it is committed if nothing was refused and rolled back otherwise.
+ * batch is written in passes: each in a fresh transaction that reads the task list, checks the
+ * batch against it and writes, stopping at the first refused row, which the next pass leaves out
+ * with any new task beneath it. Once a pass meets no new refusal, it is committed if nothing was
+ * refused and rolled back otherwise.
  */
 export async function saveTaskGrid(
   req: PayloadRequest,
   batch: TaskGridBatch,
 ): Promise<{ created: number; updated: number }> {
   if (!isStaff(req.user as Pick<User, 'roles' | 'cid'> | null)) throw new APIError(STAFF_ONLY, 403)
-  const writes = await plan(req, batch)
 
   const refused = new Map<string, string[]>()
   for (;;) {
     await initTransaction(req)
     try {
-      const done = await writeAll(writes, refused)
+      const done = await writeAll(await plan(req, batch), refused)
       if (refused.size === 0) {
         await commitTransaction(req)
         return done
       }
-      await killTransaction(req)
       throw new TaskGridRefused(
         [...refused].flatMap(([row, messages]) => messages.map((message) => ({ row, message }))),
       )
@@ -132,14 +138,19 @@ async function writeAll(writes: Write[], refused: Map<string, string[]>) {
 }
 
 /**
- * Checks the batch against the task list as it is now and turns it into writes: new tasks first,
- * each after its parent, then one save per changed task. Refuses the whole batch if it was made
- * from a task list that has since changed.
+ * Checks the batch against the task list as it is now and turns it into writes. Refuses the whole
+ * batch if it was made from a task list that has since changed, and a row whose parent is retired.
+ *
+ * The Tasks collection refuses a save whose parent is retired, so the writes go in an order that
+ * never meets one part way: saved tasks that stay live first, parents before children (an
+ * un-retired parent before its children's saves); then new tasks, parents first; then retires,
+ * children before parents.
  */
 async function plan(req: PayloadRequest, batch: TaskGridBatch): Promise<Write[]> {
   const changes = batch.changes ?? []
   const adds = batch.adds ?? []
   const orders = batch.orders ?? []
+  // In tree order, so parents come before their children.
   const saved = new Map((await loadGridTasks(req)).map((task) => [task.id, task]))
   const added = new Map(adds.map((add) => [add.key, add]))
   const refusals: TaskGridRefusal[] = []
@@ -190,6 +201,35 @@ async function plan(req: PayloadRequest, batch: TaskGridBatch): Promise<Write[]>
     grouped.add(add.parent)
   }
 
+  // Saved tasks: only what the grid edits, and any new sort key, in one save each. A task's
+  // parent changes on its own page.
+  const updates = new Map<string, Record<string, unknown>>()
+  for (const { id, name, description, retired } of changes) {
+    const data = Object.fromEntries(
+      Object.entries({ name, description, retired }).filter(([, value]) => value !== undefined),
+    )
+    updates.set(id, { ...updates.get(id), ...data })
+  }
+  for (const [id, key] of keys) {
+    if (saved.has(id)) updates.set(id, { ...updates.get(id), _order: key })
+  }
+
+  // Retired as the batch leaves it, and retired now and staying so.
+  const retiring = (id: string) => updates.get(id)?.retired === true
+  const staysRetired = (id: string) =>
+    Boolean(saved.get(id)?.retired) && updates.get(id)?.retired !== false
+  for (const id of updates.keys()) {
+    const parent = saved.get(id)?.parentId
+    if (parent && staysRetired(parent)) refusals.push({ row: id, message: PARENT_RETIRED })
+  }
+  for (const add of adds) {
+    if (add.parent && staysRetired(add.parent)) {
+      refusals.push({ row: add.key, message: PARENT_RETIRED })
+    } else if (add.parent && retiring(add.parent)) {
+      refusals.push({ row: add.key, message: PARENT_RETIRING })
+    }
+  }
+
   // New tasks, parents first.
   const ordered: NonNullable<TaskGridBatch['adds']> = []
   let waiting = [...adds]
@@ -211,39 +251,33 @@ async function plan(req: PayloadRequest, batch: TaskGridBatch): Promise<Write[]>
   if (refusals.length) throw new TaskGridRefused(refusals)
 
   const as = { req, user: req.user, overrideAccess: false, depth: 0 } as const
-  const writes: Write[] = ordered.map((add) => ({
-    row: add.key,
-    parent: add.parent,
-    run: async (ids) => {
-      const parent = add.parent === null ? null : (ids.get(add.parent) ?? add.parent)
-      const task = await req.payload.create({
-        collection: 'tasks',
-        data: { name: add.name, description: add.description, parent, _order: keys.get(add.key) },
-        ...as,
-      })
-      return task.id
+  const update = (id: string): Write => ({
+    row: id,
+    run: async () => {
+      await req.payload.update({ collection: 'tasks', id, data: updates.get(id)!, ...as })
     },
-  }))
-
-  // Saved tasks: only what the grid edits, and any new sort key, in one save each. A task's
-  // parent changes on its own page.
-  const updates = new Map<string, Record<string, unknown>>()
-  for (const { id, name, description, retired } of changes) {
-    const data = Object.fromEntries(
-      Object.entries({ name, description, retired }).filter(([, value]) => value !== undefined),
-    )
-    updates.set(id, { ...updates.get(id), ...data })
-  }
-  for (const [id, key] of keys) {
-    if (saved.has(id)) updates.set(id, { ...updates.get(id), _order: key })
-  }
-  for (const [id, data] of updates) {
-    writes.push({
-      row: id,
-      run: async () => {
-        await req.payload.update({ collection: 'tasks', id, data, ...as })
+  })
+  const inTreeOrder = [...saved.keys()].filter((id) => updates.has(id))
+  return [
+    ...inTreeOrder.filter((id) => !retiring(id)).map(update),
+    ...ordered.map((add): Write => ({
+      row: add.key,
+      parent: add.parent,
+      run: async (ids) => {
+        const parent = add.parent === null ? null : (ids.get(add.parent) ?? add.parent)
+        const task = await req.payload.create({
+          collection: 'tasks',
+          data: {
+            name: add.name,
+            description: add.description,
+            parent,
+            _order: keys.get(add.key),
+          },
+          ...as,
+        })
+        return task.id
       },
-    })
-  }
-  return writes
+    })),
+    ...inTreeOrder.filter(retiring).reverse().map(update),
+  ]
 }

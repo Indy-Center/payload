@@ -130,8 +130,8 @@ describe('saving the Tasks grid', () => {
 
     expect(status).toBe(400)
     expect(body.errors).toEqual([
-      { row: 'new:2', message: 'Name: This field is required.' },
       { row: t.runway.id, message: 'Name: This field is required.' },
+      { row: 'new:2', message: 'Name: This field is required.' },
     ])
     expect(await tree()).toEqual(before)
   })
@@ -182,6 +182,91 @@ describe('saving the Tasks grid', () => {
       { message: 'Only the Training Admin and leads edit the task list.' },
     ])
     expect(await tree()).toEqual(before)
+  })
+
+  it('refuses a new task under a task the same batch retires', async () => {
+    const t = await seedTree()
+    const before = await tree()
+
+    const { status, body } = await save({
+      changes: [{ id: t.taxi.id, retired: true }],
+      adds: [{ key: 'new:1', parent: t.taxi.id, name: 'Taxi to hold' }],
+      orders: [{ parent: t.taxi.id, tasks: [t.runway.id, t.ramp.id, 'new:1'] }],
+    })
+
+    expect(status).toBe(400)
+    expect(body.errors).toEqual([
+      {
+        row: 'new:1',
+        message: 'Its parent is being retired. Keep the parent or remove this task.',
+      },
+    ])
+    expect(await tree()).toEqual(before)
+  })
+
+  it('retires a task and its children while renaming them, in one batch', async () => {
+    const t = await seedTree()
+
+    const { status } = await save({
+      // Listed parent first: the save still writes the children before retiring the parent.
+      changes: [
+        { id: t.taxi.id, retired: true },
+        { id: t.runway.id, name: 'Taxi to the runway', retired: true },
+        { id: t.ramp.id, name: 'Taxi to the ramp' },
+      ],
+    })
+
+    expect(status).toBe(200)
+    expect(await tree()).toEqual([
+      '1 Radio (Talking on frequency)',
+      '  1.1 Readbacks',
+      '2 Ground',
+      '  2.1 Taxi [retired]',
+      '    2.1.1 Taxi to the runway [retired]',
+      '    2.1.2 Taxi to the ramp',
+      '  2.2 Crossings',
+    ])
+  })
+
+  describe('under a retired task', () => {
+    /** Radio with Readbacks under it, Radio then retired. */
+    async function retiredParent(childRetired: boolean) {
+      const radio = await task('Radio')
+      const readbacks = await task('Readbacks', radio.id, { retired: childRetired })
+      await payload.update({ collection: 'tasks', id: radio.id, data: { retired: true } })
+      return { radio, readbacks }
+    }
+
+    it('un-retires a task only with its parent', async () => {
+      const { radio, readbacks } = await retiredParent(true)
+
+      const alone = await save({ changes: [{ id: readbacks.id, retired: false }] })
+      expect(alone.status).toBe(400)
+      expect(alone.body.errors).toEqual([
+        { row: readbacks.id, message: 'Its parent is retired. Un-retire the parent first.' },
+      ])
+
+      const both = await save({
+        // Listed child first: the save un-retires the parent first.
+        changes: [
+          { id: readbacks.id, retired: false },
+          { id: radio.id, retired: false },
+        ],
+      })
+      expect(both.status).toBe(200)
+      expect(await tree()).toEqual(['1 Radio', '  1.1 Readbacks'])
+    })
+
+    it('does not rename a task whose parent is retired', async () => {
+      const { readbacks } = await retiredParent(false)
+
+      const { status, body } = await save({ changes: [{ id: readbacks.id, name: 'Read back' }] })
+
+      expect(status).toBe(400)
+      expect(body.errors).toEqual([
+        { row: readbacks.id, message: 'Its parent is retired. Un-retire the parent first.' },
+      ])
+    })
   })
 
   it('answers 401 to a request with no one signed in', async () => {
