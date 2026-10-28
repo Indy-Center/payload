@@ -39,6 +39,9 @@ export async function callEndpoint(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- tests read the JSON freely
 ): Promise<{ status: number; body: any }> {
   const method = options.method ?? 'get'
+  // A query string becomes `req.query`, as Payload parses it.
+  const [pathname, search = ''] = path.split('?')
+  path = pathname
   const endpoint = payload.config.endpoints.find(
     (candidate) => candidate.method === method && matchPath(candidate.path, path) !== null,
   )
@@ -52,6 +55,7 @@ export async function callEndpoint(
   if (options.user) req.user = { ...options.user, collection: 'users' } as typeof req.user
   if (options.body !== undefined) req.json = async () => options.body
   req.routeParams = matchPath(endpoint.path, path) ?? {}
+  req.query = Object.fromEntries(new URLSearchParams(search))
 
   const response = await endpoint.handler(req)
   return { status: response.status, body: await response.json() }
