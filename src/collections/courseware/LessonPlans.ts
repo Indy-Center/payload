@@ -1,6 +1,7 @@
 import type { CollectionConfig, FilterOptions, Where } from 'payload'
 import { lexicalEditor, UploadFeature } from '@payloadcms/richtext-lexical'
 import { lessonPlanAccess } from '@/courseware/access'
+import { COPYING_EDITION } from '@/courseware/edition-actions'
 import { idOf } from '@/courseware/ids'
 import { rowLabelComponent } from '@/courseware/row-label-component'
 import { refuseAuthorsLessonPlanStructure } from '@/courseware/structure'
@@ -36,17 +37,22 @@ export const LessonPlans: CollectionConfig = {
   admin: {
     useAsTitle: 'code',
     defaultColumns: ['code', 'title', 'courseVersion'],
-    group: 'Training',
+    // Out of the nav: lesson plans are reached from their edition on the course's page (0056).
+    // The collection's pages still open by link.
+    group: false,
   },
   access: lessonPlanAccess,
   hooks: {
     beforeChange: [
-      async ({ data, operation, originalDoc, req }) => {
+      async ({ context, data, operation, originalDoc, req }) => {
         await refuseAuthorsLessonPlanStructure(
           req,
           data,
           operation === 'update' ? originalDoc : null,
         )
+        // A copy made by starting an edition keeps the plan as it was: its minimum, even an empty
+        // one, and its rows exactly, retired tasks included.
+        if (context[COPYING_EDITION]) return data
         if (operation === 'create' && data.minimum == null && data.courseVersion) {
           const version = await req.payload.findByID({
             collection: 'course-versions',

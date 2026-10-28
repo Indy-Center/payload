@@ -1,8 +1,15 @@
-import type { Endpoint, PayloadRequest } from 'payload'
+import { APIError, ValidationError, type Endpoint, type PayloadRequest } from 'payload'
 import { hasBearerToken, unauthorized } from '@/bearer-token'
 import { buildCatalogue } from './catalogue'
 import { buildCompetencyTree } from './competency-tree'
 import { buildRowLabelLookup } from './row-labels'
+import {
+  checkPublishing,
+  discardDraft,
+  inTransaction,
+  publishEdition,
+  startEdition,
+} from './edition-actions'
 import {
   buildCourseList,
   buildCourseVersionDocument,
@@ -22,6 +29,31 @@ const fromLibrary = (req: PayloadRequest) => hasBearerToken(req, process.env.LIB
 const fromTraining = (req: PayloadRequest) => hasBearerToken(req, process.env.TRAINING_API_TOKEN)
 
 const notFound = () => Response.json({ error: 'Not found' }, { status: 404 })
+
+/**
+ * Runs one of the course page's actions as the signed-in person and answers with its result, or
+ * with the refusal's messages as `{ errors: [{ message }] }`.
+ */
+async function act(
+  req: PayloadRequest,
+  status: number,
+  action: (id: string) => Promise<unknown>,
+): Promise<Response> {
+  if (!req.user) return unauthorized()
+  const { id } = req.routeParams as { id: string }
+  try {
+    return Response.json(await inTransaction(req, () => action(id)), { status })
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      const errors = error.data.errors.map(({ message }) => ({ message }))
+      return Response.json({ errors }, { status: 400 })
+    }
+    if (error instanceof APIError) {
+      return Response.json({ errors: [{ message: error.message }] }, { status: error.status })
+    }
+    throw error
+  }
+}
 
 export const coursewareEndpoints: Endpoint[] = [
   {
@@ -77,5 +109,34 @@ export const coursewareEndpoints: Endpoint[] = [
       if (!found) return notFound()
       return Response.json(await buildCourseVersionDocument(req, found.versionId))
     },
+  },
+  // The course page's actions, for the signed-in admin.
+  {
+    path: '/courseware/courses/:id/editions',
+    method: 'post',
+    handler: (req) =>
+      act(req, 201, async (id) => {
+        const { id: started, number } = await startEdition(req, id)
+        return { edition: { id: started, number } }
+      }),
+  },
+  {
+    path: '/courseware/course-versions/:id/publishing-check',
+    method: 'get',
+    handler: (req) => act(req, 200, async (id) => ({ faults: await checkPublishing(req, id) })),
+  },
+  {
+    path: '/courseware/course-versions/:id/publish',
+    method: 'post',
+    handler: (req) =>
+      act(req, 200, async (id) => {
+        const { number } = await publishEdition(req, id)
+        return { edition: { id, number } }
+      }),
+  },
+  {
+    path: '/courseware/course-versions/:id/discard',
+    method: 'post',
+    handler: (req) => act(req, 200, async (id) => ({ discarded: await discardDraft(req, id) })),
   },
 ]

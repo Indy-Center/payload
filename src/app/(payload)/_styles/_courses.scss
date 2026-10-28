@@ -1,0 +1,214 @@
+// The course page's Content and History tabs: the edition switch, the edition banner and its
+// actions, an edition's outline, and the publish and discard modals. Theme-neutral: Payload's own
+// elevation, success and warning colours flip for dark.
+
+.course-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base);
+  padding-block: var(--base) calc(var(--base) * 2);
+  // Long codes and titles wrap rather than push the page sideways on a phone.
+  overflow-wrap: anywhere;
+
+  p {
+    margin: 0;
+  }
+}
+
+// "Edition 3 · draft" / "Edition 2 · live"
+.edition-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--base) * 0.4);
+
+  &__option {
+    padding: calc(var(--base) * 0.3) calc(var(--base) * 0.7);
+    border: 1px solid var(--theme-elevation-250);
+    border-radius: 999px;
+    color: var(--theme-elevation-800);
+    text-decoration: none;
+
+    &:hover {
+      border-color: var(--theme-elevation-500);
+    }
+
+    &--on {
+      border-color: var(--theme-elevation-900);
+      background: var(--theme-elevation-900);
+      color: var(--theme-elevation-0);
+
+      &:hover {
+        border-color: var(--theme-elevation-900);
+      }
+    }
+  }
+}
+
+.edition-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--base) * 0.6);
+  padding: calc(var(--base) * 0.8);
+  border: 1px solid var(--theme-border-color);
+  border-inline-start-width: 4px;
+  border-radius: var(--style-radius-m);
+  background: var(--theme-elevation-50);
+
+  &--draft {
+    border-inline-start-color: var(--color-warning-500);
+  }
+
+  &--live {
+    border-inline-start-color: var(--color-success-500);
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--base) * 0.2);
+    min-width: 0;
+  }
+}
+
+.edition-tag {
+  display: inline-block;
+  padding: 0 calc(var(--base) * 0.4);
+  border-radius: 999px;
+  background: var(--theme-elevation-150);
+  font-size: 0.85em;
+  vertical-align: 0.1em;
+
+  &--draft {
+    background: var(--color-warning-100);
+    color: var(--color-warning-800);
+  }
+
+  &--live {
+    background: var(--color-success-100);
+    color: var(--color-success-800);
+  }
+}
+
+.edition-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--base) * 0.4);
+}
+
+.edition-outline {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--base) * 0.8);
+
+  &__facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: calc(var(--base) * 0.6);
+    margin: 0;
+
+    dt {
+      color: var(--theme-elevation-500);
+      font-size: 0.85em;
+    }
+
+    dd {
+      margin: 0;
+      white-space: pre-line;
+    }
+  }
+
+  &__wide {
+    grid-column: 1 / -1;
+  }
+
+  &__heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(var(--base) * 0.4);
+
+    h3 {
+      margin: 0;
+    }
+  }
+
+  &__modules,
+  &__plans {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__modules {
+    gap: calc(var(--base) * 0.6);
+  }
+
+  &__module {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--base) * 0.3);
+    padding: calc(var(--base) * 0.6) calc(var(--base) * 0.8);
+    border: 1px solid var(--theme-border-color);
+    border-radius: var(--style-radius-m);
+
+    h4 {
+      margin: 0;
+    }
+  }
+
+  &__plans {
+    gap: calc(var(--base) * 0.2);
+  }
+
+  &__plan-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--indy-link);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+  }
+
+  &__none {
+    color: var(--theme-elevation-500);
+  }
+}
+
+.edition-history {
+  overflow-x: auto;
+
+  &__note {
+    color: var(--theme-elevation-500);
+  }
+}
+
+.edition-modal__faults {
+  margin: 0;
+  padding-inline-start: 1.2em;
+}
+
+// On a phone the modal's buttons share the width rather than overflow it.
+@media (max-width: 768px) {
+  .edition-modal .confirmation-modal__controls {
+    flex-wrap: wrap;
+
+    .btn {
+      flex: 1 1 auto;
+    }
+  }
+}

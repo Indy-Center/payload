@@ -476,7 +476,7 @@ export interface Course {
    */
   credentialIssued?: (string | null) | Credential;
   /**
-   * Set by publishing a version. The library shows this one.
+   * Set by publishing an edition. The library shows this one.
    */
   currentVersion?: (string | null) | CourseVersion;
   updatedAt: string;
@@ -498,6 +498,10 @@ export interface CourseVersion {
    * Choose Published and save to publish: the version is checked, becomes the course’s current version, and its grading scale is fixed.
    */
   status: 'draft' | 'published';
+  /**
+   * Set when the edition is published.
+   */
+  publishedAt?: string | null;
   description?: string | null;
   /**
    * Minutes.
@@ -1094,6 +1098,7 @@ export interface CourseVersionsSelect<T extends boolean = true> {
   course?: T;
   number?: T;
   status?: T;
+  publishedAt?: T;
   description?: T;
   time?: T;
   completionStandard?: T;
