@@ -11,13 +11,14 @@ import { TaskChildren } from './TaskChildren'
  */
 export async function TaskChildrenField({ id, req }: JoinFieldServerProps) {
   if (!id) return null
-  const { children, retired } = await loadTaskChildren(req, String(id))
+  const { children, retired, taskRetired } = await loadTaskChildren(req, String(id))
   return (
     <TaskChildren
       taskId={String(id)}
       rows={children}
       retired={retired}
       mayAdd={isStaff(req.user)}
+      taskRetired={taskRetired}
     />
   )
 }

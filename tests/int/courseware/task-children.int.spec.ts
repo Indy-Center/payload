@@ -93,11 +93,54 @@ describe("a task's children", () => {
       children: [],
       retired: [],
       nextNumber: '2.1.1',
+      taskRetired: false,
     })
   })
 
   it('is empty for a task that is not there', async () => {
-    expect(await childrenOf('9999')).toEqual({ children: [], retired: [], nextNumber: '' })
+    expect(await childrenOf('9999')).toEqual({
+      children: [],
+      retired: [],
+      nextNumber: '',
+      taskRetired: false,
+    })
+  })
+
+  it('says when the task itself is retired', async () => {
+    const old = await task('Old', undefined, { retired: true })
+
+    expect((await childrenOf(old.id)).taskRetired).toBe(true)
+  })
+
+  it('counts every live task beneath a child, even under a retired one beneath it', async () => {
+    const top = await task('Top')
+    const mid = await task('Mid', top.id)
+    await task('Live under mid', mid.id)
+    const gone = await task('Gone', mid.id)
+    await task('Live under retired', gone.id)
+    await payload.update({ collection: 'tasks', id: gone.id, data: { retired: true } })
+
+    const { children } = await childrenOf(top.id)
+
+    expect(children).toMatchObject([{ name: 'Mid', beneath: 2 }])
+  })
+
+  it('gives a course author, who holds no staff role, the children too', async () => {
+    const { taxi } = await seedTree()
+    const author = await payload.create({
+      collection: 'users',
+      data: { email: 'author@example.com', password: 'example-password', cid: '1000002' },
+    })
+    await payload.create({
+      collection: 'courses',
+      data: { code: 'X-TWR', title: 'Example Tower', authors: [author.cid!] },
+    })
+    const req = await createLocalReq({ user: { ...author, collection: 'users' } }, payload)
+
+    const { children, retired } = await loadTaskChildren(req, taxi.id)
+
+    expect(children.map((child) => child.number)).toEqual(['2.1.1', '2.1.3', '2.1.4'])
+    expect(retired).toEqual([{ number: '2.1.2', name: 'Taxi to ramp' }])
   })
 
   it('puts a task created beneath this one last', async () => {

@@ -19,6 +19,8 @@ export type TaskChildren = {
   retired: { number: string; name: string }[]
   /** The number a task added beneath this one would get: after every child, retired ones too. */
   nextNumber: string
+  /** Whether this task is itself retired; a retired task is not offered new children. */
+  taskRetired: boolean
 }
 
 /**
@@ -28,7 +30,7 @@ export type TaskChildren = {
 export async function loadTaskChildren(req: PayloadRequest, id: string): Promise<TaskChildren> {
   const tree = await loadTaskTree(req, { overrideAccess: false })
   const parent = tree.get(id)
-  if (!parent) return { children: [], retired: [], nextNumber: '' }
+  if (!parent) return { children: [], retired: [], nextNumber: '', taskRetired: false }
 
   const direct = tree.inOrder.filter((task) => task.parentId === id)
   return {
@@ -45,5 +47,6 @@ export async function loadTaskChildren(req: PayloadRequest, id: string): Promise
       .filter((task) => task.retired)
       .map((task) => ({ number: tree.number(task.id), name: task.name })),
     nextNumber: `${tree.number(id)}.${direct.length + 1}`,
+    taskRetired: parent.retired,
   }
 }
