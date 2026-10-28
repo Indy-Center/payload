@@ -1,4 +1,5 @@
-// The Tasks list's tree (src/components/admin/TaskTreeList.tsx and TaskTreeTable.tsx).
+// The Tasks list's tree (src/components/admin/TaskTreeList.tsx and TaskTreeTable.tsx), and its
+// grid (TaskGrid.tsx).
 
 .task-tree-list__controls {
   display: flex;
@@ -128,5 +129,218 @@ span.task-tree__toggle {
 @media (max-width: 767px) {
   .task-tree__description {
     display: none;
+  }
+}
+
+// The tabs above the list, Tree and Edit as grid, for the Training Admin and leads.
+.task-tree-list__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--base) * 0.25);
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--theme-border-color);
+}
+
+.task-tree-list__tab {
+  padding: calc(var(--base) * 0.4) calc(var(--base) * 0.75);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: none;
+  color: var(--theme-elevation-500);
+  font: inherit;
+  cursor: pointer;
+
+  &[aria-selected='true'] {
+    border-bottom-color: var(--indy-link);
+    color: var(--theme-text);
+    font-weight: 600;
+  }
+}
+
+// The grid (src/components/admin/TaskGrid.tsx). Built for a desktop: at phone width the table
+// keeps its width and scrolls sideways inside its box, and the page does not.
+.task-grid {
+  --task-grid-changed: color-mix(in srgb, var(--indy-link) 14%, transparent);
+
+  &__controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  &__save {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  &__scroll {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  &__table {
+    width: 100%;
+    min-width: 56rem;
+    border-collapse: collapse;
+
+    th,
+    td {
+      padding: 0.25rem 0.5rem;
+      text-align: start;
+      vertical-align: top;
+      border-bottom: 1px solid var(--theme-elevation-100);
+    }
+
+    th {
+      padding-block: 0.5rem;
+      font-weight: 600;
+      color: var(--theme-elevation-600);
+    }
+  }
+
+  &__number {
+    width: 1%;
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    line-height: 2rem;
+  }
+
+  &__number--moved [data-number] {
+    padding: 0.125rem 0.25rem;
+    border-radius: var(--style-radius-s);
+    background: var(--task-grid-changed);
+  }
+
+  &__arrows {
+    display: inline-flex;
+    gap: 0.125rem;
+    width: 3.75rem;
+    margin-inline-end: 0.375rem;
+    vertical-align: top;
+  }
+
+  &__arrow {
+    width: 1.75rem;
+    height: 1.75rem;
+    margin-block: 0.125rem;
+    padding: 0;
+    border: 1px solid var(--theme-elevation-150);
+    border-radius: var(--style-radius-s);
+    background: var(--theme-elevation-0);
+    color: var(--theme-text);
+    font: inherit;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background: var(--theme-elevation-100);
+    }
+
+    &:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+  }
+
+  &__name {
+    width: 30%;
+    min-width: 12rem;
+  }
+
+  &__description {
+    min-width: 18rem;
+  }
+
+  // Cells read as text until hovered or focused.
+  &__cell {
+    display: block;
+    width: 100%;
+    min-height: 2rem;
+    padding: 0.25rem 0.375rem;
+    border: 1px solid transparent;
+    border-radius: var(--style-radius-s);
+    background: transparent;
+    color: var(--theme-text);
+    font: inherit;
+    resize: vertical;
+
+    &:hover:not(:disabled) {
+      border-color: var(--theme-elevation-150);
+    }
+
+    &:focus {
+      border-color: var(--indy-link);
+      background: var(--theme-elevation-0);
+      outline: none;
+    }
+  }
+
+  &__cell--changed {
+    background: var(--task-grid-changed);
+  }
+
+  &__row--new td {
+    background: color-mix(in srgb, var(--indy-link) 6%, transparent);
+  }
+
+  &__row--retiring,
+  &__row--retired {
+    .task-grid__cell {
+      color: var(--theme-elevation-500);
+    }
+  }
+
+  &__row--retiring .task-grid__name .task-grid__cell {
+    text-decoration: line-through;
+  }
+
+  &__actions {
+    width: 1%;
+    white-space: nowrap;
+
+    .btn {
+      margin-inline-end: 0.25rem;
+    }
+  }
+
+  &__error {
+    margin: 0.25rem 0 0;
+    color: var(--theme-error-500);
+    font-size: 0.8125rem;
+  }
+
+  // A faint row where the next task of a group would land: the grid's own text size and face.
+  &__placeholder td {
+    color: var(--theme-elevation-400);
+    border-bottom-style: dashed;
+  }
+
+  &__new {
+    display: block;
+    width: 100%;
+    min-height: 2rem;
+    padding: 0.25rem 0.375rem;
+    border: 1px dashed transparent;
+    border-radius: var(--style-radius-s);
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--theme-elevation-200);
+      color: var(--theme-text);
+    }
+  }
+
+  &__note {
+    margin-top: 0.5rem;
+    color: var(--theme-elevation-500);
+    font-size: 0.8125rem;
   }
 }
