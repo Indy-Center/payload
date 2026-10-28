@@ -128,7 +128,7 @@ describe('moving a task among its siblings', () => {
 
     expect(status).toBe(400)
     expect(body.errors).toEqual([
-      { message: 'The order of these tasks needs repairing; save them in the grid once.' },
+      { message: 'The order of these tasks needs repairing; move one of them in the grid once.' },
     ])
   })
 

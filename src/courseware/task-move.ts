@@ -9,7 +9,8 @@ export type MoveDirection = 'up' | 'down'
 
 export const MOVE_STAFF_ONLY = 'Only the Training Admin and lead instructors may move tasks.'
 const NO_DIRECTION = 'Move a task up or down.'
-const ORDER_NEEDS_REPAIR = 'The order of these tasks needs repairing; save them in the grid once.'
+const ORDER_NEEDS_REPAIR =
+  'The order of these tasks needs repairing; move one of them in the grid once.'
 
 /** A task's siblings in order, itself included, retired ones too: they keep their numbers (0025). */
 const siblingsOf = (tree: TaskTree, id: string) => {
