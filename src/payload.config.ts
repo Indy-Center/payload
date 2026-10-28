@@ -23,6 +23,8 @@ import { Partners } from './collections/partners/Partners'
 import { TeacherResources } from './globals/TeacherResources'
 import { coursewareEndpoints } from './courseware/endpoints'
 import { IMPORT_FRAMEWORKS_PATH } from './courseware/import/form'
+import { taskMoveEndpoints } from './courseware/task-move'
+import { taskPickerEndpoints } from './courseware/task-picker'
 import { partnersEndpoints } from './partners/endpoints'
 import { trainingEndpoints } from './training/endpoints'
 import { migrations } from './migrations'
@@ -67,7 +69,13 @@ export default buildConfig({
     Partners,
   ],
   globals: [TeacherResources],
-  endpoints: [...coursewareEndpoints, ...partnersEndpoints, ...trainingEndpoints],
+  endpoints: [
+    ...coursewareEndpoints,
+    ...taskMoveEndpoints,
+    ...taskPickerEndpoints,
+    ...partnersEndpoints,
+    ...trainingEndpoints,
+  ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

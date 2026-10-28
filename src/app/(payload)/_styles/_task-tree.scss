@@ -393,3 +393,42 @@ span.task-tree__toggle {
     font-size: 0.8125rem;
   }
 }
+
+// The Training Admin's and leads' ↑ and ↓, before each number. A missing one keeps its space, so
+// the numbers stay in line.
+.task-tree__moves {
+  display: inline-flex;
+  gap: 0.125rem;
+  margin-inline-end: 0.5rem;
+  vertical-align: middle;
+}
+
+.task-tree__move {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: var(--style-radius-s);
+  background: var(--theme-elevation-0);
+  color: var(--theme-elevation-800);
+  font: inherit;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--theme-elevation-100);
+  }
+
+  &:disabled {
+    cursor: progress;
+    opacity: 0.6;
+  }
+}
+
+span.task-tree__move {
+  border-color: transparent;
+  background: none;
+  cursor: default;
+}

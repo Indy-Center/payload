@@ -6,6 +6,7 @@ import { idOf } from '@/courseware/ids'
 import { refuseMinimumOffScale } from '@/courseware/minimums'
 import { rowLabelComponent } from '@/courseware/row-label-component'
 import { refuseAuthorsLessonPlanStructure } from '@/courseware/structure'
+import { taskPickerComponents } from '@/courseware/task-picker'
 import { expandTaskRows, pickableTask } from '@/courseware/task-rows'
 
 /**
@@ -135,6 +136,7 @@ export const LessonPlans: CollectionConfig = {
           relationTo: 'tasks',
           required: true,
           filterOptions: pickableTask,
+          admin: { components: taskPickerComponents() },
         },
         {
           name: 'teacherNotes',
