@@ -42,7 +42,6 @@ const facts = {
   ratingExam: 'S2',
   academyExam: 'S2',
   estimatedWeeks: { min: 4, max: 8 },
-  examOptional: true,
   moodleUrl: 'https://moodle.example.com/course/1',
 } satisfies Partial<Course>
 
@@ -58,10 +57,11 @@ async function refusal(promise: Promise<unknown>): Promise<{ path: string; messa
 }
 
 describe("a course's enrolment facts", () => {
-  it('start empty: no exams, no consolidation, no weeks, exam not optional', async () => {
+  it('start empty: no exams, no consolidation, no weeks override, no exam optional', async () => {
     const created = await course()
 
-    expect(created).toMatchObject({ ratingExam: 'none', academyExam: 'none', examOptional: false })
+    expect(created).toMatchObject({ ratingExam: 'none', academyExam: 'none' })
+    expect(created).not.toHaveProperty('examOptional')
     expect(created.consolidation?.hours ?? null).toBeNull()
     expect(created.consolidation?.positionTypes ?? []).toEqual([])
     expect(created.estimatedWeeks?.min ?? null).toBeNull()

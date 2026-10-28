@@ -466,10 +466,6 @@ export interface Course {
     min?: number | null;
     max?: number | null;
   };
-  /**
-   * The course can finish without its exam.
-   */
-  examOptional?: boolean | null;
   moodleUrl?: string | null;
   /**
    * What finishing the course earns. Each credential is issued by one course.
@@ -1082,7 +1078,6 @@ export interface CoursesSelect<T extends boolean = true> {
         min?: T;
         max?: T;
       };
-  examOptional?: T;
   moodleUrl?: T;
   credentialIssued?: T;
   currentVersion?: T;

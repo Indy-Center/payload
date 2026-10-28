@@ -308,13 +308,6 @@ export const Courses: CollectionConfig = {
       ],
     },
     {
-      name: 'examOptional',
-      label: 'Exam optional',
-      type: 'checkbox',
-      defaultValue: false,
-      admin: { description: 'The course can finish without its exam.' },
-    },
-    {
       name: 'moodleUrl',
       label: 'Moodle link',
       type: 'text',

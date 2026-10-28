@@ -96,7 +96,6 @@ describe('the one-document course version', () => {
       ratingExam: null,
       academyExam: null,
       estimatedWeeks: null,
-      examOptional: false,
       moodleUrl: null,
       prerequisites: [],
       credentialIssued: null,
@@ -137,7 +136,6 @@ describe('the one-document course version', () => {
         ratingExam: 'S2',
         academyExam: 'S3',
         estimatedWeeks: { min: 4, max: 8 },
-        examOptional: true,
         moodleUrl: 'https://moodle.example.com/course/1',
       },
     })
@@ -154,7 +152,6 @@ describe('the one-document course version', () => {
       ratingExam: 'S2',
       academyExam: 'S3',
       estimatedWeeks: { min: 4, max: 8 },
-      examOptional: true,
       moodleUrl: 'https://moodle.example.com/course/1',
       prerequisites: [],
       credentialIssued: null,

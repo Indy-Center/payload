@@ -80,12 +80,15 @@ export type CourseVersionDocument = {
     prerequisitesNote: string
     /** Hours counted across all the listed position types together; null when none is asked. */
     consolidation: { hours: number; positionTypes: PositionType[] } | null
-    /** The rating exam the course ends in. */
+    /** The rating exam the course ends in; null when it ends in none (0059). */
     ratingExam: 'S1' | 'S2' | 'S3' | 'C1' | null
     /** The VATUSA Academy exam a student passes before training. */
     academyExam: 'S2' | 'S3' | 'C1' | null
+    /**
+     * The course's override if set, otherwise worked out from its live edition: one week per
+     * lesson plan in its modules, and 20% more rounded up (0058). Null with neither.
+     */
     estimatedWeeks: { min: number; max: number } | null
-    examOptional: boolean
     /** An https link. */
     moodleUrl: string | null
     /**

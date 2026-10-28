@@ -159,7 +159,6 @@ export async function buildCourseVersionDocument(
         course.estimatedWeeks?.min != null && course.estimatedWeeks.max != null
           ? { min: course.estimatedWeeks.min, max: course.estimatedWeeks.max }
           : null,
-      examOptional: course.examOptional ?? false,
       moodleUrl: course.moodleUrl || null,
       prerequisites: (course.prerequisites ?? []).map((row) => ({
         anyOf: (row.anyOf ?? []).map(codeOf).filter((code): code is string => code !== null),
