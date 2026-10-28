@@ -9,11 +9,6 @@ export type EditionTab = {
   edition: string
   /** How many competencies it holds, headings included. */
   count: number
-  /**
-   * When the edition's record last changed. The import never changes an edition it finds, so
-   * today this is when the edition was first imported.
-   */
-  updatedAt: string
   /** Whether its competencies carry VATUSA's GCAP pairing: USA editions only. */
   showsPairing: boolean
 }
@@ -116,7 +111,6 @@ export async function buildCompetencyTree(
       name: framework.name,
       edition: framework.edition,
       count: counts.get(framework.id) ?? 0,
-      updatedAt: framework.updatedAt,
       showsPairing: framework.name === FRAMEWORK_NAMES.usa,
     }))
     .sort(compareEditions)

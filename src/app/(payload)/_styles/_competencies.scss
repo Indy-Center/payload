@@ -112,8 +112,8 @@
     background: color-mix(in oklab, var(--indy-link) 10%, transparent);
   }
 
-  // At phone width the GCAP column drops out.
-  @media (max-width: 768px) {
+  // At phone width the GCAP column drops out; a 768px tablet keeps it.
+  @media (max-width: 767px) {
     &__gcap {
       display: none;
     }

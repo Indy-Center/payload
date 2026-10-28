@@ -42,7 +42,7 @@ describe('the editions', () => {
     ).toEqual(['USA 2027-04', 'USA 2026-10', 'GCAP 2026-10'])
   })
 
-  it('names each edition with its number of competencies and when its record last changed', async () => {
+  it('names each edition with its number of competencies', async () => {
     const usa = await edition('USA', '2026-10')
     await competency(usa.id, '9.1', 'Example heading')
     await competency(usa.id, '9.2', 'Another heading')
@@ -55,7 +55,6 @@ describe('the editions', () => {
       name: 'USA',
       edition: '2026-10',
       count: 2,
-      updatedAt: usa.updatedAt,
       showsPairing: true,
     })
     expect(body.editions[1]).toMatchObject({ name: 'GCAP', count: 0, showsPairing: false })

@@ -8,9 +8,6 @@ import { CompetencyTree } from './CompetencyTree'
 
 const baseClass = 'competency-tree'
 
-const shortDate = (iso: string) =>
-  new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
-
 /** Keeps the tab and search in the address, so coming back from a competency finds them again. */
 function rememberInAddress(edition: string | null, search: string) {
   const params = new URLSearchParams(window.location.search)
@@ -158,8 +155,7 @@ export function CompetenciesList() {
               <strong>
                 {current.name} {current.edition}
               </strong>{' '}
-              · {current.count} {current.count === 1 ? 'competency' : 'competencies'} · updated{' '}
-              {shortDate(current.updatedAt)}
+              · {current.count} {current.count === 1 ? 'competency' : 'competencies'}
             </p>
 
             <div className={`${baseClass}__toolbar`}>
