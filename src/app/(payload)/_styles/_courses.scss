@@ -377,7 +377,7 @@
 }
 
 // On a phone the modal's buttons share the width rather than overflow it.
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .edition-modal .confirmation-modal__controls {
     flex-wrap: wrap;
 
