@@ -42,6 +42,7 @@ export const Competencies: CollectionConfig = {
     },
     {
       name: 'sourceId',
+      label: 'ID',
       type: 'text',
       required: true,
       admin: { description: 'Such as 2.1.3a.', readOnly: true },

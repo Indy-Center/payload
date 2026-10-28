@@ -69,3 +69,17 @@
     }
   }
 }
+
+// With no Save button the document controls have nothing to share their row with, and the meta
+// row ("Last Modified", "Created") would set the page's width. Letting the controls shrink to the
+// viewport keeps the meta row scrolling inside its own box, as Payload intends on a phone.
+.collection-edit--competencies {
+  @media (max-width: 767px) {
+    .doc-controls,
+    .doc-controls__wrapper,
+    .doc-controls__content {
+      min-width: 0;
+      max-width: 100%;
+    }
+  }
+}
