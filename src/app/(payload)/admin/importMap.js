@@ -1,4 +1,6 @@
 import { CompetenciesList as CompetenciesList_650d8d1f11cf3d8633778927c6d86719 } from '../../../components/admin/CompetenciesList'
+import { TaskNextNumber as TaskNextNumber_0211a6250198a4675f43eb4eea370e9c } from '../../../components/admin/TaskNextNumber'
+import { TaskChildrenField as TaskChildrenField_d7e1983a8e592ae236bacc1d9466ecd3 } from '../../../components/admin/TaskChildrenField'
 import { CoursewareRowLabel as CoursewareRowLabel_5b7533a214a22a862ece67f0c9269294 } from '../../../components/admin/CoursewareRowLabel'
 import { TaskTreeListView as TaskTreeListView_f40353e6c5e3e091362f35bdcb5b48bc } from '../../../components/admin/TaskTreeListView'
 import { CredentialCell as CredentialCell_6f77df66545adeb6b7e4f2ebec0bfcdc } from '../../../components/admin/courses/CredentialCell'
@@ -39,6 +41,8 @@ import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc056
 /** @type import('payload').ImportMap */
 export const importMap = {
   "/components/admin/CompetenciesList#CompetenciesList": CompetenciesList_650d8d1f11cf3d8633778927c6d86719,
+  "/components/admin/TaskNextNumber#TaskNextNumber": TaskNextNumber_0211a6250198a4675f43eb4eea370e9c,
+  "/components/admin/TaskChildrenField#TaskChildrenField": TaskChildrenField_d7e1983a8e592ae236bacc1d9466ecd3,
   "/components/admin/CoursewareRowLabel#CoursewareRowLabel": CoursewareRowLabel_5b7533a214a22a862ece67f0c9269294,
   "/components/admin/TaskTreeListView#TaskTreeListView": TaskTreeListView_f40353e6c5e3e091362f35bdcb5b48bc,
   "/components/admin/courses/CredentialCell#CredentialCell": CredentialCell_6f77df66545adeb6b7e4f2ebec0bfcdc,

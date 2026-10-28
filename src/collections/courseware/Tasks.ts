@@ -40,6 +40,12 @@ export const Tasks: CollectionConfig = {
   },
   access: staffAccess,
   fields: [
+    {
+      // In the "Add child" drawer: the number the new task will get.
+      name: 'nextNumber',
+      type: 'ui',
+      admin: { components: { Field: '/components/admin/TaskNextNumber#TaskNextNumber' } },
+    },
     { name: 'name', type: 'text', required: true },
     { name: 'description', type: 'textarea' },
     {
@@ -57,7 +63,11 @@ export const Tasks: CollectionConfig = {
       type: 'join',
       collection: 'tasks',
       on: 'parent',
-      admin: { allowCreate: false },
+      admin: {
+        allowCreate: false,
+        // The direct children as a read-only grid, with "Add child" for the staff.
+        components: { Field: '/components/admin/TaskChildrenField#TaskChildrenField' },
+      },
     },
     {
       name: 'mappings',
