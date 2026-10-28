@@ -14,6 +14,7 @@ import type {
   Scenario,
   TaskRef,
 } from './document'
+import { estimateCourse } from './estimated-weeks'
 import { idOf } from './ids'
 import { loadTaskTree, type TaskTree } from './task-tree'
 
@@ -155,10 +156,7 @@ export async function buildCourseVersionDocument(
           : null,
       ratingExam: course.ratingExam === 'none' ? null : (course.ratingExam ?? null),
       academyExam: course.academyExam === 'none' ? null : (course.academyExam ?? null),
-      estimatedWeeks:
-        course.estimatedWeeks?.min != null && course.estimatedWeeks.max != null
-          ? { min: course.estimatedWeeks.min, max: course.estimatedWeeks.max }
-          : null,
+      estimatedWeeks: (await estimateCourse(req, course))?.weeks ?? null,
       moodleUrl: course.moodleUrl || null,
       prerequisites: (course.prerequisites ?? []).map((row) => ({
         anyOf: (row.anyOf ?? []).map(codeOf).filter((code): code is string => code !== null),
