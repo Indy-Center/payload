@@ -8,6 +8,8 @@ import { loadTaskTree, type TaskTree } from './task-tree'
 export type MoveDirection = 'up' | 'down'
 
 export const MOVE_STAFF_ONLY = 'Only the Training Admin and lead instructors may move tasks.'
+const NO_DIRECTION = 'Move a task up or down.'
+const ORDER_NEEDS_REPAIR = 'The order of these tasks needs repairing; save them in the grid once.'
 
 /** A task's siblings in order, itself included, retired ones too: they keep their numbers (0025). */
 const siblingsOf = (tree: TaskTree, id: string) => {
@@ -36,7 +38,7 @@ export async function moveTask(
   if (!isStaff(req.user as Pick<User, 'roles' | 'cid'> | null)) {
     throw new APIError(MOVE_STAFF_ONLY, 403)
   }
-  if (direction !== 'up' && direction !== 'down') throw new APIError('Move a task up or down.', 400)
+  if (direction !== 'up' && direction !== 'down') throw new APIError(NO_DIRECTION, 400)
 
   const tree = await loadTaskTree(req, { overrideAccess: false })
   const task = tree.get(id)
@@ -47,13 +49,22 @@ export async function moveTask(
   const siblings = siblingsOf(tree, id)
   const at = siblings.findIndex((each) => each.id === id)
   const keyAt = (index: number) => siblings[index]?.order || null
+  // Two siblings with the same key, or none, leave no key between them; `generateKeyBetween` then
+  // throws a plain Error. Saving the siblings' order in the grid gives each its own key again.
+  const keyBetween = (before: string | null, after: string | null) => {
+    try {
+      return generateKeyBetween(before, after)
+    } catch {
+      throw new APIError(ORDER_NEEDS_REPAIR, 400)
+    }
+  }
   let key: string
   if (direction === 'up') {
     if (at === 0) throw new APIError(`${label} is already first.`, 400)
-    key = generateKeyBetween(keyAt(at - 2), keyAt(at - 1))
+    key = keyBetween(keyAt(at - 2), keyAt(at - 1))
   } else {
     if (at === siblings.length - 1) throw new APIError(`${label} is already last.`, 400)
-    key = generateKeyBetween(keyAt(at + 1), keyAt(at + 2))
+    key = keyBetween(keyAt(at + 1), keyAt(at + 2))
   }
 
   await req.payload.update({
@@ -78,7 +89,12 @@ export const taskMoveEndpoints: Endpoint[] = [
     handler: async (req) => {
       if (!req.user) return unauthorized()
       const { id } = req.routeParams as { id: string }
-      const body = ((await req.json?.()) ?? {}) as { direction?: MoveDirection }
+      let body: { direction?: MoveDirection }
+      try {
+        body = ((await req.json?.()) ?? {}) as typeof body
+      } catch {
+        return Response.json({ errors: [{ message: NO_DIRECTION }] }, { status: 400 })
+      }
       try {
         return Response.json(await moveTask(req, id, body.direction as MoveDirection))
       } catch (error) {

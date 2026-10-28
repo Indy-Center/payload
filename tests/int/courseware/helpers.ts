@@ -33,6 +33,7 @@ export async function callEndpoint(
   options: {
     token?: string | null
     method?: string
+    /** The JSON body, or an Error for `req.json()` to throw. */
     body?: unknown
     /** A multipart body, as a browser's form upload sends it. */
     formData?: FormData
@@ -55,7 +56,13 @@ export async function callEndpoint(
   if (token !== null) headers.set('authorization', `Bearer ${token}`)
   req.headers = headers
   if (options.user) req.user = { ...options.user, collection: 'users' } as typeof req.user
-  if (options.body !== undefined) req.json = async () => options.body
+  // An Error for a body is what `req.json()` throws, as for a body that isn't JSON.
+  if (options.body instanceof Error) {
+    const error = options.body
+    req.json = async () => {
+      throw error
+    }
+  } else if (options.body !== undefined) req.json = async () => options.body
   if (options.formData !== undefined) req.formData = async () => options.formData!
   req.routeParams = matchPath(endpoint.path, path) ?? {}
   req.query = Object.fromEntries(new URLSearchParams(search))

@@ -118,6 +118,35 @@ describe('moving a task among its siblings', () => {
     expect(down.body.errors).toEqual([{ message: '2.1.3 Taxi to ramp is already last.' }])
   })
 
+  it('asks for the order to be repaired when siblings share a sort key', async () => {
+    const parent = await task('Ground')
+    await task('Taxi', parent.id, { _order: 'a0' })
+    await task('Hold short', parent.id, { _order: 'a0' })
+    const third = await task('Crossings', parent.id, { _order: 'a1' })
+
+    const { status, body } = await move(third, 'up')
+
+    expect(status).toBe(400)
+    expect(body.errors).toEqual([
+      { message: 'The order of these tasks needs repairing; save them in the grid once.' },
+    ])
+  })
+
+  it('refuses a body that is not JSON', async () => {
+    const { ramp } = await seedTree()
+
+    const { status, body } = await callEndpoint(payload, `/courseware/tasks/${ramp.id}/move`, {
+      method: 'post',
+      token: null,
+      user: lead,
+      // What `req.json()` throws for a body that isn't JSON.
+      body: new SyntaxError('Unexpected token < in JSON'),
+    })
+
+    expect(status).toBe(400)
+    expect(body.errors).toEqual([{ message: 'Move a task up or down.' }])
+  })
+
   it('is refused for a course author, and nothing moves', async () => {
     const { ramp } = await seedTree()
     const before = await numbered()
