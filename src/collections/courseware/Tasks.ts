@@ -1,8 +1,10 @@
-import type { CollectionConfig, FieldHook } from 'payload'
+import type { CollectionConfig, FieldHook, RelationshipFieldValidation } from 'payload'
+import { relationship } from 'payload/shared'
 import { staffAccess } from '@/courseware/access'
 import { hideRetiredUnlessAsked } from '@/courseware/retired'
 import { rowLabelComponent } from '@/courseware/row-label-component'
 import { taskPickerComponents } from '@/courseware/task-picker'
+import { loadTaskTree } from '@/courseware/task-tree'
 
 /** The GCAP code VATUSA pairs a mapped USA competency with, read fresh from the competency. */
 const pairedGcapCode: FieldHook = async ({ siblingData, req }) => {
@@ -16,6 +18,25 @@ const pairedGcapCode: FieldHook = async ({ siblingData, req }) => {
     req,
   })
   return found.pairedGcapCode || null
+}
+
+/**
+ * A task's parent can't be a task beneath it: the two would make a loop, which the tree can't
+ * number. The task itself is refused by `filterOptions`.
+ */
+const notBeneathItself: RelationshipFieldValidation = async (value, options) => {
+  const valid = await relationship(value, options)
+  if (valid !== true) return valid
+  const parentId = typeof value === 'string' ? value : null
+  if (!parentId || !options.id) return true
+  // The admin form runs validators in the browser, where there is no database to ask for the
+  // tree; the server checks again on save.
+  if (!options.req?.payload) return true
+
+  const tree = await loadTaskTree(options.req)
+  const beneath = tree.descendants(String(options.id)).find((task) => task.id === parentId)
+  if (!beneath) return true
+  return `${tree.number(beneath.id)} ${beneath.name} is beneath this task, so it can’t be its parent.`
 }
 
 /**
@@ -64,6 +85,7 @@ export const Tasks: CollectionConfig = {
         retired: { not_equals: true },
         ...(id ? { id: { not_equals: id } } : {}),
       }),
+      validate: notBeneathItself,
       admin: { components: taskPickerComponents({ excludeSelf: true }) },
     },
     {

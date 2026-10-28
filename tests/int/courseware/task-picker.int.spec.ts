@@ -102,6 +102,39 @@ describe('the task picker', () => {
     })
   })
 
+  it('leaves a task and everything beneath it out of its own Parent picker', async () => {
+    const { ground } = await seedTree()
+
+    expect(await pick({ exclude: ground.id })).toEqual(['1 Radio', '1.1 Readbacks'])
+  })
+
+  it('refuses a task beneath it as a task’s parent, which would make a loop', async () => {
+    const { ground, runway } = await seedTree()
+    const lead = await payload.create({
+      collection: 'users',
+      data: { email: 'lead@example.com', password: 'example-password', roles: ['training:lead'] },
+    })
+
+    const saving = payload.update({
+      collection: 'tasks',
+      id: ground.id,
+      data: { parent: runway.id },
+      user: lead,
+      overrideAccess: false,
+    })
+
+    await expect(saving).rejects.toMatchObject({
+      data: {
+        errors: [
+          {
+            path: 'parent',
+            message: '2.2.1 Taxi to runway is beneath this task, so it can’t be its parent.',
+          },
+        ],
+      },
+    })
+  })
+
   it('answers 401 to anyone not signed in', async () => {
     const { status } = await callEndpoint(payload, '/courseware/task-options', { token: null })
 

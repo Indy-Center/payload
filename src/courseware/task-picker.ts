@@ -17,7 +17,7 @@ export type TaskOptionsQuery = {
   search?: string
   /** The task already chosen: offered even when retired, as the fields' `filterOptions` allow. */
   current?: string
-  /** A task to leave out: a task's own Parent picker leaves the task itself out. */
+  /** A task to leave out with every task beneath it: a task's own Parent picker passes itself. */
   exclude?: string
 }
 
@@ -47,8 +47,12 @@ export async function loadTaskOptions(
     )
   }
 
+  // A task's parent can be neither the task nor anything beneath it, which would make a loop.
+  const excluded = new Set(
+    exclude ? [exclude, ...tree.descendants(exclude).map((task) => task.id)] : [],
+  )
   const options = tree.inOrder
-    .filter((task) => (!task.retired || task.id === current) && task.id !== exclude)
+    .filter((task) => (!task.retired || task.id === current) && !excluded.has(task.id))
     .filter((task) => matches(task.id, task.name))
     .map((task) => labelOf(tree, task.id))
   const selected = current && tree.get(current) ? labelOf(tree, current) : null
