@@ -11,7 +11,7 @@ export type TreeTask = {
   order: string
   /** Competencies mapped on this task itself, not inherited. */
   competencyIds: string[]
-  citations: { sourceId: string; section: string }[]
+  citations: { sourceId: string; place: string; title: string | null }[]
 }
 
 /**
@@ -106,7 +106,8 @@ export async function loadTaskTree(req: PayloadRequest): Promise<TaskTree> {
       competencyIds: (task.mappings ?? []).map((row) => idOf(row.competency)!),
       citations: (task.citations ?? []).map((row) => ({
         sourceId: idOf(row.source)!,
-        section: row.section ?? '',
+        place: row.place ?? '',
+        title: row.title || null,
       })),
     })),
   )

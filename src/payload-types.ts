@@ -381,9 +381,13 @@ export interface Task {
     | {
         source: string | Source;
         /**
-         * Where in the source, such as 3-7-2.
+         * Chapter, section or paragraph as the source writes it, such as 3-7-2.a.
          */
-        section?: string | null;
+        place?: string | null;
+        /**
+         * The heading at that place.
+         */
+        title?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -1021,7 +1025,8 @@ export interface TasksSelect<T extends boolean = true> {
     | T
     | {
         source?: T;
-        section?: T;
+        place?: T;
+        title?: T;
         id?: T;
       };
   retired?: T;
