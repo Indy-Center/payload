@@ -10,10 +10,12 @@ import {
 import { callEndpoint, resetDatabase, testPayload } from './helpers'
 
 const lookup: RowLabelLookup = {
-  competencies: { c1: { framework: 'USA', edition: '2026-10', sourceId: '2.2.2a', title: 'Taxi' } },
+  competencies: {
+    c1: { framework: 'USA', edition: '2026-10', sourceId: '9.9.9a', title: 'Example standard' },
+  },
   sources: {
-    s1: { name: 'JO 7110.65BB', edition: null },
-    s2: { name: 'KIND SOP', edition: '2026-03' },
+    s1: { name: 'Example Order', edition: null },
+    s2: { name: 'Example SOP', edition: '2026-03' },
   },
   tasks: { t1: { number: '2.2.1', name: 'Airport layout' } },
   credentials: { k1: 'S-GC', k2: 'A-GC' },
@@ -22,28 +24,29 @@ const lookup: RowLabelLookup = {
 describe('what a row says', () => {
   it('names a mapping by framework, edition, competency ID and title', () => {
     expect(rowLabel('mapping', { competency: 'c1' }, lookup)?.text).toBe(
-      'USA 2026-10 · 2.2.2a Taxi',
+      'USA 2026-10 · 9.9.9a Example standard',
     )
   })
 
   it('names a citation by source, place and, when there is one, title', () => {
-    expect(rowLabel('citation', { source: 's1', place: '3-7-2' }, lookup)?.text).toBe(
-      'JO 7110.65BB 3-7-2',
+    expect(rowLabel('citation', { source: 's1', place: '1-2-3' }, lookup)?.text).toBe(
+      'Example Order 1-2-3',
     )
-    expect(rowLabel('citation', { source: 's2', place: '4-2.b' }, lookup)?.text).toBe(
-      'KIND SOP 2026-03 4-2.b',
+    expect(rowLabel('citation', { source: 's2', place: '4-5.b' }, lookup)?.text).toBe(
+      'Example SOP 2026-03 4-5.b',
     )
     expect(
-      rowLabel('citation', { source: 's1', place: '3-7-2', title: ' Taxi ' }, lookup)?.text,
-    ).toBe('JO 7110.65BB 3-7-2 · Taxi')
+      rowLabel('citation', { source: 's1', place: '1-2-3', title: ' Example heading ' }, lookup)
+        ?.text,
+    ).toBe('Example Order 1-2-3 · Example heading')
     expect(
       rowLabel(
         'citation',
-        { source: 's1', place: '3-7-2', title: 'Taxi and ground movement operations' },
+        { source: 's1', place: '1-2-3', title: 'Example heading with more words' },
         lookup,
       )?.text,
-    ).toBe('JO 7110.65BB 3-7-2 · Taxi and ground movement operations')
-    expect(rowLabel('citation', { source: 's1' }, lookup)?.text).toBe('JO 7110.65BB')
+    ).toBe('Example Order 1-2-3 · Example heading with more words')
+    expect(rowLabel('citation', { source: 's1' }, lookup)?.text).toBe('Example Order')
   })
 
   it('names points and modules by their own words', () => {
@@ -139,11 +142,11 @@ describe('GET /courseware/row-labels', () => {
     })
     const competency = await payload.create({
       collection: 'competencies',
-      data: { framework: framework.id, sourceId: '2.2.2a', title: 'Taxi to Runway' },
+      data: { framework: framework.id, sourceId: '9.9.9a', title: 'Example standard' },
     })
     const source = await payload.create({
       collection: 'sources',
-      data: { name: 'KIND SOP', edition: '2026-03', url: 'https://example.com/sop' },
+      data: { name: 'Example SOP', edition: '2026-03', url: 'https://example.com/sop' },
     })
     const credential = await payload.create({
       collection: 'credentials',
@@ -167,10 +170,10 @@ describe('GET /courseware/row-labels', () => {
     expect(body.competencies[competency.id]).toEqual({
       framework: 'USA',
       edition: '2026-10',
-      sourceId: '2.2.2a',
-      title: 'Taxi to Runway',
+      sourceId: '9.9.9a',
+      title: 'Example standard',
     })
-    expect(body.sources[source.id]).toEqual({ name: 'KIND SOP', edition: '2026-03' })
+    expect(body.sources[source.id]).toEqual({ name: 'Example SOP', edition: '2026-03' })
     expect(body.credentials[credential.id]).toBe('X-GC')
     expect(body.tasks[first.id]).toEqual({ number: '1', name: 'Airport layout' })
     expect(body.tasks[second.id]).toEqual({ number: '2', name: 'Taxi' })
