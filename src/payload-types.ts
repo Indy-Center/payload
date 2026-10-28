@@ -530,6 +530,7 @@ export interface CourseVersion {
 export interface LessonPlan {
   id: string;
   courseVersion: string | CourseVersion;
+  module?: string | null;
   /**
    * Such as S-GC-3.
    */
@@ -1116,6 +1117,7 @@ export interface CourseVersionsSelect<T extends boolean = true> {
  */
 export interface LessonPlansSelect<T extends boolean = true> {
   courseVersion?: T;
+  module?: T;
   code?: T;
   title?: T;
   description?: T;
