@@ -1,4 +1,10 @@
-import { movedBy, type GridTask, type TaskGridBatch } from '@/courseware/task-grid'
+import {
+  movedBy,
+  PARENT_RETIRED,
+  PARENT_RETIRING,
+  type GridTask,
+  type TaskGridBatch,
+} from '@/courseware/task-grid'
 
 /**
  * The Tasks grid's pending changes over the saved tasks, and what it shows from them: each row's
@@ -173,6 +179,13 @@ export type GridRow =
       down: string | null
       /** Whether it may be given a first child here: it has none showing and isn't retired. */
       canAddChild: boolean
+      /**
+       * Why the row can't be changed or added beside: its parent is retired, and the Tasks
+       * collection refuses any save under a retired parent.
+       */
+      locked: string | null
+      /** Why a new row would be refused as it stands: its parent is being retired. */
+      warning: string | null
     }
   | { kind: 'placeholder'; parent: string | null; number: string; depth: number }
 
@@ -197,6 +210,9 @@ export function gridRows(state: GridState, showRetired: boolean): GridRow[] {
   const walk = (parent: string | null, prefix: string, depth: number): boolean => {
     const children = state.order[at(parent)] ?? []
     const shown = children.filter((id) => !hidden(id))
+    // Retired and staying so: a pending retire still lets its children be saved first.
+    const parentRetired =
+      parent !== null && Boolean(saved.get(parent)?.retired) && state.retire[parent] !== false
     for (const [index, id] of children.entries()) {
       if (hidden(id)) continue
       const number = prefix ? `${prefix}.${index + 1}` : `${index + 1}`
@@ -223,6 +239,8 @@ export function gridRows(state: GridState, showRetired: boolean): GridRow[] {
         up: shown[place - 1] ?? null,
         down: shown[place + 1] ?? null,
         canAddChild: false,
+        locked: parentRetired ? PARENT_RETIRED : null,
+        warning: fresh && parent !== null && state.retire[parent] === true ? PARENT_RETIRING : null,
       }
       rows.push(row)
       const hasChildren = walk(id, number, depth + 1)

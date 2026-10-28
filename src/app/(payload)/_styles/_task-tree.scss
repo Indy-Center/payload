@@ -312,6 +312,13 @@ span.task-tree__toggle {
     font-size: 0.8125rem;
   }
 
+  // Why a row is locked, or would be refused as it stands.
+  &__hint {
+    margin: 0.25rem 0 0;
+    color: var(--theme-elevation-600);
+    font-size: 0.8125rem;
+  }
+
   // A faint row where the next task of a group would land: the grid's own text size and face.
   &__placeholder td {
     color: var(--theme-elevation-400);

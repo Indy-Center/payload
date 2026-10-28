@@ -62,6 +62,9 @@ export function TaskGrid({
 
   const save = async () => {
     setBusy(true)
+    // Once saved, the grid stays busy until the tasks read again arrive and start it afresh
+    // (its key changes), so a second press can't send the same batch again.
+    let saved = false
     try {
       const response = await fetch(
         formatAdminURL({ apiRoute: routes.api, serverURL, path: '/courseware/task-grid' }),
@@ -74,6 +77,7 @@ export function TaskGrid({
       )
       const body = await response.json().catch(() => ({}))
       if (response.ok) {
+        saved = true
         setRefusals(noRefusals)
         toast.success(`${pending} ${pending === 1 ? 'change' : 'changes'} saved.`)
         // The tree, and every number shown elsewhere, are read again from what was saved.
@@ -93,7 +97,7 @@ export function TaskGrid({
     } catch {
       setRefusals({ rows: {}, batch: ['The CMS could not be reached. Nothing was saved.'] })
     } finally {
-      setBusy(false)
+      if (!saved) setBusy(false)
     }
   }
 
@@ -203,6 +207,7 @@ function TaskRow({
 }) {
   const retiring = row.retire === true
   const retired = retiring || (row.retired && row.retire !== false)
+  const locked = row.locked !== null
   const classes = [
     `${baseClass}__row`,
     row.isNew && `${baseClass}__row--new`,
@@ -212,7 +217,6 @@ function TaskRow({
   ]
   const cell = (changed: boolean) =>
     `${baseClass}__cell${changed || row.isNew ? ` ${baseClass}__cell--changed` : ''}`
-  const small = { buttonStyle: 'secondary', size: 'xsmall', margin: false } as const
 
   return (
     <tr data-row={row.id} className={classes.filter(Boolean).join(' ')}>
@@ -225,7 +229,7 @@ function TaskRow({
             type="button"
             className={`${baseClass}__arrow`}
             aria-label={`Move ${row.number} up`}
-            disabled={!row.up}
+            disabled={!row.up || locked}
             onClick={() => row.up && dispatch({ type: 'swap', id: row.id, with: row.up })}
           >
             ↑
@@ -234,7 +238,7 @@ function TaskRow({
             type="button"
             className={`${baseClass}__arrow`}
             aria-label={`Move ${row.number} down`}
-            disabled={!row.down}
+            disabled={!row.down || locked}
             onClick={() => row.down && dispatch({ type: 'swap', id: row.id, with: row.down })}
           >
             ↓
@@ -249,7 +253,7 @@ function TaskRow({
           className={cell(row.changed.name)}
           value={row.name}
           placeholder="Name"
-          disabled={retired}
+          disabled={retired || locked}
           onChange={(event) =>
             dispatch({ type: 'edit', id: row.id, field: 'name', value: event.target.value })
           }
@@ -257,6 +261,13 @@ function TaskRow({
         {row.retired && row.retire === undefined ? (
           <span className="task-tree__retired">Retired</span>
         ) : null}
+        {[row.locked, row.warning]
+          .filter((note): note is string => note !== null && !refusals.includes(note))
+          .map((note) => (
+            <div key={note} className={`${baseClass}__hint`}>
+              {note}
+            </div>
+          ))}
         {refusals.map((message) => (
           <div key={message} className={`${baseClass}__error`}>
             {message}
@@ -270,48 +281,64 @@ function TaskRow({
           aria-label={`Description of ${row.number}`}
           className={cell(row.changed.description)}
           value={row.description}
-          disabled={retired}
+          disabled={retired || locked}
           onChange={(event) =>
             dispatch({ type: 'edit', id: row.id, field: 'description', value: event.target.value })
           }
         />
       </td>
       <td className={`${baseClass}__actions`}>
-        <Button
-          {...small}
-          aria-label={`Add a task below ${row.number}`}
-          onClick={() => dispatch({ type: 'add', parent: row.parent, after: row.id })}
-        >
-          + Below
-        </Button>
-        {row.canAddChild ? (
-          <Button
-            {...small}
-            aria-label={`Add a first task under ${row.number}`}
-            onClick={() => dispatch({ type: 'add', parent: row.id })}
-          >
-            + Child
-          </Button>
-        ) : null}
-        {row.isNew ? (
-          <Button
-            {...small}
-            aria-label={`Remove ${row.number}`}
-            onClick={() => dispatch({ type: 'remove', key: row.id })}
-          >
-            Remove
-          </Button>
-        ) : (
-          <Button
-            {...small}
-            aria-label={`${retireLabel(row)} ${row.number}`}
-            onClick={() => dispatch({ type: 'retire', id: row.id })}
-          >
-            {retireLabel(row)}
-          </Button>
-        )}
+        {locked ? null : <RowActions row={row} dispatch={dispatch} />}
       </td>
     </tr>
+  )
+}
+
+/** "+ Below", "+ Child", and Retire, Keep, Un-retire, Keep retired or Remove. */
+function RowActions({
+  row,
+  dispatch,
+}: {
+  row: Extract<GridRow, { kind: 'task' }>
+  dispatch: Dispatch
+}) {
+  const small = { buttonStyle: 'secondary', size: 'xsmall', margin: false } as const
+  return (
+    <>
+      <Button
+        {...small}
+        aria-label={`Add a task below ${row.number}`}
+        onClick={() => dispatch({ type: 'add', parent: row.parent, after: row.id })}
+      >
+        + Below
+      </Button>
+      {row.canAddChild ? (
+        <Button
+          {...small}
+          aria-label={`Add a first task under ${row.number}`}
+          onClick={() => dispatch({ type: 'add', parent: row.id })}
+        >
+          + Child
+        </Button>
+      ) : null}
+      {row.isNew ? (
+        <Button
+          {...small}
+          aria-label={`Remove ${row.number}`}
+          onClick={() => dispatch({ type: 'remove', key: row.id })}
+        >
+          Remove
+        </Button>
+      ) : (
+        <Button
+          {...small}
+          aria-label={`${retireLabel(row)} ${row.number}`}
+          onClick={() => dispatch({ type: 'retire', id: row.id })}
+        >
+          {retireLabel(row)}
+        </Button>
+      )}
+    </>
   )
 }
 

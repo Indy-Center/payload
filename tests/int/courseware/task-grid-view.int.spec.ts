@@ -262,4 +262,44 @@ describe('the Tasks grid', () => {
     // Nothing was saved, so every change is still pending.
     expect(saveLabel()).toBe('Save 2 changes')
   })
+
+  it('stays busy after a save until the tasks are read again, so Save is not sent twice', async () => {
+    const fetch = vi.fn(async (..._args: unknown[]) => Response.json({ saved: {} }))
+    vi.stubGlobal('fetch', fetch)
+    show()
+
+    press('Retire 2')
+    await pressAndWait('Save 1 change')
+
+    expect(button('Save 1 change').disabled).toBe(true)
+    expect(router.refresh).toHaveBeenCalled()
+  })
+
+  it('says a new task under a task being retired would be refused', () => {
+    show()
+
+    press('Add a first task under 2')
+    press('Retire 2')
+
+    expect(nameCell('2.1').closest('tr')!.textContent).toContain(
+      'Its parent is being retired. Keep the parent or remove this task.',
+    )
+  })
+
+  it('locks the tasks under a retired task until it is un-retired', () => {
+    show([...tasks, task('f', 'Winds', 'e', 'a5')])
+    act(() => document.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click())
+
+    const winds = nameCell('3.1')
+    expect(winds.disabled).toBe(true)
+    expect(winds.closest('tr')!.textContent).toContain(
+      'Its parent is retired. Un-retire the parent first.',
+    )
+    expect(() => button('Retire 3.1')).toThrow()
+    expect(() => button('Add a task below 3.1')).toThrow()
+
+    press('Un-retire 3')
+    expect(nameCell('3.1').disabled).toBe(false)
+    expect(() => button('Retire 3.1')).not.toThrow()
+  })
 })
