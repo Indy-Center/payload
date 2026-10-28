@@ -1,3 +1,6 @@
+import { EditionCell as EditionCell_4739f25f5aa938351f26a42268769d3e } from '../../../components/admin/courses/EditionCell'
+import { CourseContentView as CourseContentView_5e7875f4b67a6148b148358c2ba6917f } from '../../../components/admin/courses/CourseContentView'
+import { CourseHistoryView as CourseHistoryView_9a7e571f00fe5a32a5b3133430fa87d8 } from '../../../components/admin/courses/CourseHistoryView'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { RscEntryLexicalField as RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { LexicalDiffComponent as LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -31,6 +34,9 @@ import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc056
 
 /** @type import('payload').ImportMap */
 export const importMap = {
+  "/components/admin/courses/EditionCell#EditionCell": EditionCell_4739f25f5aa938351f26a42268769d3e,
+  "/components/admin/courses/CourseContentView#CourseContentView": CourseContentView_5e7875f4b67a6148b148358c2ba6917f,
+  "/components/admin/courses/CourseHistoryView#CourseHistoryView": CourseHistoryView_9a7e571f00fe5a32a5b3133430fa87d8,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalField": RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#LexicalDiffComponent": LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e,

@@ -36,7 +36,9 @@ export const LessonPlans: CollectionConfig = {
   admin: {
     useAsTitle: 'code',
     defaultColumns: ['code', 'title', 'courseVersion'],
-    group: 'Training',
+    // Out of the nav: lesson plans are reached from their edition on the course's page (0056).
+    // The collection's pages still open by link.
+    group: false,
   },
   access: lessonPlanAccess,
   hooks: {

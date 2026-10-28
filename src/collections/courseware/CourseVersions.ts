@@ -10,7 +10,9 @@ export const CourseVersions: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'status', 'updatedAt'],
-    group: 'Training',
+    // Out of the nav: editions are worked on from their course's page (decision 0056). The
+    // collection's pages still open by link.
+    group: false,
   },
   // "Start a new edition" on the course page makes a new edition. A duplicate of a published one
   // could be saved published without the publishing check.

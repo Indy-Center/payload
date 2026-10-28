@@ -12,6 +12,8 @@ import { idOf } from '@/courseware/ids'
 
 const POSITION_TYPES = ['DEL', 'GND', 'TWR', 'APP', 'DEP', 'CTR', 'FSS'] as const
 
+const EDITION_CELL = '/components/admin/courses/EditionCell#EditionCell'
+
 const BOTH_WEEKS = 'Give both the fewest and the most weeks, or neither.'
 
 type Siblings = Record<string, unknown> | undefined
@@ -122,9 +124,29 @@ export const Courses: CollectionConfig = {
   slug: 'courses',
   admin: {
     useAsTitle: 'code',
-    defaultColumns: ['code', 'title', 'currentVersion'],
+    defaultColumns: ['code', 'title', 'currentVersion', 'draftEdition', 'credentialIssued'],
     group: 'Training',
+    // The course page has three tabs, Details, Content and History (decision 0056), and no API tab.
+    hideAPIURL: true,
+    components: {
+      views: {
+        edit: {
+          default: { tab: { label: 'Details', order: 100 } },
+          content: {
+            path: '/content',
+            Component: '/components/admin/courses/CourseContentView#CourseContentView',
+            tab: { label: 'Content', href: '/content', order: 200 },
+          },
+          history: {
+            path: '/history',
+            Component: '/components/admin/courses/CourseHistoryView#CourseHistoryView',
+            tab: { label: 'History', href: '/history', order: 300 },
+          },
+        },
+      },
+    },
   },
+  defaultSort: 'code',
   access: staffAccess,
   fields: [
     {
@@ -273,12 +295,21 @@ export const Courses: CollectionConfig = {
     },
     {
       name: 'currentVersion',
+      label: 'Live edition',
       type: 'relationship',
       relationTo: 'course-versions',
       admin: {
         readOnly: true,
-        description: 'Set by publishing a version. The library shows this one.',
+        description: 'Set by publishing an edition. The library shows this one.',
+        components: { Cell: EDITION_CELL },
       },
+    },
+    {
+      // A column in the Courses list only: the course's draft edition, looked up, not stored.
+      name: 'draftEdition',
+      label: 'Draft edition',
+      type: 'ui',
+      admin: { components: { Cell: EDITION_CELL } },
     },
   ],
 }
