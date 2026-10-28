@@ -42,6 +42,12 @@ export const Tasks: CollectionConfig = {
   access: staffAccess,
   fields: [
     {
+      // Puts the number before the name in the page title and breadcrumb; shows nothing itself.
+      name: 'numberedTitle',
+      type: 'ui',
+      admin: { components: { Field: '/components/admin/TaskTitle#TaskTitle' } },
+    },
+    {
       // In the "Add child" drawer: the number the new task will get.
       name: 'nextNumber',
       type: 'ui',
