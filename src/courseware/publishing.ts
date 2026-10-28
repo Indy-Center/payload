@@ -35,6 +35,15 @@ export async function refuseUnpublishable(
   req: PayloadRequest,
   version: Partial<CourseVersion>,
 ): Promise<void> {
+  const faults = await publishingFaults(req, version)
+  if (faults.length > 0) refuse('status', faults)
+}
+
+/** Every fault the publishing check finds, each once; none when the version may be published. */
+export async function publishingFaults(
+  req: PayloadRequest,
+  version: Partial<CourseVersion>,
+): Promise<string[]> {
   const faults: string[] = []
   const scaleId = idOf(version.gradingScale)
   const scale = scaleId
@@ -108,7 +117,7 @@ export async function refuseUnpublishable(
     }
   }
 
-  if (faults.length > 0) refuse('status', [...new Set(faults)])
+  return [...new Set(faults)]
 }
 
 function inScale(position: number | null | undefined, points: number): boolean {

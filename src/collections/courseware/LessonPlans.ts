@@ -1,6 +1,7 @@
 import type { CollectionConfig, FilterOptions, Where } from 'payload'
 import { lexicalEditor, UploadFeature } from '@payloadcms/richtext-lexical'
 import { lessonPlanAccess } from '@/courseware/access'
+import { COPYING_EDITION } from '@/courseware/edition-actions'
 import { idOf } from '@/courseware/ids'
 import { refuseAuthorsLessonPlanStructure } from '@/courseware/structure'
 import { expandTaskRows, pickableTask } from '@/courseware/task-rows'
@@ -40,7 +41,7 @@ export const LessonPlans: CollectionConfig = {
   access: lessonPlanAccess,
   hooks: {
     beforeChange: [
-      async ({ data, operation, originalDoc, req }) => {
+      async ({ context, data, operation, originalDoc, req }) => {
         await refuseAuthorsLessonPlanStructure(
           req,
           data,
@@ -55,6 +56,8 @@ export const LessonPlans: CollectionConfig = {
           })
           data.minimum = version.defaultMinimum ?? null
         }
+        // A copy made by starting an edition keeps its rows exactly, retired tasks included.
+        if (context[COPYING_EDITION]) return data
         data.theoryItems = await expandTaskRows(
           req,
           data.theoryItems,

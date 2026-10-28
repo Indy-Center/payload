@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import type { CourseVersion } from '@/payload-types'
 import { courseVersionAccess, staffOnlyField } from '@/courseware/access'
 import { numberEdition } from '@/courseware/editions'
 import { idOf } from '@/courseware/ids'
@@ -11,18 +12,22 @@ export const CourseVersions: CollectionConfig = {
     defaultColumns: ['title', 'status', 'updatedAt'],
     group: 'Training',
   },
+  // "Start a new edition" on the course page makes a new edition. A duplicate of a published one
+  // could be saved published without the publishing check.
+  disableDuplicate: true,
   access: courseVersionAccess,
   // Two editions of one course never share a number (decision 0056).
   indexes: [{ fields: ['course', 'number'], unique: true }],
   hooks: {
     beforeChange: [
       async ({ data, operation, originalDoc, req }) => {
-        // On create `originalDoc` is empty, or the version being duplicated.
-        await numberEdition(req, data, operation === 'update' ? originalDoc! : null)
+        const before = operation === 'update' ? (originalDoc as CourseVersion) : null
+        await numberEdition(req, data, before)
         refuseScaleChange(data, originalDoc)
-        if (data.status === 'published' && originalDoc?.status !== 'published') {
-          await refuseUnpublishable(req, data)
-        }
+        const publishing = data.status === 'published' && before?.status !== 'published'
+        if (publishing) await refuseUnpublishable(req, data)
+        // Set once, when the edition is published; a date sent with a save is ignored.
+        data.publishedAt = publishing ? new Date().toISOString() : (before?.publishedAt ?? null)
         return data
       },
     ],
@@ -92,6 +97,17 @@ export const CourseVersions: CollectionConfig = {
         position: 'sidebar',
         description:
           'Choose Published and save to publish: the version is checked, becomes the course’s current version, and its grading scale is fixed.',
+      },
+    },
+    {
+      name: 'publishedAt',
+      label: 'Published',
+      type: 'date',
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        date: { pickerAppearance: 'dayOnly', displayFormat: 'd MMM yyyy' },
+        description: 'Set when the edition is published.',
       },
     },
     { name: 'description', type: 'textarea' },
