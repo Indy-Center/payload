@@ -89,23 +89,44 @@ describe('edition numbers', () => {
     expect(second.title).toBe('X-TWR edition 2')
   })
 
-  it('refuses two editions of one course sharing a number', async () => {
+  it('refuses moving a saved edition to another course, and saves it with its own', async () => {
     const tower = await course('X-TWR')
     const approach = await course('X-APP')
     await startEdition(tower.id)
     const other = await startEdition(approach.id)
+    const second = await startEdition(approach.id)
 
-    // Moving X-APP edition 1 into X-TWR would give X-TWR two edition 1s.
-    const refused = await refusal(
-      payload.update({
-        collection: 'course-versions',
-        id: other.id,
-        data: { course: tower.id },
-        ...as(admin),
-      }),
-    )
+    // Whether or not the other course already has that number.
+    for (const [edition, target] of [
+      [other, tower],
+      [second, tower],
+    ] as const) {
+      const refused = await refusal(
+        payload.update({
+          collection: 'course-versions',
+          id: edition.id,
+          data: { course: target.id },
+          ...as(admin),
+        }),
+      )
+      expect(refused).toEqual([
+        {
+          path: 'course',
+          message:
+            'An edition stays with its course once it is saved. Start a new edition of the other course instead.',
+        },
+      ])
+    }
+    const after = await payload.findByID({ collection: 'course-versions', id: second.id, depth: 0 })
+    expect(after).toMatchObject({ course: approach.id, number: 2 })
 
-    expect(refused).toEqual([{ path: 'number', message: 'X-TWR already has an edition 1.' }])
+    const saved = await payload.update({
+      collection: 'course-versions',
+      id: second.id,
+      data: { course: approach.id, description: 'Same course' },
+      ...as(admin),
+    })
+    expect(saved).toMatchObject({ course: approach.id, number: 2, description: 'Same course' })
   })
 
   it('never gives two editions started at once one number', async () => {

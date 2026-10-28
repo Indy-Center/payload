@@ -335,7 +335,7 @@ export interface Credential {
   name: string;
   description?: string | null;
   /**
-   * Certifications only: its place on the ladder, higher above lower. No two share one.
+   * Certifications only, and each needs one: its place on the ladder, higher above lower. No two share one.
    */
   rank?: number | null;
   /**

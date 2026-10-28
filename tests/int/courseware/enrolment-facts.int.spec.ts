@@ -150,6 +150,9 @@ describe("a course's enrolment facts", () => {
         message: 'Give both the fewest and the most weeks, or neither.',
       },
     ])
+    expect(await refusal(save({ min: 0, max: 6 }))).toEqual([
+      { path: 'estimatedWeeks.min', message: 'The fewest weeks is at least 1.' },
+    ])
     expect((await save({ min: 6, max: 6 })).estimatedWeeks).toMatchObject({ min: 6, max: 6 })
   })
 

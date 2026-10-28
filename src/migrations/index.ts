@@ -19,6 +19,7 @@ import * as migration_20261026_032117_course_prerequisites_and_credential_issued
 import * as migration_20261026_034520_edition_numbers from './20261026_034520_edition_numbers';
 import * as migration_20261028_143500_citation_place_and_title from './20261028_143500_citation_place_and_title';
 import * as migration_20261028_194448_edition_published_date from './20261028_194448_edition_published_date';
+import * as migration_20261028_200131_tighter_course_and_credential_rules from './20261028_200131_tighter_course_and_credential_rules';
 
 export const migrations = [
   {
@@ -124,6 +125,11 @@ export const migrations = [
   {
     up: migration_20261028_194448_edition_published_date.up,
     down: migration_20261028_194448_edition_published_date.down,
-    name: '20261028_194448_edition_published_date'
+    name: '20261028_194448_edition_published_date',
+  },
+  {
+    up: migration_20261028_200131_tighter_course_and_credential_rules.up,
+    down: migration_20261028_200131_tighter_course_and_credential_rules.down,
+    name: '20261028_200131_tighter_course_and_credential_rules'
   },
 ];

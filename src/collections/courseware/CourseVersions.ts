@@ -3,6 +3,7 @@ import type { CourseVersion } from '@/payload-types'
 import { courseVersionAccess, staffOnlyField } from '@/courseware/access'
 import { numberEdition } from '@/courseware/editions'
 import { idOf } from '@/courseware/ids'
+import { refuseMinimumOffScale } from '@/courseware/minimums'
 import { refuseScaleChange, refuseUnpublishable } from '@/courseware/publishing'
 import { rowLabelComponent } from '@/courseware/row-label-component'
 
@@ -27,6 +28,12 @@ export const CourseVersions: CollectionConfig = {
         const before = operation === 'update' ? (originalDoc as CourseVersion) : null
         await numberEdition(req, data, before)
         refuseScaleChange(data, originalDoc)
+        await refuseMinimumOffScale(
+          req,
+          'defaultMinimum',
+          'defaultMinimum' in data ? data.defaultMinimum : before?.defaultMinimum,
+          'gradingScale' in data ? data.gradingScale : before?.gradingScale,
+        )
         const publishing = data.status === 'published' && before?.status !== 'published'
         if (publishing) await refuseUnpublishable(req, data)
         // Set once, when the edition is published; a date sent with a save is ignored.

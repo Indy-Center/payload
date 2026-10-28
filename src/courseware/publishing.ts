@@ -1,6 +1,7 @@
 import { ValidationError, type PayloadRequest } from 'payload'
 import type { CourseVersion, Scenario } from '@/payload-types'
 import { idOf } from './ids'
+import { inScale } from './minimums'
 
 const refuse = (path: string, messages: string[]): never => {
   throw new ValidationError({ errors: messages.map((message) => ({ path, message })) })
@@ -118,8 +119,4 @@ export async function publishingFaults(
   }
 
   return [...new Set(faults)]
-}
-
-function inScale(position: number | null | undefined, points: number): boolean {
-  return position != null && Number.isInteger(position) && position >= 1 && position <= points
 }
