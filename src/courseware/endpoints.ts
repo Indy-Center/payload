@@ -1,6 +1,7 @@
 import type { Endpoint, PayloadRequest } from 'payload'
 import { hasBearerToken, unauthorized } from '@/bearer-token'
 import { buildCatalogue } from './catalogue'
+import { buildRowLabelLookup } from './row-labels'
 import {
   buildCourseList,
   buildCourseVersionDocument,
@@ -22,6 +23,15 @@ const fromTraining = (req: PayloadRequest) => hasBearerToken(req, process.env.TR
 const notFound = () => Response.json({ error: 'Not found' }, { status: 404 })
 
 export const coursewareEndpoints: Endpoint[] = [
+  {
+    // For the admin's row labels, read by a signed-in browser session rather than a server token.
+    path: '/courseware/row-labels',
+    method: 'get',
+    handler: async (req) => {
+      if (!req.user) return unauthorized()
+      return Response.json(await buildRowLabelLookup(req))
+    },
+  },
   {
     path: '/courseware/catalogue',
     method: 'get',
