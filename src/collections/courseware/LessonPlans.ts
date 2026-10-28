@@ -3,6 +3,7 @@ import { lexicalEditor, UploadFeature } from '@payloadcms/richtext-lexical'
 import { lessonPlanAccess } from '@/courseware/access'
 import { COPYING_EDITION } from '@/courseware/edition-actions'
 import { idOf } from '@/courseware/ids'
+import { refuseMinimumOffScale } from '@/courseware/minimums'
 import { rowLabelComponent } from '@/courseware/row-label-component'
 import { refuseAuthorsLessonPlanStructure } from '@/courseware/structure'
 import { expandTaskRows, pickableTask } from '@/courseware/task-rows'
@@ -53,15 +54,24 @@ export const LessonPlans: CollectionConfig = {
         // A copy made by starting an edition keeps the plan as it was: its minimum, even an empty
         // one, and its rows exactly, retired tasks included.
         if (context[COPYING_EDITION]) return data
-        if (operation === 'create' && data.minimum == null && data.courseVersion) {
-          const version = await req.payload.findByID({
-            collection: 'course-versions',
-            id: idOf(data.courseVersion)!,
-            depth: 0,
-            req,
-          })
+        const versionId = idOf(data.courseVersion ?? originalDoc?.courseVersion)
+        const version = versionId
+          ? await req.payload.findByID({
+              collection: 'course-versions',
+              id: versionId,
+              depth: 0,
+              req,
+            })
+          : null
+        if (operation === 'create' && data.minimum == null && version) {
           data.minimum = version.defaultMinimum ?? null
         }
+        await refuseMinimumOffScale(
+          req,
+          'minimum',
+          'minimum' in data ? data.minimum : originalDoc?.minimum,
+          version?.gradingScale,
+        )
         data.theoryItems = await expandTaskRows(
           req,
           data.theoryItems,

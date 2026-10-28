@@ -114,6 +114,142 @@ describe('lesson plan minimums', () => {
     const { plan } = await readyVersion()
     expect(plan.minimum).toBe(2)
   })
+
+  describe('must be a point on the edition’s grading scale', () => {
+    const offScale = (value: number) =>
+      `${value} is not a point on Three point, which has 3 points. Choose 1 to 3.`
+
+    async function signedInLead() {
+      const lead = await payload.create({
+        collection: 'users',
+        data: {
+          email: 'lead@example.com',
+          password: 'example-password',
+          cid: '1000009',
+          roles: ['training:lead'],
+        },
+      })
+      return { user: lead, overrideAccess: false }
+    }
+
+    async function refusedAt(promise: Promise<unknown>) {
+      try {
+        await promise
+      } catch (error) {
+        if (error instanceof ValidationError)
+          return error.data.errors.map(({ path, message }) => ({ path, message }))
+        throw error
+      }
+      throw new Error('Expected the save to be refused')
+    }
+
+    it('for an edition’s default minimum, whenever the edition is saved', async () => {
+      const as = await signedInLead()
+      const { version, course, scale } = await readyVersion()
+      const save = (data: object, id = version.id) =>
+        payload.update({ collection: 'course-versions', id, data, ...as })
+
+      expect(await refusedAt(save({ defaultMinimum: 4 }))).toEqual([
+        { path: 'defaultMinimum', message: offScale(4) },
+      ])
+      expect(await refusedAt(save({ defaultMinimum: 1.5 }))).toEqual([
+        { path: 'defaultMinimum', message: offScale(1.5) },
+      ])
+      expect((await save({ defaultMinimum: 3 })).defaultMinimum).toBe(3)
+
+      // A smaller scale leaves the stored default off it.
+      const small = await payload.create({
+        collection: 'grading-scales',
+        data: { name: 'Two point', points: POINTS.slice(0, 2) },
+      })
+      expect(await refusedAt(save({ gradingScale: small.id }))).toEqual([
+        {
+          path: 'defaultMinimum',
+          message: '3 is not a point on Two point, which has 2 points. Choose 1 to 2.',
+        },
+      ])
+      expect((await save({ gradingScale: small.id, defaultMinimum: 2 })).defaultMinimum).toBe(2)
+
+      // A new edition is checked the same way.
+      expect(
+        await refusedAt(
+          payload.create({
+            collection: 'course-versions',
+            data: {
+              course: course.id,
+              number: 1,
+              status: 'draft',
+              gradingScale: scale.id,
+              defaultMinimum: 9,
+            },
+            ...as,
+          }),
+        ),
+      ).toEqual([{ path: 'defaultMinimum', message: offScale(9) }])
+    })
+
+    it('for a lesson plan’s minimum, in a draft or a published edition', async () => {
+      const as = await signedInLead()
+      const { version, plan } = await readyVersion()
+      const save = (data: object) =>
+        payload.update({ collection: 'lesson-plans', id: plan.id, data, ...as })
+
+      expect(await refusedAt(save({ minimum: 4 }))).toEqual([
+        { path: 'minimum', message: offScale(4) },
+      ])
+      expect((await save({ minimum: 3 })).minimum).toBe(3)
+      expect(
+        await refusedAt(
+          payload.create({
+            collection: 'lesson-plans',
+            data: { courseVersion: version.id, code: 'X-TWR-2', minimum: 7 },
+            ...as,
+          }),
+        ),
+      ).toEqual([{ path: 'minimum', message: offScale(7) }])
+
+      await publish(version.id)
+      expect(await refusedAt(save({ minimum: 4 }))).toEqual([
+        { path: 'minimum', message: offScale(4) },
+      ])
+      expect((await save({ minimum: 1 })).minimum).toBe(1)
+    })
+
+    it('only once the edition has a scale to check against', async () => {
+      const as = await signedInLead()
+      const course = await payload.create({
+        collection: 'courses',
+        data: { code: 'X-TWR', title: 'Example Tower' },
+      })
+      const version = await payload.create({
+        collection: 'course-versions',
+        data: { course: course.id, number: 1, status: 'draft', defaultMinimum: 5 },
+        ...as,
+      })
+      const plan = await payload.create({
+        collection: 'lesson-plans',
+        data: { courseVersion: version.id, code: 'X-TWR-1' },
+        ...as,
+      })
+      expect(plan.minimum).toBe(5)
+
+      // The scale arrives with the default still off it: refused until it fits.
+      const scale = await payload.create({
+        collection: 'grading-scales',
+        data: { name: 'Three point', points: POINTS },
+      })
+      expect(
+        await refusedAt(
+          payload.update({
+            collection: 'course-versions',
+            id: version.id,
+            data: { gradingScale: scale.id },
+            ...as,
+          }),
+        ),
+      ).toEqual([{ path: 'defaultMinimum', message: offScale(5) }])
+    })
+  })
 })
 
 describe('publishing', () => {
