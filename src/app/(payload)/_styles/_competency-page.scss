@@ -70,16 +70,13 @@
   }
 }
 
-// With no Save button the document controls have nothing to share their row with, and the meta
-// row ("Last Modified", "Created") would set the page's width. Letting the controls shrink to the
-// viewport keeps the meta row scrolling inside its own box, as Payload intends on a phone.
+// Payload's page is a grid whose content column is `auto`, so it grows to the widest thing inside
+// the edit view: the document controls' meta row ("Last Modified", "Created", 465px, which Payload
+// means to scroll inside its own box) and the form's text. That pushes the top bar past the
+// viewport. `contain: inline-size` makes the edit view count as zero wide when the column is
+// sized, while it still fills the column; its wide parts then scroll or wrap inside it.
 .collection-edit--competencies {
   @media (max-width: 767px) {
-    .doc-controls,
-    .doc-controls__wrapper,
-    .doc-controls__content {
-      min-width: 0;
-      max-width: 100%;
-    }
+    contain: inline-size;
   }
 }
