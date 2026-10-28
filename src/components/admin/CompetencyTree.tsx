@@ -1,6 +1,7 @@
 'use client'
 import React from 'react'
 import Link from 'next/link'
+import { ChevronIcon } from '@payloadcms/ui'
 import type { TreeRow } from '@/courseware/competency-tree'
 
 type Props = {
@@ -83,7 +84,7 @@ export function CompetencyTree({
                       aria-label={`${isOpen ? 'Close' : 'Open'} ${row.sourceId}`}
                       onClick={() => onToggle(row.id)}
                     >
-                      {isOpen ? '▾' : '▸'}
+                      <ChevronIcon direction={isOpen ? 'down' : 'right'} size="small" />
                     </button>
                   ) : (
                     <span className={`${baseClass}__toggle`} aria-hidden="true" />

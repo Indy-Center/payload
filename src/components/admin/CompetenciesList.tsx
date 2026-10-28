@@ -1,7 +1,7 @@
 'use client'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Button, Gutter, SearchIcon, useConfig, useStepNav } from '@payloadcms/ui'
+import { Button, Gutter, SearchFilter, SearchIcon, useConfig, useStepNav } from '@payloadcms/ui'
 import { formatAdminURL } from 'payload/shared'
 import type { CompetencyTree as Tree, TreeRow } from '@/courseware/competency-tree'
 import { CompetencyTree } from './CompetencyTree'
@@ -31,20 +31,15 @@ export function CompetenciesList() {
   const params = useSearchParams()
 
   const [edition, setEdition] = useState<string | null>(params.get('edition'))
-  const [search, setSearch] = useState(params.get('search') ?? '')
-  const [query, setQuery] = useState(search.trim())
+  // The search the page opened with; Payload's search box waits for typing to pause itself.
+  const [initialSearch] = useState(params.get('search') ?? '')
+  const [query, setQuery] = useState(initialSearch.trim())
   const [tree, setTree] = useState<Tree | null>(null)
   const [failed, setFailed] = useState(false)
   const [open, setOpen] = useState<Set<string>>(new Set())
   const [searchOpen, setSearchOpen] = useState<Set<string>>(new Set())
 
   useEffect(() => setStepNav([{ label: 'Competencies' }]), [setStepNav])
-
-  // A search runs once typing pauses.
-  useEffect(() => {
-    const wait = setTimeout(() => setQuery(search.trim()), 250)
-    return () => clearTimeout(wait)
-  }, [search])
 
   useEffect(() => {
     rememberInAddress(edition, query)
@@ -159,16 +154,14 @@ export function CompetenciesList() {
             </p>
 
             <div className={`${baseClass}__toolbar`}>
-              <div className={`search-filter ${baseClass}__search`}>
-                <input
-                  className="search-filter__input"
-                  type="search"
-                  placeholder="Search by ID or title"
-                  aria-label="Search by ID or title"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                />
+              {/* Payload's own search box: its `search-bar` wrapper draws the box and the icon. */}
+              <div className={`search-bar ${baseClass}__search`}>
                 <SearchIcon />
+                <SearchFilter
+                  label="Search by ID or title"
+                  searchQueryParam={initialSearch}
+                  handleChange={(value) => setQuery((value ?? '').trim())}
+                />
               </div>
               {parents.length > 0 && (
                 <Button buttonStyle="secondary" size="small" margin={false} onClick={expandAll}>
