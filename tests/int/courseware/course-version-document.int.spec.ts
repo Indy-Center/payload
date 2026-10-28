@@ -300,6 +300,58 @@ describe("a course's estimated weeks", () => {
 
     expect(await weeksOf('draft')).toBeNull()
   })
+
+  it('are the override for a course with no editions', async () => {
+    await payload.create({
+      collection: 'courses',
+      data: { code: 'X-CTR', title: 'Example Center', estimatedWeeks: { min: 4, max: 8 } },
+    })
+    // The document needs an edition to be served; a draft adds no live one.
+    const course = await payload.find({
+      collection: 'courses',
+      where: { code: { equals: 'X-CTR' } },
+    })
+    await payload.create({
+      collection: 'course-versions',
+      data: { course: course.docs[0].id, number: 1, status: 'draft' },
+    })
+
+    const { body } = await callEndpoint(payload, '/courseware/courses/X-CTR/draft')
+
+    expect(body.course.estimatedWeeks).toEqual({ min: 4, max: 8 })
+  })
+
+  it('leave out a lesson plan of another edition placed in a live module', async () => {
+    const course = await courseWithPlans(7, { live: true })
+    const liveId = (await payload.findByID({ collection: 'courses', id: course.id, depth: 0 }))
+      .currentVersion as string
+    const live = await payload.findByID({ collection: 'course-versions', id: liveId, depth: 0 })
+    const other = await payload.create({
+      collection: 'course-versions',
+      data: { course: course.id, number: 2, status: 'draft' },
+    })
+    const stray = await payload.create({
+      collection: 'lesson-plans',
+      data: { courseVersion: other.id, code: 'X-APP-99', title: 'Elsewhere' },
+    })
+    // Below the API, which would not place another edition's plan.
+    await payload.db.updateOne({
+      collection: 'course-versions',
+      id: liveId,
+      data: {
+        modules: (live.modules ?? []).map((module, index) => ({
+          ...module,
+          lessonPlans: [...(module.lessonPlans ?? []), ...(index === 0 ? [stray.id] : [])],
+        })),
+      },
+    })
+    const placed = (
+      await payload.findByID({ collection: 'course-versions', id: liveId, depth: 0 })
+    ).modules?.flatMap((module) => module.lessonPlans ?? [])
+    expect(placed).toContain(stray.id)
+
+    expect(await weeksOf('current')).toEqual({ min: 7, max: 9 })
+  })
 })
 
 describe('the course list', () => {

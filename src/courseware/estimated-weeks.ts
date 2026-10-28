@@ -33,6 +33,8 @@ export async function workedOutWeeks(
 ): Promise<{ edition: number; weeks: Weeks } | null> {
   const liveId = idOf(course.currentVersion)
   if (!liveId) return null
+  // These reads skip access on purpose: the course document is served to key holders with no
+  // user, as the rest of `buildCourseVersionDocument` reads, and only a count leaves here.
   const live = await req.payload.findByID({
     collection: 'course-versions',
     id: liveId,
