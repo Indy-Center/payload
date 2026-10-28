@@ -25,6 +25,7 @@ const config = {
   collections: [],
   globals: [],
   routes: { admin: '/admin', api: '/api' },
+  serverURL: '',
 } as unknown as ClientConfig
 
 const nowhere = () => {}
@@ -38,7 +39,13 @@ const router: AppRouterInstance = {
   bfcacheId: 'test',
 }
 
-function row(id: string, number: string, parentId: string | null, hasChildren = false) {
+function row(
+  id: string,
+  number: string,
+  parentId: string | null,
+  hasChildren = false,
+  moves: TaskTreeRow['moves'] = null,
+) {
   return {
     id,
     number,
@@ -48,6 +55,7 @@ function row(id: string, number: string, parentId: string | null, hasChildren = 
     parentId,
     depth: number.split('.').length - 1,
     hasChildren,
+    moves,
   } satisfies TaskTreeRow
 }
 
@@ -95,13 +103,17 @@ function show(list: TaskTreeList) {
   )
 }
 
-/** Presses the button with this accessible name: its aria-label, or else its text. */
-function press(name: string) {
-  const button = [...document.querySelectorAll('button')].find(
+/** The button with this accessible name: its aria-label, or else its text. */
+function button(name: string) {
+  const found = [...document.querySelectorAll('button')].find(
     (each) => (each.getAttribute('aria-label') ?? each.textContent) === name,
   )
-  if (!button) throw new Error(`No button "${name}"`)
-  act(() => button.click())
+  if (!found) throw new Error(`No button "${name}"`)
+  return found
+}
+
+function press(name: string) {
+  act(() => button(name).click())
 }
 
 const numbersShown = () =>
@@ -159,5 +171,63 @@ describe('the task tree table', () => {
       (cell) => cell.textContent === 'About 2',
     )
     expect(description?.classList).toContain('task-tree__description')
+  })
+})
+
+describe('the task tree table, for the Training Admin and leads', () => {
+  // Three made-up siblings, as the server offers their moves to a lead.
+  const siblings: TaskTreeList = {
+    rows: [
+      row('a', '1', null, false, { up: false, down: true }),
+      row('b', '2', null, false, { up: true, down: true }),
+      row('c', '3', null, false, { up: true, down: false }),
+    ],
+    opened: [],
+  }
+
+  const buttonNames = () =>
+    [...document.querySelectorAll('tbody button')].map((each) => each.getAttribute('aria-label'))
+
+  it('puts ↑ and ↓ beside each number, with no ↑ on the first and no ↓ on the last', () => {
+    show(siblings)
+
+    expect(buttonNames()).toEqual([
+      'Move 1 Task 1 down',
+      'Move 2 Task 2 up',
+      'Move 2 Task 2 down',
+      'Move 3 Task 3 up',
+    ])
+    const firstCell = document.querySelector('tbody tr td:first-child')
+    expect(firstCell?.querySelector('button')?.textContent).toBe('↓')
+  })
+
+  it('shows no move buttons to anyone else', () => {
+    show(tree)
+
+    expect(buttonNames().filter((name) => name?.startsWith('Move'))).toEqual([])
+  })
+
+  it('saves a move at once, then reads the tree again', async () => {
+    const calls: { url: string; body: unknown }[] = []
+    const realFetch = globalThis.fetch
+    globalThis.fetch = (async (url: string, init?: RequestInit) => {
+      calls.push({ url, body: JSON.parse(String(init?.body)) })
+      return Response.json({ message: '2 Task 2 is now 1', from: '2', to: '1' })
+    }) as typeof fetch
+    let refreshed = 0
+    router.refresh = () => {
+      refreshed++
+    }
+    try {
+      show(siblings)
+
+      await act(async () => button('Move 2 Task 2 up').click())
+
+      expect(calls).toEqual([{ url: '/api/courseware/tasks/b/move', body: { direction: 'up' } }])
+      expect(refreshed).toBe(1)
+    } finally {
+      globalThis.fetch = realFetch
+      router.refresh = nowhere
+    }
   })
 })

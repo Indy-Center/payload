@@ -1,0 +1,96 @@
+import { APIError, ValidationError, type Endpoint, type PayloadRequest } from 'payload'
+import { generateKeyBetween } from 'payload/shared'
+import { unauthorized } from '@/bearer-token'
+import type { User } from '@/payload-types'
+import { isStaff } from './access'
+import { loadTaskTree, type TaskTree } from './task-tree'
+
+export type MoveDirection = 'up' | 'down'
+
+export const MOVE_STAFF_ONLY = 'Only the Training Admin and lead instructors may move tasks.'
+
+/** A task's siblings in order, itself included, retired ones too: they keep their numbers (0025). */
+const siblingsOf = (tree: TaskTree, id: string) => {
+  const parentId = tree.get(id)?.parentId ?? null
+  return tree.inOrder.filter((task) => (task.parentId ?? null) === parentId)
+}
+
+/** Which way a task can move among its siblings: the first has no up, the last no down. */
+export function movesOf(tree: TaskTree, id: string): { up: boolean; down: boolean } {
+  const siblings = siblingsOf(tree, id)
+  const at = siblings.findIndex((task) => task.id === id)
+  return { up: at > 0, down: at >= 0 && at < siblings.length - 1 }
+}
+
+/**
+ * Moves a task one place up or down among its siblings, with everything beneath it, as the person
+ * signed in on `req`. Only the moved task's sort key (`_order`) is rewritten: its number, its
+ * children's and its siblings' come from the tree (0025). Only the Training Admin and leads move
+ * tasks (0022). Answers with what the move renumbered, as "2.2.3 Taxi to ramp is now 2.2.2".
+ */
+export async function moveTask(
+  req: PayloadRequest,
+  id: string,
+  direction: MoveDirection,
+): Promise<{ message: string; from: string; to: string }> {
+  if (!isStaff(req.user as Pick<User, 'roles' | 'cid'> | null)) {
+    throw new APIError(MOVE_STAFF_ONLY, 403)
+  }
+  if (direction !== 'up' && direction !== 'down') throw new APIError('Move a task up or down.', 400)
+
+  const tree = await loadTaskTree(req, { overrideAccess: false })
+  const task = tree.get(id)
+  if (!task) throw new APIError('That task no longer exists.', 404)
+  const from = tree.number(id)
+  const label = `${from} ${task.name}`
+
+  const siblings = siblingsOf(tree, id)
+  const at = siblings.findIndex((each) => each.id === id)
+  const keyAt = (index: number) => siblings[index]?.order || null
+  let key: string
+  if (direction === 'up') {
+    if (at === 0) throw new APIError(`${label} is already first.`, 400)
+    key = generateKeyBetween(keyAt(at - 2), keyAt(at - 1))
+  } else {
+    if (at === siblings.length - 1) throw new APIError(`${label} is already last.`, 400)
+    key = generateKeyBetween(keyAt(at + 1), keyAt(at + 2))
+  }
+
+  await req.payload.update({
+    collection: 'tasks',
+    id,
+    data: { _order: key },
+    depth: 0,
+    overrideAccess: false,
+    user: req.user,
+    req,
+  })
+
+  const to = (await loadTaskTree(req, { overrideAccess: false })).number(id)
+  return { message: `${label} is now ${to}`, from, to }
+}
+
+export const taskMoveEndpoints: Endpoint[] = [
+  {
+    // The Tasks tree's ↑ and ↓: saves at once. A refusal answers `{ errors: [{ message }] }`.
+    path: '/courseware/tasks/:id/move',
+    method: 'post',
+    handler: async (req) => {
+      if (!req.user) return unauthorized()
+      const { id } = req.routeParams as { id: string }
+      const body = ((await req.json?.()) ?? {}) as { direction?: MoveDirection }
+      try {
+        return Response.json(await moveTask(req, id, body.direction as MoveDirection))
+      } catch (error) {
+        if (error instanceof ValidationError) {
+          const errors = error.data.errors.map(({ message }) => ({ message }))
+          return Response.json({ errors }, { status: 400 })
+        }
+        if (error instanceof APIError) {
+          return Response.json({ errors: [{ message: error.message }] }, { status: error.status })
+        }
+        throw error
+      }
+    },
+  },
+]

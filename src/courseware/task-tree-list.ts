@@ -1,4 +1,7 @@
 import type { PayloadRequest } from 'payload'
+import type { User } from '@/payload-types'
+import { isStaff } from './access'
+import { movesOf } from './task-move'
 import { loadTaskTree, type TreeTask } from './task-tree'
 
 /** One task as the Tasks list shows it. */
@@ -14,6 +17,11 @@ export type TaskTreeRow = {
   depth: number
   /** Whether any of its children are in `rows`, so it has something to open. */
   hasChildren: boolean
+  /**
+   * Which way it can move among its siblings (the first has no up, the last no down), or null
+   * for anyone but the Training Admin and leads, who alone move tasks (0022).
+   */
+  moves: { up: boolean; down: boolean } | null
 }
 
 export type TaskTreeListOptions = {
@@ -39,6 +47,7 @@ export async function loadTaskTreeList(
   { search = '', showRetired = false }: TaskTreeListOptions = {},
 ): Promise<TaskTreeList> {
   const tree = await loadTaskTree(req, { overrideAccess: false })
+  const mayMove = isStaff(req.user as Pick<User, 'roles' | 'cid'> | null)
 
   // A retired task takes the tasks beneath it out of the list with it.
   const listed = (task: TreeTask) =>
@@ -74,6 +83,7 @@ export async function loadTaskTreeList(
         parentId,
         depth: tree.ancestors(task.id).length,
         hasChildren: parentsShown.has(task.id),
+        moves: mayMove ? movesOf(tree, task.id) : null,
       }
     }),
     opened: [...opened],

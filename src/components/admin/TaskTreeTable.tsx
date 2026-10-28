@@ -1,8 +1,49 @@
 'use client'
 import React, { useState } from 'react'
-import { ChevronIcon, Link, useConfig } from '@payloadcms/ui'
+import { useRouter } from 'next/navigation'
+import { ChevronIcon, Link, toast, useConfig } from '@payloadcms/ui'
 import { formatAdminURL } from 'payload/shared'
+import type { MoveDirection } from '@/courseware/task-move'
 import type { TaskTreeList, TaskTreeRow } from '@/courseware/task-tree-list'
+
+/**
+ * Moves a task one place among its siblings. Each press saves at once, with no confirm; the tree
+ * is then read again and a message names what the move renumbered.
+ */
+function useMoveTask() {
+  const { config } = useConfig()
+  const router = useRouter()
+  const [moving, setMoving] = useState(false)
+
+  const move = async (id: string, direction: MoveDirection) => {
+    setMoving(true)
+    try {
+      const response = await fetch(
+        `${config.serverURL}${config.routes.api}/courseware/tasks/${id}/move`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ direction }),
+        },
+      )
+      const body = await response.json().catch(() => ({}))
+      if (response.ok) toast.success(body.message)
+      else {
+        const errors: { message: string }[] = body.errors ?? []
+        if (errors.length) errors.forEach(({ message }) => toast.error(message))
+        else toast.error('Something went wrong.')
+      }
+      router.refresh()
+    } catch {
+      toast.error('The CMS could not be reached. Try again.')
+    } finally {
+      setMoving(false)
+    }
+  }
+
+  return { move, moving }
+}
 
 /**
  * Which tasks are open. Nothing is open at first but what a search opened; each task then opens
@@ -63,6 +104,21 @@ export const TaskTreeTable = ({
     },
   } = useConfig()
   const href = (id: string) => formatAdminURL({ adminRoute, path: `/collections/tasks/${id}` })
+  const { move, moving } = useMoveTask()
+  const moveButton = (row: TaskTreeRow, direction: MoveDirection) =>
+    row.moves?.[direction] ? (
+      <button
+        type="button"
+        className="task-tree__move"
+        aria-label={`Move ${row.number} ${row.name} ${direction}`}
+        disabled={moving}
+        onClick={() => move(row.id, direction)}
+      >
+        {direction === 'up' ? '↑' : '↓'}
+      </button>
+    ) : (
+      <span className="task-tree__move" aria-hidden="true" />
+    )
 
   return (
     <div className="task-tree">
@@ -81,6 +137,12 @@ export const TaskTreeTable = ({
             return (
               <tr key={row.id} className={row.retired ? 'task-tree__row--retired' : undefined}>
                 <td className="task-tree__number">
+                  {row.moves ? (
+                    <span className="task-tree__moves">
+                      {moveButton(row, 'up')}
+                      {moveButton(row, 'down')}
+                    </span>
+                  ) : null}
                   <span
                     className="task-tree__indent"
                     style={{ paddingInlineStart: `${row.depth * 1.25}rem` }}
