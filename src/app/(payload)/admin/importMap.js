@@ -33,6 +33,7 @@ import { Icon as Icon_dfe4008080d895d460898c3a6155e9ba } from '../../../componen
 import { Logo as Logo_91a09b539d3c86b0aebf520e7564ce08 } from '../../../components/admin/Logo'
 import { NavFooter as NavFooter_3b9e48c0766d631a740babd8ba41f9aa } from '../../../components/admin/NavFooter'
 import { IndyCenterLinks as IndyCenterLinks_a0e989a207f165787f36b51839b92b88 } from '../../../components/admin/IndyCenterLinks'
+import { ImportFrameworksView as ImportFrameworksView_c60c7d7e4609fd81279ef36bac0361de } from '../../../components/admin/ImportFrameworksView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
 
@@ -73,6 +74,7 @@ export const importMap = {
   "/components/admin/Logo#Logo": Logo_91a09b539d3c86b0aebf520e7564ce08,
   "/components/admin/NavFooter#NavFooter": NavFooter_3b9e48c0766d631a740babd8ba41f9aa,
   "/components/admin/IndyCenterLinks#IndyCenterLinks": IndyCenterLinks_a0e989a207f165787f36b51839b92b88,
+  "/components/admin/ImportFrameworksView#ImportFrameworksView": ImportFrameworksView_c60c7d7e4609fd81279ef36bac0361de,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1,
   "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24
 }

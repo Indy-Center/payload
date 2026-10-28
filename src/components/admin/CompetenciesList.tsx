@@ -1,8 +1,19 @@
 'use client'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Button, Gutter, SearchFilter, SearchIcon, useConfig, useStepNav } from '@payloadcms/ui'
+import {
+  Button,
+  Gutter,
+  SearchFilter,
+  SearchIcon,
+  useAuth,
+  useConfig,
+  useStepNav,
+} from '@payloadcms/ui'
 import { formatAdminURL } from 'payload/shared'
+import { canAdministerTraining } from '@/courseware/access'
+import { IMPORT_FRAMEWORKS_PATH } from '@/courseware/import/form'
+import type { User } from '@/payload-types'
 import type { CompetencyTree as Tree, TreeRow } from '@/courseware/competency-tree'
 import { CompetencyTree } from './CompetencyTree'
 
@@ -29,6 +40,9 @@ export function CompetenciesList() {
   } = useConfig()
   const { setStepNav } = useStepNav()
   const params = useSearchParams()
+  const { user } = useAuth<User>()
+  // The import page and its endpoints check again; this only hides the button from others.
+  const mayImport = canAdministerTraining(user)
 
   const [edition, setEdition] = useState<string | null>(params.get('edition'))
   // The search the page opened with; Payload's search box waits for typing to pause itself.
@@ -118,6 +132,17 @@ export function CompetenciesList() {
       <Gutter className="collection-list__wrap">
         <header className={`${baseClass}__header`}>
           <h1>Competencies</h1>
+          {mayImport && (
+            <Button
+              el="link"
+              url={formatAdminURL({ adminRoute: routes.admin, path: IMPORT_FRAMEWORKS_PATH })}
+              buttonStyle="primary"
+              size="medium"
+              margin={false}
+            >
+              Import framework edition
+            </Button>
+          )}
         </header>
 
         {failed && <p className={`${baseClass}__note`}>The competencies could not be loaded.</p>}

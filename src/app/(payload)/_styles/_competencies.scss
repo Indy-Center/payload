@@ -2,8 +2,18 @@
 // (src/components/admin/CompetenciesList.tsx and CompetencyTree.tsx).
 
 .competency-tree {
-  &__header h1 {
+  // The heading, and "Import framework edition" beside it (below it on a narrow phone).
+  &__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(var(--base) * 0.5) var(--base);
     margin-block: calc(var(--base) * 1.5) var(--base);
+  }
+
+  &__header h1 {
+    margin: 0;
   }
 
   &__note {
