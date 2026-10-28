@@ -192,20 +192,17 @@
     }
   }
 
-  &__modules,
-  &__plans {
+  &__modules {
     display: flex;
     flex-direction: column;
+    gap: calc(var(--base) * 0.6);
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  &__modules {
-    gap: calc(var(--base) * 0.6);
-  }
-
-  &__module {
+  &__module,
+  &__unplaced {
     display: flex;
     flex-direction: column;
     gap: calc(var(--base) * 0.3);
@@ -218,8 +215,70 @@
     }
   }
 
+  // "Not in a module", at the bottom: set apart from the modules with a dashed edge.
+  &__unplaced {
+    border-style: dashed;
+  }
+
+  &__module-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(var(--base) * 0.4);
+  }
+
+  // "Structural changes to a published edition are made by a lead."
+  &__structural {
+    padding: calc(var(--base) * 0.5) calc(var(--base) * 0.8);
+    border-radius: var(--style-radius-m);
+    background: var(--theme-elevation-50);
+    color: var(--theme-elevation-700);
+  }
+
+  // A module's lesson plans: code, title, minutes, theory items, then ↑ ↓ and Remove.
   &__plans {
-    gap: calc(var(--base) * 0.2);
+    width: 100%;
+    border-collapse: collapse;
+
+    th,
+    td {
+      padding: calc(var(--base) * 0.3) calc(var(--base) * 0.4);
+      border-bottom: 1px solid var(--theme-elevation-100);
+      text-align: start;
+      vertical-align: middle;
+    }
+
+    th {
+      color: var(--theme-elevation-500);
+      font-size: 0.85em;
+      font-weight: normal;
+    }
+
+    th:first-child,
+    td:first-child {
+      padding-inline-start: 0;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc(var(--base) * 0.25);
+  }
+
+  &__put {
+    max-width: 100%;
+    padding: calc(var(--base) * 0.2) calc(var(--base) * 0.3);
+    border: 1px solid var(--theme-elevation-250);
+    border-radius: var(--style-radius-s);
+    background: var(--theme-input-bg);
+    color: var(--theme-text);
+    font: inherit;
   }
 
   &__plan-link {
@@ -257,6 +316,64 @@
 .edition-modal__faults {
   margin: 0;
   padding-inline-start: 1.2em;
+}
+
+// A lesson plan's drawer: its edition as fixed text, and its Module select.
+.lesson-plan-fixed {
+  margin-bottom: var(--spacing-field);
+
+  &__label {
+    display: block;
+    margin-bottom: calc(var(--base) * 0.25);
+    color: var(--theme-elevation-800);
+  }
+
+  &__value {
+    margin: 0;
+    font-weight: 600;
+  }
+}
+
+.lesson-plan-module {
+  margin-bottom: var(--spacing-field);
+
+  &__select {
+    display: block;
+    width: 100%;
+    max-width: 30rem;
+    padding: calc(var(--base) * 0.4) calc(var(--base) * 0.5);
+    border: 1px solid var(--theme-elevation-150);
+    border-radius: var(--style-radius-s);
+    background: var(--theme-input-bg);
+    color: var(--theme-text);
+    font: inherit;
+
+    &:disabled {
+      background: var(--theme-elevation-100);
+      color: var(--theme-elevation-500);
+    }
+  }
+
+  .field-description {
+    margin-top: calc(var(--base) * 0.25);
+  }
+}
+
+// On a phone, a module's lesson plans drop minutes and theory items, and a drawer opened from the
+// course page fills the screen: Payload sizes it to leave a strip of the page beside it, by the
+// page's gutter, which is zeroed for the drawer and restored inside it.
+@media (max-width: 767px) {
+  .edition-outline__wide-only {
+    display: none;
+  }
+
+  body:has(.course-page) .drawer__content {
+    --gutter-h: 0px;
+  }
+
+  body:has(.course-page) .drawer__content-children {
+    --gutter-h: calc(var(--base) * 0.8);
+  }
 }
 
 // On a phone the modal's buttons share the width rather than overflow it.

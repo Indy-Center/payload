@@ -4,6 +4,7 @@ import { lessonPlanAccess } from '@/courseware/access'
 import { COPYING_EDITION } from '@/courseware/edition-actions'
 import { idOf } from '@/courseware/ids'
 import { refuseMinimumOffScale } from '@/courseware/minimums'
+import { placeLessonPlan } from '@/courseware/outline'
 import { rowLabelComponent } from '@/courseware/row-label-component'
 import { refuseAuthorsLessonPlanStructure } from '@/courseware/structure'
 import { taskPickerComponents } from '@/courseware/task-picker'
@@ -85,14 +86,42 @@ export const LessonPlans: CollectionConfig = {
         return data
       },
     ],
+    afterChange: [
+      // A save that names a module puts the plan last in it, and one naming none ('') takes it out
+      // of the outline; without `module` the outline is left alone. Either is a save of the
+      // edition in this save's transaction, so a refusal undoes both.
+      async ({ context, data, doc, req }) => {
+        if (context[COPYING_EDITION] || data.module == null) return doc
+        await placeLessonPlan(req, doc, data.module || null)
+        return doc
+      },
+    ],
   },
   fields: [
     {
       name: 'courseVersion',
       type: 'relationship',
       relationTo: 'course-versions',
+      label: 'Edition',
       required: true,
       index: true,
+      admin: {
+        // Fixed text ("S-GC edition 3") once the plan has an edition, which adding it from its
+        // edition's module sets. A plan started from its own list picks one here.
+        components: { Field: '/components/admin/courses/LessonPlanEdition#LessonPlanEdition' },
+      },
+    },
+    {
+      // The module the plan sits in. Not stored on the plan: the edition's outline holds it
+      // (`modules[].lessonPlans`), and a save that names one moves the plan there (afterChange).
+      // Read back it is empty; the field's component shows where the plan is.
+      name: 'module',
+      type: 'text',
+      virtual: true,
+      admin: {
+        readOnly: false,
+        components: { Field: '/components/admin/courses/LessonPlanModule#LessonPlanModule' },
+      },
     },
     { name: 'code', type: 'text', admin: { description: 'Such as S-GC-3.' } },
     { name: 'title', type: 'text' },

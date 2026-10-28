@@ -14,6 +14,7 @@ import {
   publishEdition,
   startEdition,
 } from './edition-actions'
+import { moduleOf, moveLessonPlan, placeLessonPlan, type OutlineMove } from './outline'
 import {
   buildCourseList,
   buildCourseVersionDocument,
@@ -143,6 +144,28 @@ export const coursewareEndpoints: Endpoint[] = [
     path: '/courseware/course-versions/:id/discard',
     method: 'post',
     handler: (req) => act(req, 200, async (id) => ({ discarded: await discardDraft(req, id) })),
+  },
+  // The course page's Content: a lesson plan moved up or down in its module, or put last in a
+  // module or taken out of the outline. Each is a save of the edition, through its own rules.
+  {
+    path: '/courseware/lesson-plans/:id/move',
+    method: 'post',
+    handler: (req) =>
+      act(req, 200, async (id) => {
+        const { direction } = ((await req.json?.()) ?? {}) as { direction?: OutlineMove }
+        await moveLessonPlan(req, id, direction as OutlineMove)
+        return { moved: id }
+      }),
+  },
+  {
+    path: '/courseware/lesson-plans/:id/module',
+    method: 'post',
+    handler: (req) =>
+      act(req, 200, async (id) => {
+        const moduleId = moduleOf(await req.json?.())
+        await placeLessonPlan(req, id, moduleId)
+        return { placed: id, module: moduleId }
+      }),
   },
   // The import page's Check and Import, for the Training Admin. The form is a multipart upload.
   {

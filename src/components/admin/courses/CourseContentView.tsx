@@ -3,6 +3,7 @@ import Link from 'next/link'
 import type { DocumentViewServerProps } from 'payload'
 import { formatAdminURL } from 'payload/shared'
 import { Gutter, SetDocumentStepNav } from '@payloadcms/ui'
+import { mayChangeOutline, STRUCTURAL_CHANGES_BY_A_LEAD } from '@/courseware/outline'
 import type { Course } from '@/payload-types'
 import { EditionActions } from './EditionActions'
 import { EditionOutline } from './EditionOutline'
@@ -31,6 +32,8 @@ export async function CourseContentView({
   const shown = (asked === 'live' ? (live ?? draft) : (draft ?? live)) ?? null
   const status = shown && shown === draft ? 'draft' : 'live'
   const outline = shown ? await loadOutline(req, shown.id) : null
+  // The edition's own update rule says who may change its outline (0055).
+  const rearrange = shown ? await mayChangeOutline(req, shown.id) : false
 
   return (
     <Gutter className="course-page">
@@ -102,7 +105,12 @@ export async function CourseContentView({
               may={may}
             />
           </div>
-          <EditionOutline edition={outline} editable />
+          <EditionOutline
+            edition={outline}
+            editable
+            rearrange={rearrange}
+            structuralNote={status === 'live' ? STRUCTURAL_CHANGES_BY_A_LEAD : null}
+          />
         </>
       )}
     </Gutter>
