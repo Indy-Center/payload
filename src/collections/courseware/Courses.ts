@@ -10,6 +10,7 @@ import { number, relationship, select } from 'payload/shared'
 import { staffAccess } from '@/courseware/access'
 import { idOf } from '@/courseware/ids'
 import { rowLabelComponent } from '@/courseware/row-label-component'
+import type { Course } from '@/payload-types'
 
 const POSITION_TYPES = ['DEL', 'GND', 'TWR', 'APP', 'DEP', 'CTR', 'FSS'] as const
 
@@ -39,6 +40,7 @@ const consolidationTypes: SelectFieldValidation = (value, options) => {
 }
 
 const fewestWeeks: NumberFieldValidation = (value, options) => {
+  if (given(value) && (value as number) < 1) return 'The fewest weeks is at least 1.'
   const valid = number(value, options)
   if (valid !== true) return valid
   return given(value) || !given((options.siblingData as Siblings)?.max) || BOTH_WEEKS
@@ -77,10 +79,41 @@ const pickableCredential: FilterOptions = async ({ id, req }) => {
   return named.length === 0 ? live : { or: [live, { id: { in: named } }] }
 }
 
-const prerequisiteRow: RelationshipFieldValidation = (value, options) => {
+/**
+ * A prerequisite row names a credential once, across all the course's rows (a repeat is refused on
+ * the later row), and never the credential the course itself issues.
+ */
+const prerequisiteRow: RelationshipFieldValidation = async (value, options) => {
   if (!Array.isArray(value) || value.length === 0)
     return 'A prerequisite row names at least one credential. Remove the row if it is empty.'
-  return relationship(value, options)
+  const valid = await relationship(value, options)
+  if (valid !== true) return valid
+
+  const data = options.data as Partial<Course>
+  const credentialsOf = (row: { anyOf?: unknown } | undefined) =>
+    ((row?.anyOf ?? []) as (string | { id: string })[]).map((credential) => idOf(credential))
+  const position = Number(options.path[1])
+  const seen = new Set((data.prerequisites ?? []).slice(0, position).flatMap(credentialsOf))
+  const repeated = credentialsOf({ anyOf: value }).find((id, index, own) => {
+    if (seen.has(id) || own.indexOf(id) !== index) return true
+    return false
+  })
+  const issued = idOf(data.credentialIssued)
+  const named = async (id: string | null) =>
+    (
+      await options.req.payload.findByID({
+        collection: 'credentials',
+        id: id!,
+        depth: 0,
+        req: options.req,
+      })
+    ).code
+
+  if (repeated)
+    return `${await named(repeated)} is named twice in the prerequisites. Name each credential once.`
+  if (issued && credentialsOf({ anyOf: value }).includes(issued))
+    return `${await named(issued)} is what ${data.code} issues, so it can’t also be a prerequisite.`
+  return true
 }
 
 /** A credential is issued by one course at most (0054), so finishing never grants it twice. */
@@ -263,7 +296,7 @@ export const Courses: CollectionConfig = {
         {
           type: 'row',
           fields: [
-            { name: 'min', label: 'Fewest', type: 'number', min: 0, validate: fewestWeeks },
+            { name: 'min', label: 'Fewest', type: 'number', min: 1, validate: fewestWeeks },
             { name: 'max', label: 'Most', type: 'number', min: 0, validate: mostWeeks },
           ],
         },

@@ -193,6 +193,101 @@ describe('credentials', () => {
     expect(saved.rank).toBe(1)
   })
 
+  it('need a rank on a certification, but none on an endorsement', async () => {
+    const needsRank = {
+      path: 'rank',
+      message: 'A certification needs a rank. Give it its place on the ladder.',
+    }
+    expect(
+      await refusal(
+        payload.create({
+          collection: 'credentials',
+          data: { ...certification, rank: null },
+          ...as(lead),
+        }),
+      ),
+    ).toEqual([needsRank])
+
+    const existing = await payload.create({
+      collection: 'credentials',
+      data: endorsement,
+      ...as(lead),
+    })
+    expect(
+      await refusal(
+        payload.update({
+          collection: 'credentials',
+          id: existing.id,
+          data: { kind: 'certification' },
+          ...as(lead),
+        }),
+      ),
+    ).toEqual([needsRank])
+    const turned = await payload.update({
+      collection: 'credentials',
+      id: existing.id,
+      data: { kind: 'certification', rank: 4 },
+      ...as(lead),
+    })
+    expect(turned).toMatchObject({ kind: 'certification', rank: 4 })
+  })
+
+  it('give each arrival rating to one certification', async () => {
+    const first = await payload.create({
+      collection: 'credentials',
+      data: { ...certification, grantedOnArrival: ['S1', 'S2'] },
+      ...as(lead),
+    })
+    const other = { ...certification, code: 'X-TC', rank: 2 }
+
+    expect(
+      await refusal(
+        payload.create({
+          collection: 'credentials',
+          data: { ...other, grantedOnArrival: ['S2', 'S3'] },
+          ...as(lead),
+        }),
+      ),
+    ).toEqual([
+      {
+        path: 'grantedOnArrival',
+        message: 'X-GC is already granted on arrival for S2. Each rating brings one certification.',
+      },
+    ])
+
+    const second = await payload.create({
+      collection: 'credentials',
+      data: { ...other, grantedOnArrival: ['S3'] },
+      ...as(lead),
+    })
+    expect(
+      await refusal(
+        payload.update({
+          collection: 'credentials',
+          id: second.id,
+          data: { grantedOnArrival: ['S3', 'S1', 'S2'] },
+          ...as(lead),
+        }),
+      ),
+    ).toEqual([
+      {
+        path: 'grantedOnArrival',
+        message:
+          'X-GC is already granted on arrival for S1. Each rating brings one certification. ' +
+          'X-GC is already granted on arrival for S2. Each rating brings one certification.',
+      },
+    ])
+
+    // Saving a certification again keeps its own ratings.
+    const saved = await payload.update({
+      collection: 'credentials',
+      id: first.id,
+      data: { name: 'Example Ground Control' },
+      ...as(lead),
+    })
+    expect(saved.grantedOnArrival).toEqual(['S1', 'S2'])
+  })
+
   it('refuse a rank or arrival ratings on an endorsement', async () => {
     expect(
       await refusal(
