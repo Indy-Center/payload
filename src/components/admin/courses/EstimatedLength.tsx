@@ -24,8 +24,13 @@ export async function EstimatedLength({ id, data, req }: UIFieldServerProps) {
         {worked
           ? `Worked out from edition ${worked.edition}: ${range(worked.weeks)} weeks`
           : 'No live edition to work it out from.'}
-        {override && ` The override below replaces it: ${range(override)} weeks.`}
       </p>
+      {override && (
+        <p>
+          {worked ? 'The override below replaces it' : 'The override below sets it'}:{' '}
+          {range(override)} weeks
+        </p>
+      )}
     </div>
   )
 }
