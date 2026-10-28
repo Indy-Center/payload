@@ -94,7 +94,9 @@ export const Credentials: CollectionConfig = {
   admin: {
     useAsTitle: 'code',
     defaultColumns: ['code', 'name', 'kind', 'rank', 'retired'],
-    group: 'Training',
+    // Kept from the Courses list's Credentials tab, not the nav (ticket 22). Its pages still open
+    // by link; `hidden` would take them away too.
+    group: false,
     baseFilter: hideRetiredUnlessAsked,
   },
   access: staffAccess,

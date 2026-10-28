@@ -97,7 +97,8 @@ describe('the label of an empty row', () => {
     'matches Payload’s own wording for a %s row',
     async (kind, [collection, field]) => {
       const payload = await testPayload()
-      const config = payload.collections[collection as 'tasks'].config.fields.find(
+      // Flattened, so an array laid out inside a row or an unnamed group is found too.
+      const config = payload.collections[collection as 'tasks'].config.flattenedFields.find(
         (candidate) => 'name' in candidate && candidate.name === field,
       )
       expect(config?.type).toBe('array')

@@ -11,6 +11,9 @@ import { idOf } from '@/courseware/ids'
  * (0018), and only an edition's number is shown.
  */
 export async function EditionCell({ field, rowData, payload }: DefaultServerCellComponentProps) {
+  // Payload also renders a ui field's Cell when it builds the course form, with no row; nothing
+  // shows it there.
+  if (!rowData) return null
   const draft = 'name' in field && field.name === 'draftEdition'
   const liveId = idOf(rowData.currentVersion)
 

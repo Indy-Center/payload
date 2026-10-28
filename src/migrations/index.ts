@@ -20,6 +20,7 @@ import * as migration_20261026_034520_edition_numbers from './20261026_034520_ed
 import * as migration_20261028_143500_citation_place_and_title from './20261028_143500_citation_place_and_title';
 import * as migration_20261028_194448_edition_published_date from './20261028_194448_edition_published_date';
 import * as migration_20261028_200131_tighter_course_and_credential_rules from './20261028_200131_tighter_course_and_credential_rules';
+import * as migration_20261028_204506_drop_exam_optional from './20261028_204506_drop_exam_optional';
 
 export const migrations = [
   {
@@ -130,6 +131,11 @@ export const migrations = [
   {
     up: migration_20261028_200131_tighter_course_and_credential_rules.up,
     down: migration_20261028_200131_tighter_course_and_credential_rules.down,
-    name: '20261028_200131_tighter_course_and_credential_rules'
+    name: '20261028_200131_tighter_course_and_credential_rules',
+  },
+  {
+    up: migration_20261028_204506_drop_exam_optional.up,
+    down: migration_20261028_204506_drop_exam_optional.down,
+    name: '20261028_204506_drop_exam_optional'
   },
 ];

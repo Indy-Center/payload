@@ -8,10 +8,13 @@ import { TaskChildrenField as TaskChildrenField_d7e1983a8e592ae236bacc1d9466ecd3
 import { CoursewareRowLabel as CoursewareRowLabel_5b7533a214a22a862ece67f0c9269294 } from '../../../components/admin/CoursewareRowLabel'
 import { TaskTitle as TaskTitle_1c70265119b17574ac807a8faa7befda } from '../../../components/admin/TaskTitle'
 import { TaskTreeListView as TaskTreeListView_f40353e6c5e3e091362f35bdcb5b48bc } from '../../../components/admin/TaskTreeListView'
+import { StaffOnlyNote as StaffOnlyNote_2f31a73fcd7fc1182e070205b6a62999 } from '../../../components/admin/courses/StaffOnlyNote'
+import { EstimatedLength as EstimatedLength_210f9da2ef2ab2c9e90c8511987394b9 } from '../../../components/admin/courses/EstimatedLength'
 import { CredentialCell as CredentialCell_6f77df66545adeb6b7e4f2ebec0bfcdc } from '../../../components/admin/courses/CredentialCell'
 import { EditionCell as EditionCell_4739f25f5aa938351f26a42268769d3e } from '../../../components/admin/courses/EditionCell'
 import { CourseContentView as CourseContentView_5e7875f4b67a6148b148358c2ba6917f } from '../../../components/admin/courses/CourseContentView'
 import { CourseHistoryView as CourseHistoryView_9a7e571f00fe5a32a5b3133430fa87d8 } from '../../../components/admin/courses/CourseHistoryView'
+import { CoursesListView as CoursesListView_235e0b59d99ef31655e1e9f551cb646d } from '../../../components/admin/courses/CoursesListView'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { RscEntryLexicalField as RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { LexicalDiffComponent as LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -56,10 +59,13 @@ export const importMap = {
   "/components/admin/CoursewareRowLabel#CoursewareRowLabel": CoursewareRowLabel_5b7533a214a22a862ece67f0c9269294,
   "/components/admin/TaskTitle#TaskTitle": TaskTitle_1c70265119b17574ac807a8faa7befda,
   "/components/admin/TaskTreeListView#TaskTreeListView": TaskTreeListView_f40353e6c5e3e091362f35bdcb5b48bc,
+  "/components/admin/courses/StaffOnlyNote#StaffOnlyNote": StaffOnlyNote_2f31a73fcd7fc1182e070205b6a62999,
+  "/components/admin/courses/EstimatedLength#EstimatedLength": EstimatedLength_210f9da2ef2ab2c9e90c8511987394b9,
   "/components/admin/courses/CredentialCell#CredentialCell": CredentialCell_6f77df66545adeb6b7e4f2ebec0bfcdc,
   "/components/admin/courses/EditionCell#EditionCell": EditionCell_4739f25f5aa938351f26a42268769d3e,
   "/components/admin/courses/CourseContentView#CourseContentView": CourseContentView_5e7875f4b67a6148b148358c2ba6917f,
   "/components/admin/courses/CourseHistoryView#CourseHistoryView": CourseHistoryView_9a7e571f00fe5a32a5b3133430fa87d8,
+  "/components/admin/courses/CoursesListView#CoursesListView": CoursesListView_235e0b59d99ef31655e1e9f551cb646d,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalField": RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#LexicalDiffComponent": LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e,

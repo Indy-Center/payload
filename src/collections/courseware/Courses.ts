@@ -169,6 +169,8 @@ export const Courses: CollectionConfig = {
     hideAPIURL: true,
     components: {
       views: {
+        // Two tabs, Courses and Credentials; Credentials are kept from here, not the nav.
+        list: { Component: '/components/admin/courses/CoursesListView#CoursesListView' },
         edit: {
           default: { tab: { label: 'Details', order: 100 } },
           content: {
@@ -187,16 +189,33 @@ export const Courses: CollectionConfig = {
   },
   defaultSort: 'code',
   access: staffAccess,
+  // Details reads in the order the Training Admin thinks about a course: its basics, then who may
+  // enrol, then what finishing involves and earns (ticket 22). The groups are unnamed, so they
+  // only lay the form out: the stored data and the API keep their shape.
   fields: [
     {
-      name: 'code',
-      type: 'text',
-      required: true,
-      unique: true,
-      index: true,
-      admin: { description: 'The course code training-tools uses, such as S-GC.' },
+      type: 'row',
+      fields: [
+        {
+          name: 'code',
+          type: 'text',
+          required: true,
+          unique: true,
+          index: true,
+          admin: { description: 'The course code training-tools uses, such as S-GC.' },
+        },
+        { name: 'title', type: 'text', required: true },
+      ],
     },
-    { name: 'title', type: 'text', required: true },
+    {
+      // For a course author only, after the course's code and title.
+      name: 'staffOnlyNote',
+      type: 'ui',
+      admin: {
+        components: { Field: '/components/admin/courses/StaffOnlyNote#StaffOnlyNote' },
+        disableListColumn: true,
+      },
+    },
     {
       name: 'authors',
       label: 'Course authors',
@@ -211,92 +230,29 @@ export const Courses: CollectionConfig = {
         (value ?? []).every((cid) => /^\d+$/.test(cid)) || 'A course author is a CID: digits only.',
     },
     {
-      name: 'prerequisites',
-      type: 'array',
-      labels: { singular: 'Prerequisite', plural: 'Prerequisites' },
+      name: 'moodleUrl',
+      label: 'Moodle link',
+      type: 'text',
+      validate: (value: string | null | undefined) =>
+        !value || value.startsWith('https://') || 'A link starts with https://.',
+    },
+    {
+      // Worked out from the live edition, not stored (0058).
+      name: 'estimatedLength',
+      type: 'ui',
       admin: {
-        components: { RowLabel: rowLabelComponent('prerequisite') },
-        description:
-          'Credentials a student holds before enrolling. Every row must be met; a row is met by holding any one of its credentials.',
+        components: { Field: '/components/admin/courses/EstimatedLength#EstimatedLength' },
+        disableListColumn: true,
       },
-      fields: [
-        {
-          name: 'anyOf',
-          label: 'Holds one of these',
-          type: 'relationship',
-          relationTo: 'credentials',
-          hasMany: true,
-          required: true,
-          filterOptions: pickableCredential,
-          validate: prerequisiteRow,
-        },
-      ],
-    },
-    {
-      name: 'prerequisitesNote',
-      label: 'Prerequisites note',
-      type: 'textarea',
-      admin: {
-        description:
-          'Anything a student must do before enrolling that can’t be said otherwise, such as a policy to read.',
-      },
-    },
-    {
-      name: 'consolidation',
-      type: 'group',
-      admin: {
-        description:
-          'Optional. Hours on these position types, counted together, such as 30 hours on GND or TWR.',
-      },
-      fields: [
-        {
-          type: 'row',
-          fields: [
-            { name: 'hours', type: 'number', min: 1, validate: consolidationHours },
-            {
-              name: 'positionTypes',
-              label: 'Position types',
-              type: 'select',
-              hasMany: true,
-              options: [...POSITION_TYPES],
-              validate: consolidationTypes,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      name: 'ratingExam',
-      label: 'Rating exam',
-      type: 'select',
-      defaultValue: 'none',
-      options: [
-        { label: 'None', value: 'none' },
-        { label: 'S1', value: 'S1' },
-        { label: 'S2', value: 'S2' },
-        { label: 'S3', value: 'S3' },
-        { label: 'C1', value: 'C1' },
-      ],
-      admin: { description: 'The rating exam the course ends in.' },
-    },
-    {
-      name: 'academyExam',
-      label: 'VATUSA Academy exam',
-      type: 'select',
-      defaultValue: 'none',
-      options: [
-        { label: 'None', value: 'none' },
-        { label: 'S2', value: 'S2' },
-        { label: 'S3', value: 'S3' },
-        { label: 'C1', value: 'C1' },
-      ],
-      admin: { description: 'The VATUSA Academy exam a student passes before training.' },
     },
     {
       name: 'estimatedWeeks',
-      label: 'Estimated weeks',
+      label: 'Estimated weeks (override)',
       type: 'group',
-      admin: { description: 'Optional. How long the course usually runs.' },
+      admin: {
+        description:
+          'Empty unless the worked-out range misleads, as for a course with no editions. Filled, it replaces that range everywhere.',
+      },
       fields: [
         {
           type: 'row',
@@ -308,31 +264,112 @@ export const Courses: CollectionConfig = {
       ],
     },
     {
-      name: 'examOptional',
-      label: 'Exam optional',
-      type: 'checkbox',
-      defaultValue: false,
-      admin: { description: 'The course can finish without its exam.' },
+      type: 'group',
+      label: 'Enrolment',
+      fields: [
+        {
+          name: 'prerequisites',
+          type: 'array',
+          labels: { singular: 'Prerequisite', plural: 'Prerequisites' },
+          admin: {
+            components: { RowLabel: rowLabelComponent('prerequisite') },
+            description:
+              'Credentials a student holds before enrolling. Every row must be met; a row is met by holding any one of its credentials.',
+          },
+          fields: [
+            {
+              name: 'anyOf',
+              label: 'Holds one of these',
+              type: 'relationship',
+              relationTo: 'credentials',
+              hasMany: true,
+              required: true,
+              filterOptions: pickableCredential,
+              validate: prerequisiteRow,
+            },
+          ],
+        },
+        {
+          name: 'prerequisitesNote',
+          label: 'Prerequisites note',
+          type: 'textarea',
+          admin: {
+            description:
+              'Anything a student must do before enrolling that can’t be said otherwise, such as a policy to read.',
+          },
+        },
+        {
+          name: 'academyExam',
+          label: 'VATUSA Academy exam',
+          type: 'select',
+          defaultValue: 'none',
+          options: [
+            { label: 'None', value: 'none' },
+            { label: 'S2', value: 'S2' },
+            { label: 'S3', value: 'S3' },
+            { label: 'C1', value: 'C1' },
+          ],
+          admin: { description: 'The VATUSA Academy exam a student passes before training.' },
+        },
+      ],
     },
     {
-      name: 'moodleUrl',
-      label: 'Moodle link',
-      type: 'text',
-      validate: (value: string | null | undefined) =>
-        !value || value.startsWith('https://') || 'A link starts with https://.',
-    },
-    {
-      name: 'credentialIssued',
-      label: 'Credential issued',
-      type: 'relationship',
-      relationTo: 'credentials',
-      unique: true,
-      filterOptions: pickableCredential,
-      validate: oneCoursePerCredential,
-      admin: {
-        description: 'What finishing the course earns. Each credential is issued by one course.',
-        components: { Cell: '/components/admin/courses/CredentialCell#CredentialCell' },
-      },
+      type: 'group',
+      label: 'Completion',
+      fields: [
+        {
+          name: 'consolidation',
+          type: 'group',
+          admin: {
+            description:
+              'Optional. Hours on these position types, counted together, such as 30 hours on GND or TWR.',
+          },
+          fields: [
+            {
+              type: 'row',
+              fields: [
+                { name: 'hours', type: 'number', min: 1, validate: consolidationHours },
+                {
+                  name: 'positionTypes',
+                  label: 'Position types',
+                  type: 'select',
+                  hasMany: true,
+                  options: [...POSITION_TYPES],
+                  validate: consolidationTypes,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'ratingExam',
+          label: 'Rating exam',
+          type: 'select',
+          defaultValue: 'none',
+          options: [
+            { label: 'None', value: 'none' },
+            { label: 'S1', value: 'S1' },
+            { label: 'S2', value: 'S2' },
+            { label: 'S3', value: 'S3' },
+            { label: 'C1', value: 'C1' },
+          ],
+          admin: { description: 'The rating exam the course ends in. None: it ends in no exam.' },
+        },
+        {
+          name: 'credentialIssued',
+          label: 'Credential issued',
+          type: 'relationship',
+          relationTo: 'credentials',
+          unique: true,
+          filterOptions: pickableCredential,
+          validate: oneCoursePerCredential,
+          admin: {
+            description:
+              'What finishing the course earns. Each credential is issued by one course.',
+            components: { Cell: '/components/admin/courses/CredentialCell#CredentialCell' },
+          },
+        },
+      ],
     },
     {
       name: 'currentVersion',

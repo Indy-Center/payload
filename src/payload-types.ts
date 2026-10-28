@@ -431,6 +431,14 @@ export interface Course {
    * VATSIM CIDs of the people who may edit this course’s drafts, lesson plans and scenarios.
    */
   authors?: string[] | null;
+  moodleUrl?: string | null;
+  /**
+   * Empty unless the worked-out range misleads, as for a course with no editions. Filled, it replaces that range everywhere.
+   */
+  estimatedWeeks?: {
+    min?: number | null;
+    max?: number | null;
+  };
   /**
    * Credentials a student holds before enrolling. Every row must be met; a row is met by holding any one of its credentials.
    */
@@ -445,6 +453,10 @@ export interface Course {
    */
   prerequisitesNote?: string | null;
   /**
+   * The VATUSA Academy exam a student passes before training.
+   */
+  academyExam?: ('none' | 'S2' | 'S3' | 'C1') | null;
+  /**
    * Optional. Hours on these position types, counted together, such as 30 hours on GND or TWR.
    */
   consolidation?: {
@@ -452,25 +464,9 @@ export interface Course {
     positionTypes?: ('DEL' | 'GND' | 'TWR' | 'APP' | 'DEP' | 'CTR' | 'FSS')[] | null;
   };
   /**
-   * The rating exam the course ends in.
+   * The rating exam the course ends in. None: it ends in no exam.
    */
   ratingExam?: ('none' | 'S1' | 'S2' | 'S3' | 'C1') | null;
-  /**
-   * The VATUSA Academy exam a student passes before training.
-   */
-  academyExam?: ('none' | 'S2' | 'S3' | 'C1') | null;
-  /**
-   * Optional. How long the course usually runs.
-   */
-  estimatedWeeks?: {
-    min?: number | null;
-    max?: number | null;
-  };
-  /**
-   * The course can finish without its exam.
-   */
-  examOptional?: boolean | null;
-  moodleUrl?: string | null;
   /**
    * What finishing the course earns. Each credential is issued by one course.
    */
@@ -1061,6 +1057,13 @@ export interface CoursesSelect<T extends boolean = true> {
   code?: T;
   title?: T;
   authors?: T;
+  moodleUrl?: T;
+  estimatedWeeks?:
+    | T
+    | {
+        min?: T;
+        max?: T;
+      };
   prerequisites?:
     | T
     | {
@@ -1068,6 +1071,7 @@ export interface CoursesSelect<T extends boolean = true> {
         id?: T;
       };
   prerequisitesNote?: T;
+  academyExam?: T;
   consolidation?:
     | T
     | {
@@ -1075,15 +1079,6 @@ export interface CoursesSelect<T extends boolean = true> {
         positionTypes?: T;
       };
   ratingExam?: T;
-  academyExam?: T;
-  estimatedWeeks?:
-    | T
-    | {
-        min?: T;
-        max?: T;
-      };
-  examOptional?: T;
-  moodleUrl?: T;
   credentialIssued?: T;
   currentVersion?: T;
   updatedAt?: T;
