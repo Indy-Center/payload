@@ -1,5 +1,6 @@
 import { createLocalReq, type Payload } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { loadOutline } from '@/components/admin/courses/editions'
 import { mayChangeOutline } from '@/courseware/outline'
 import type { CourseVersion, LessonPlan, User } from '@/payload-types'
 import { callEndpoint, resetDatabase, testPayload } from './helpers'
@@ -368,5 +369,28 @@ describe('who may change an edition’s outline, as the course page asks', () =>
 
     expect(await asked(lead, version.id)).toBe(true)
     expect(await asked(author, version.id)).toBe(false)
+  })
+})
+
+describe('the outline the Content tab lists', () => {
+  it('lists each module’s plans in order with minutes and theory items, and the plans in no module', async () => {
+    const { version, one } = await edition()
+    await payload.update({ collection: 'lesson-plans', id: one.id, data: { time: 90 } })
+    const req = await createLocalReq({ user: { ...author, collection: 'users' } }, payload)
+
+    const outlined = await loadOutline(req, version.id)
+
+    expect(outlined.modules.map((module) => [module.title, module.lessonPlans])).toEqual([
+      [
+        'Theory',
+        [
+          { id: one.id, code: 'X-TWR-1', title: 'Plan X-TWR-1', minutes: 90, theoryItems: 1 },
+          expect.objectContaining({ code: 'X-TWR-2', minutes: null }),
+        ],
+      ],
+      ['Sim', [expect.objectContaining({ code: 'X-TWR-3' })]],
+    ])
+    expect(outlined.unplaced.map((plan) => plan.code)).toEqual(['X-TWR-9'])
+    expect(outlined.ownLessonPlans).toBe(4)
   })
 })

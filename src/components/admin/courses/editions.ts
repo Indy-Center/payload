@@ -66,20 +66,45 @@ export type EditionOutline = {
     key: string
     title: string
     description: string | null
-    lessonPlans: { id: string; code: string | null; title: string | null }[]
+    lessonPlans: OutlinePlan[]
   }[]
+  /** The edition's own lesson plans that no module holds. */
+  unplaced: OutlinePlan[]
   /** All of the edition's own lesson plans, placed in a module or not. */
   ownLessonPlans: number
 }
 
+/** A lesson plan as a module lists it. */
+export type OutlinePlan = {
+  id: string
+  code: string | null
+  title: string | null
+  minutes: number | null
+  theoryItems: number
+}
+
+const outlinePlan = (plan: LessonPlan): OutlinePlan => ({
+  id: plan.id,
+  code: plan.code ?? null,
+  title: plan.title ?? null,
+  minutes: plan.time ?? null,
+  theoryItems: plan.theoryItems?.length ?? 0,
+})
+
 export async function loadOutline(req: PayloadRequest, id: string): Promise<EditionOutline> {
   const as = { req, user: req.user, overrideAccess: false } as const
   const edition = await req.payload.findByID({ collection: 'course-versions', id, depth: 1, ...as })
-  const own = await req.payload.count({
+  const { docs: own } = await req.payload.find({
     collection: 'lesson-plans',
     where: { courseVersion: { equals: id } },
+    sort: 'code',
+    depth: 0,
+    pagination: false,
     ...as,
   })
+  const placed = new Set(
+    (edition.modules ?? []).flatMap((module) => (module.lessonPlans ?? []).map(idOf)),
+  )
   const scale = edition.gradingScale as GradingScale | string | null | undefined
   return {
     id: edition.id,
@@ -94,9 +119,10 @@ export async function loadOutline(req: PayloadRequest, id: string): Promise<Edit
       description: module.description ?? null,
       lessonPlans: (module.lessonPlans ?? [])
         .filter((plan): plan is LessonPlan => typeof plan === 'object')
-        .map((plan) => ({ id: plan.id, code: plan.code ?? null, title: plan.title ?? null })),
+        .map(outlinePlan),
     })),
-    ownLessonPlans: own.totalDocs,
+    unplaced: own.filter((plan) => !placed.has(plan.id)).map(outlinePlan),
+    ownLessonPlans: own.length,
   }
 }
 

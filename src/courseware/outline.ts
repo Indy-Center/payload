@@ -12,6 +12,10 @@ import { idOf } from './ids'
 
 export type OutlineMove = 'up' | 'down'
 
+/** Shown where a course author's outline controls are greyed out in a published edition. */
+export const STRUCTURAL_CHANGES_BY_A_LEAD =
+  'Structural changes to a published edition are made by a lead.'
+
 type Plan = Pick<LessonPlan, 'id' | 'code' | 'courseVersion'>
 
 const refuse = (message: string): never => {

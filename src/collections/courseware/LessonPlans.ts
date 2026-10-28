@@ -105,15 +105,23 @@ export const LessonPlans: CollectionConfig = {
       label: 'Edition',
       required: true,
       index: true,
+      admin: {
+        // Fixed text ("S-GC edition 3") once the plan has an edition, which adding it from its
+        // edition's module sets. A plan started from its own list picks one here.
+        components: { Field: '/components/admin/courses/LessonPlanEdition#LessonPlanEdition' },
+      },
     },
     {
       // The module the plan sits in. Not stored on the plan: the edition's outline holds it
       // (`modules[].lessonPlans`), and a save that names one moves the plan there (afterChange).
-      // Read back it is empty.
+      // Read back it is empty; the field's component shows where the plan is.
       name: 'module',
       type: 'text',
       virtual: true,
-      admin: { hidden: true },
+      admin: {
+        readOnly: false,
+        components: { Field: '/components/admin/courses/LessonPlanModule#LessonPlanModule' },
+      },
     },
     { name: 'code', type: 'text', admin: { description: 'Such as S-GC-3.' } },
     { name: 'title', type: 'text' },

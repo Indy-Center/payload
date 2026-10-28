@@ -1,7 +1,8 @@
 'use client'
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button, Modal, toast, useConfig, useModal } from '@payloadcms/ui'
+import { Button, Modal, toast, useModal } from '@payloadcms/ui'
+import { useEndpoint, type Call } from './useEndpoint'
 
 type Props = {
   courseId: string
@@ -13,27 +14,6 @@ type Props = {
   liveNumber: number | null
   hasDraft: boolean
   may: { start: boolean; publish: boolean; discard: boolean }
-}
-
-type Outcome = { ok: true; body: Record<string, unknown> } | { ok: false; messages: string[] }
-
-/** Calls one of the course page's endpoints as the signed-in person. */
-function useEndpoint() {
-  const { config } = useConfig()
-  return async (path: string, method: 'get' | 'post' = 'post'): Promise<Outcome> => {
-    try {
-      const response = await fetch(`${config.serverURL}${config.routes.api}${path}`, {
-        method: method.toUpperCase(),
-        credentials: 'include',
-      })
-      const body = await response.json().catch(() => ({}))
-      if (response.ok) return { ok: true, body }
-      const messages = (body.errors ?? []).map((error: { message: string }) => error.message)
-      return { ok: false, messages: messages.length ? messages : ['Something went wrong.'] }
-    } catch {
-      return { ok: false, messages: ['The CMS could not be reached. Try again.'] }
-    }
-  }
 }
 
 /**
@@ -106,7 +86,6 @@ export function EditionActions({
 }
 
 type Edition = NonNullable<Props['edition']>
-type Call = ReturnType<typeof useEndpoint>
 
 /** A modal laid out as Payload's own confirmation modal, with the buttons the caller gives. */
 function AskFirst({
