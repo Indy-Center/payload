@@ -1,6 +1,23 @@
 // The course page's Content and History tabs: the edition switch, the edition banner and its
-// actions, an edition's outline, and the publish and discard modals. Theme-neutral: Payload's own
-// elevation, success and warning colours flip for dark.
+// actions, an edition's outline, and the publish and discard modals; on Details, the estimated
+// length and the line a course author sees; and the Courses list's tabs and Credentials table.
+// Theme-neutral: Payload's own elevation, success and warning colours flip for dark.
+
+// Details: "Worked out from edition 2: 10–12 weeks", read like a field.
+.estimated-length {
+  p {
+    margin: 0;
+  }
+}
+
+// Details, for a course author: "Only the Training Admin and leads change these."
+.staff-only-note {
+  margin: 0 0 var(--base);
+  padding: calc(var(--base) * 0.6) calc(var(--base) * 0.8);
+  border: 1px solid var(--theme-border-color);
+  border-radius: var(--style-radius-m);
+  background: var(--theme-elevation-50);
+}
 
 .course-page {
   display: flex;

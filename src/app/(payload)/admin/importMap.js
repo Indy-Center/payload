@@ -6,6 +6,8 @@ import { TaskNextNumber as TaskNextNumber_0211a6250198a4675f43eb4eea370e9c } fro
 import { TaskChildrenField as TaskChildrenField_d7e1983a8e592ae236bacc1d9466ecd3 } from '../../../components/admin/TaskChildrenField'
 import { CoursewareRowLabel as CoursewareRowLabel_5b7533a214a22a862ece67f0c9269294 } from '../../../components/admin/CoursewareRowLabel'
 import { TaskTreeListView as TaskTreeListView_f40353e6c5e3e091362f35bdcb5b48bc } from '../../../components/admin/TaskTreeListView'
+import { StaffOnlyNote as StaffOnlyNote_2f31a73fcd7fc1182e070205b6a62999 } from '../../../components/admin/courses/StaffOnlyNote'
+import { EstimatedLength as EstimatedLength_210f9da2ef2ab2c9e90c8511987394b9 } from '../../../components/admin/courses/EstimatedLength'
 import { CredentialCell as CredentialCell_6f77df66545adeb6b7e4f2ebec0bfcdc } from '../../../components/admin/courses/CredentialCell'
 import { EditionCell as EditionCell_4739f25f5aa938351f26a42268769d3e } from '../../../components/admin/courses/EditionCell'
 import { CourseContentView as CourseContentView_5e7875f4b67a6148b148358c2ba6917f } from '../../../components/admin/courses/CourseContentView'
@@ -51,6 +53,8 @@ export const importMap = {
   "/components/admin/TaskChildrenField#TaskChildrenField": TaskChildrenField_d7e1983a8e592ae236bacc1d9466ecd3,
   "/components/admin/CoursewareRowLabel#CoursewareRowLabel": CoursewareRowLabel_5b7533a214a22a862ece67f0c9269294,
   "/components/admin/TaskTreeListView#TaskTreeListView": TaskTreeListView_f40353e6c5e3e091362f35bdcb5b48bc,
+  "/components/admin/courses/StaffOnlyNote#StaffOnlyNote": StaffOnlyNote_2f31a73fcd7fc1182e070205b6a62999,
+  "/components/admin/courses/EstimatedLength#EstimatedLength": EstimatedLength_210f9da2ef2ab2c9e90c8511987394b9,
   "/components/admin/courses/CredentialCell#CredentialCell": CredentialCell_6f77df66545adeb6b7e4f2ebec0bfcdc,
   "/components/admin/courses/EditionCell#EditionCell": EditionCell_4739f25f5aa938351f26a42268769d3e,
   "/components/admin/courses/CourseContentView#CourseContentView": CourseContentView_5e7875f4b67a6148b148358c2ba6917f,
