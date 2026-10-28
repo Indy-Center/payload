@@ -5,6 +5,8 @@ import { buildCompetencyTree } from './competency-tree'
 import { buildRowLabelLookup } from './row-labels'
 import { IMPORT_ENDPOINTS } from './import/form'
 import { importUpload } from './import/upload'
+import type { TaskGridBatch } from './task-grid'
+import { saveTaskGrid, TaskGridRefused } from './task-grid-batch'
 import {
   checkPublishing,
   discardDraft,
@@ -152,5 +154,25 @@ export const coursewareEndpoints: Endpoint[] = [
     path: IMPORT_ENDPOINTS.import,
     method: 'post',
     handler: (req) => act(req, 200, () => importUpload(req, { dryRun: false })),
+  },
+  {
+    // The Tasks grid's save: every pending change, all or none. A refusal names each row.
+    path: '/courseware/task-grid',
+    method: 'post',
+    handler: async (req) => {
+      if (!req.user) return unauthorized()
+      const batch = ((await req.json?.()) ?? {}) as TaskGridBatch
+      try {
+        return Response.json({ saved: await saveTaskGrid(req, batch) })
+      } catch (error) {
+        if (error instanceof TaskGridRefused) {
+          return Response.json({ errors: error.refusals }, { status: 400 })
+        }
+        if (error instanceof APIError) {
+          return Response.json({ errors: [{ message: error.message }] }, { status: error.status })
+        }
+        throw error
+      }
+    },
   },
 ]
