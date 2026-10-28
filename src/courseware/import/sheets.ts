@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { parseCsv } from './csv'
+import { ALL_SHEET_FILES, SHEET_FILES, type SheetFile } from './form'
 
 /** One competency as the import will store it, keyed by its source id. */
 export type SheetCompetency = {
@@ -17,12 +18,7 @@ export type SheetCompetency = {
 
 export type Sheets = { usa: SheetCompetency[]; gcap: SheetCompetency[]; notes: string[] }
 
-/** The files the sheet's tabs are saved as. Sheets come from outside the repo, never in it. */
-export const SHEET_FILES = {
-  usa: 'usa-framework.csv',
-  gcap: 'gcap-codes.csv',
-  rubrics: ['rubric-s1.csv', 'rubric-s2.csv', 'rubric-s3.csv', 'rubric-c1.csv'],
-} as const
+export { ALL_SHEET_FILES, SHEET_FILES, type SheetFile }
 
 /**
  * The rows that say a later rating includes the earlier ones. The order of the ratings already
@@ -139,16 +135,59 @@ function parseRubric(text: string): Map<string, { theory: string[]; practical: s
   return lines
 }
 
-/** Reads and cleans the saved sheets in `dir`. */
-export async function readSheets(dir: string): Promise<Sheets> {
-  const read = (file: string) => readFile(path.join(dir, file), 'utf8')
-  const usa = parseUsa(await read(SHEET_FILES.usa))
-  const gcap = parseGcap(await read(SHEET_FILES.gcap))
+/** Thrown when a file is not the tab it is named for; one message per such file. */
+export class NotTheSheet extends Error {
+  constructor(readonly faults: string[]) {
+    super(faults.join(' '))
+  }
+}
+
+const cellsOf = (row: string[] | undefined) => (row ?? []).map((cell) => cell.trim())
+const startsWith = (row: string[] | undefined, wanted: string[]) =>
+  wanted.every((cell, index) => cellsOf(row)[index] === cell)
+
+/**
+ * Whether a file is the tab it is named for, by the header rows VATUSA's sheet has. Says what is
+ * wrong, or null.
+ */
+function sheetFault(file: SheetFile, text: string): string | null {
+  const rows = parseCsv(text)
+  if (file === SHEET_FILES.usa) {
+    return startsWith(rows[0], ['USA ID', 'GCAP ID'])
+      ? null
+      : `${file} is not the sheet’s USA framework tab: its first row should start “USA ID, GCAP ID”.`
+  }
+  if (file === SHEET_FILES.gcap) {
+    return startsWith(rows[0], ['GCAP Code', 'Topic'])
+      ? null
+      : `${file} is not the sheet’s GCAP codes tab: its first row should start “GCAP Code, Topic”.`
+  }
+  const header = rows.some((row) => startsWith(row, ['USA ID', 'Domain', 'Completion Standard']))
+  const theory = rows.some((row) => cellsOf(row)[0] === 'Theory')
+  return header && theory
+    ? null
+    : `${file} is not one of the sheet’s rubric tabs: it should have a “USA ID, Domain, Completion Standard” row and a “Theory” row.`
+}
+
+/**
+ * Cleans the sheet's tabs, given each file's text. Refuses, with every fault, when a file is not
+ * the tab it is named for.
+ */
+export function parseSheets(given: Record<SheetFile, string>): Sheets {
+  // A byte-order mark, which some programs write when saving CSV, is not part of the first cell.
+  const text = (file: SheetFile) => given[file].replace(/^﻿/, '')
+  const faults = ALL_SHEET_FILES.map((file) => sheetFault(file, text(file))).filter(
+    (fault): fault is string => fault !== null,
+  )
+  if (faults.length) throw new NotTheSheet(faults)
+
+  const usa = parseUsa(text(SHEET_FILES.usa))
+  const gcap = parseGcap(text(SHEET_FILES.gcap))
 
   const byId = new Map(usa.map((row) => [row.sourceId, row]))
   const notes = [...NOTES]
   for (const file of SHEET_FILES.rubrics) {
-    for (const [id, wording] of parseRubric(await read(file))) {
+    for (const [id, wording] of parseRubric(text(file))) {
       const row = byId.get(id)
       if (!row) {
         notes.push(`${file} names ${id}, which the framework does not have; skipped.`)
@@ -159,4 +198,12 @@ export async function readSheets(dir: string): Promise<Sheets> {
     }
   }
   return { usa, gcap, notes }
+}
+
+/** Reads and cleans the saved sheets in `dir`. */
+export async function readSheets(dir: string): Promise<Sheets> {
+  const texts = await Promise.all(
+    ALL_SHEET_FILES.map(async (file) => [file, await readFile(path.join(dir, file), 'utf8')]),
+  )
+  return parseSheets(Object.fromEntries(texts) as Record<SheetFile, string>)
 }

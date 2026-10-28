@@ -22,6 +22,7 @@ import { PartnerCategories } from './collections/partners/PartnerCategories'
 import { Partners } from './collections/partners/Partners'
 import { TeacherResources } from './globals/TeacherResources'
 import { coursewareEndpoints } from './courseware/endpoints'
+import { IMPORT_FRAMEWORKS_PATH } from './courseware/import/form'
 import { partnersEndpoints } from './partners/endpoints'
 import { trainingEndpoints } from './training/endpoints'
 import { migrations } from './migrations'
@@ -36,6 +37,16 @@ export default buildConfig({
     user: Users.slug,
     importMap: {
       baseDir: path.resolve(dirname),
+    },
+    components: {
+      views: {
+        // Opened from the Competencies list, for the Training Admin; not in the nav.
+        importFrameworks: {
+          Component: '/components/admin/ImportFrameworksView#ImportFrameworksView',
+          path: IMPORT_FRAMEWORKS_PATH,
+          exact: true,
+        },
+      },
     },
   },
   collections: [

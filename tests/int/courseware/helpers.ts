@@ -34,6 +34,8 @@ export async function callEndpoint(
     token?: string | null
     method?: string
     body?: unknown
+    /** A multipart body, as a browser's form upload sends it. */
+    formData?: FormData
     user?: Awaited<ReturnType<Payload['create']>>
   } = {},
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- tests read the JSON freely
@@ -54,6 +56,7 @@ export async function callEndpoint(
   req.headers = headers
   if (options.user) req.user = { ...options.user, collection: 'users' } as typeof req.user
   if (options.body !== undefined) req.json = async () => options.body
+  if (options.formData !== undefined) req.formData = async () => options.formData!
   req.routeParams = matchPath(endpoint.path, path) ?? {}
   req.query = Object.fromEntries(new URLSearchParams(search))
 

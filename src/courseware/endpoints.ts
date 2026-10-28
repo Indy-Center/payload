@@ -3,6 +3,8 @@ import { hasBearerToken, unauthorized } from '@/bearer-token'
 import { buildCatalogue } from './catalogue'
 import { buildCompetencyTree } from './competency-tree'
 import { buildRowLabelLookup } from './row-labels'
+import { IMPORT_ENDPOINTS } from './import/form'
+import { importUpload } from './import/upload'
 import {
   checkPublishing,
   discardDraft,
@@ -31,7 +33,8 @@ const fromTraining = (req: PayloadRequest) => hasBearerToken(req, process.env.TR
 const notFound = () => Response.json({ error: 'Not found' }, { status: 404 })
 
 /**
- * Runs one of the course page's actions as the signed-in person and answers with its result, or
+ * Runs one of the course page's or the import page's actions as the signed-in person, in one
+ * transaction, and answers with its result, or
  * with the refusal's messages as `{ errors: [{ message }] }`.
  */
 async function act(
@@ -138,5 +141,16 @@ export const coursewareEndpoints: Endpoint[] = [
     path: '/courseware/course-versions/:id/discard',
     method: 'post',
     handler: (req) => act(req, 200, async (id) => ({ discarded: await discardDraft(req, id) })),
+  },
+  // The import page's Check and Import, for the Training Admin. The form is a multipart upload.
+  {
+    path: IMPORT_ENDPOINTS.check,
+    method: 'post',
+    handler: (req) => act(req, 200, () => importUpload(req, { dryRun: true })),
+  },
+  {
+    path: IMPORT_ENDPOINTS.import,
+    method: 'post',
+    handler: (req) => act(req, 200, () => importUpload(req, { dryRun: false })),
   },
 ]
