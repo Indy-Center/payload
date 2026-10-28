@@ -9,6 +9,7 @@ import type {
 import { number, relationship, select } from 'payload/shared'
 import { staffAccess } from '@/courseware/access'
 import { idOf } from '@/courseware/ids'
+import { rowLabelComponent } from '@/courseware/row-label-component'
 
 const POSITION_TYPES = ['DEL', 'GND', 'TWR', 'APP', 'DEP', 'CTR', 'FSS'] as const
 
@@ -154,6 +155,7 @@ export const Courses: CollectionConfig = {
       type: 'array',
       labels: { singular: 'Prerequisite', plural: 'Prerequisites' },
       admin: {
+        components: { RowLabel: rowLabelComponent('prerequisite') },
         description:
           'Credentials a student holds before enrolling. Every row must be met; a row is met by holding any one of its credentials.',
       },
