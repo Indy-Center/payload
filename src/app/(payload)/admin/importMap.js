@@ -3,6 +3,7 @@ import { CompetencyRelations as CompetencyRelations_d7fd06c8daddf06d97b50efa71d3
 import { NoSaveButton as NoSaveButton_177a01f20de7a41d5daf6bf44c99ff1e } from '../../../components/admin/NoSaveButton'
 import { CompetenciesList as CompetenciesList_650d8d1f11cf3d8633778927c6d86719 } from '../../../components/admin/CompetenciesList'
 import { TaskNextNumber as TaskNextNumber_0211a6250198a4675f43eb4eea370e9c } from '../../../components/admin/TaskNextNumber'
+import { TaskPicker as TaskPicker_0c82503736039335f0be9ea9dec5cac2 } from '../../../components/admin/TaskPicker'
 import { TaskChildrenField as TaskChildrenField_d7e1983a8e592ae236bacc1d9466ecd3 } from '../../../components/admin/TaskChildrenField'
 import { CoursewareRowLabel as CoursewareRowLabel_5b7533a214a22a862ece67f0c9269294 } from '../../../components/admin/CoursewareRowLabel'
 import { TaskTreeListView as TaskTreeListView_f40353e6c5e3e091362f35bdcb5b48bc } from '../../../components/admin/TaskTreeListView'
@@ -49,6 +50,7 @@ export const importMap = {
   "/components/admin/NoSaveButton#NoSaveButton": NoSaveButton_177a01f20de7a41d5daf6bf44c99ff1e,
   "/components/admin/CompetenciesList#CompetenciesList": CompetenciesList_650d8d1f11cf3d8633778927c6d86719,
   "/components/admin/TaskNextNumber#TaskNextNumber": TaskNextNumber_0211a6250198a4675f43eb4eea370e9c,
+  "/components/admin/TaskPicker#TaskPicker": TaskPicker_0c82503736039335f0be9ea9dec5cac2,
   "/components/admin/TaskChildrenField#TaskChildrenField": TaskChildrenField_d7e1983a8e592ae236bacc1d9466ecd3,
   "/components/admin/CoursewareRowLabel#CoursewareRowLabel": CoursewareRowLabel_5b7533a214a22a862ece67f0c9269294,
   "/components/admin/TaskTreeListView#TaskTreeListView": TaskTreeListView_f40353e6c5e3e091362f35bdcb5b48bc,

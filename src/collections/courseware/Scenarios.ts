@@ -3,6 +3,7 @@ import { scenarioAccess, staffOnlyField } from '@/courseware/access'
 import { hideRetiredUnlessAsked } from '@/courseware/retired'
 import { rowLabelComponent } from '@/courseware/row-label-component'
 import { refuseAuthorsScenarioStructure } from '@/courseware/structure'
+import { taskPickerComponents } from '@/courseware/task-picker'
 import { expandTaskRows, pickableTask } from '@/courseware/task-rows'
 
 /**
@@ -107,6 +108,7 @@ export const Scenarios: CollectionConfig = {
           relationTo: 'tasks',
           required: true,
           filterOptions: pickableTask,
+          admin: { components: taskPickerComponents() },
         },
         {
           name: 'teacherNotes',

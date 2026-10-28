@@ -2,6 +2,7 @@ import type { CollectionConfig, FieldHook } from 'payload'
 import { staffAccess } from '@/courseware/access'
 import { hideRetiredUnlessAsked } from '@/courseware/retired'
 import { rowLabelComponent } from '@/courseware/row-label-component'
+import { taskPickerComponents } from '@/courseware/task-picker'
 
 /** The GCAP code VATUSA pairs a mapped USA competency with, read fresh from the competency. */
 const pairedGcapCode: FieldHook = async ({ siblingData, req }) => {
@@ -57,6 +58,7 @@ export const Tasks: CollectionConfig = {
         retired: { not_equals: true },
         ...(id ? { id: { not_equals: id } } : {}),
       }),
+      admin: { components: taskPickerComponents({ excludeSelf: true }) },
     },
     {
       name: 'children',
