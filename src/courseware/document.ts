@@ -169,7 +169,7 @@ export type CatalogueTask = {
    * `fromTaskId` is the task the mapping is written on: this task's id, or an ancestor's.
    */
   mappings: { competencyId: string; fromTaskId: string }[]
-  citations: { sourceId: string; section: string }[]
+  citations: { sourceId: string; place: string; title: string | null }[]
 }
 
 export type Catalogue = {

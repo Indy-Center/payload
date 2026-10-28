@@ -86,9 +86,18 @@ export const Tasks: CollectionConfig = {
       fields: [
         { name: 'source', type: 'relationship', relationTo: 'sources', required: true },
         {
-          name: 'section',
+          name: 'place',
           type: 'text',
-          admin: { description: 'Where in the source, such as 3-7-2.' },
+          label: 'Place',
+          admin: {
+            description: 'Chapter, section or paragraph as the source writes it, such as 3-7-2.a.',
+          },
+        },
+        {
+          name: 'title',
+          type: 'text',
+          label: 'Title',
+          admin: { description: 'The heading at that place.' },
         },
       ],
     },
