@@ -49,6 +49,9 @@ export const LessonPlans: CollectionConfig = {
           data,
           operation === 'update' ? originalDoc : null,
         )
+        // A copy made by starting an edition keeps the plan as it was: its minimum, even an empty
+        // one, and its rows exactly, retired tasks included.
+        if (context[COPYING_EDITION]) return data
         if (operation === 'create' && data.minimum == null && data.courseVersion) {
           const version = await req.payload.findByID({
             collection: 'course-versions',
@@ -58,8 +61,6 @@ export const LessonPlans: CollectionConfig = {
           })
           data.minimum = version.defaultMinimum ?? null
         }
-        // A copy made by starting an edition keeps its rows exactly, retired tasks included.
-        if (context[COPYING_EDITION]) return data
         data.theoryItems = await expandTaskRows(
           req,
           data.theoryItems,

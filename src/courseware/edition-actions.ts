@@ -103,14 +103,19 @@ export async function startEdition(req: PayloadRequest, courseId: string): Promi
     ...as,
   })
   const copies = new Map<string, string>()
-  for (const plan of plans) {
-    const copy = await req.payload.create({
-      collection: 'lesson-plans',
-      data: copyOfPlan(plan, started.id),
-      context: { [COPYING_EDITION]: true },
-      ...as,
-    })
-    copies.set(plan.id, copy.id)
+  try {
+    for (const plan of plans) {
+      const copy = await req.payload.create({
+        collection: 'lesson-plans',
+        data: copyOfPlan(plan, started.id),
+        context: { [COPYING_EDITION]: true },
+        ...as,
+      })
+      copies.set(plan.id, copy.id)
+    }
+  } finally {
+    // The Local API sets `context` on the shared request, so the flag would outlive the copies.
+    delete req.context[COPYING_EDITION]
   }
 
   return req.payload.update({

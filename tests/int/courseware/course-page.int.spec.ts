@@ -195,6 +195,20 @@ describe('starting a new edition, further', () => {
     expect((await plansOf(live.id))[0].id).toBe(first.id)
   })
 
+  it('copies an empty minimum as empty, not as the edition’s default', async () => {
+    const { course, spare } = await liveCourse()
+    await payload.update({ collection: 'lesson-plans', id: spare.id, data: { minimum: null } })
+
+    const { body } = await start(course.id, lead)
+
+    const copies = await plansOf(body.edition.id)
+    expect(copies.map((plan) => [plan.code, plan.minimum])).toEqual([
+      ['X-TWR-1', 2],
+      ['X-TWR-2', 2],
+      ['X-TWR-9', null],
+    ])
+  })
+
   it('lets a course author start a draft of their own course, and edit it fully', async () => {
     const { course, radio } = await liveCourse()
 
@@ -229,9 +243,10 @@ describe('starting a new edition, further', () => {
     const { course } = await liveCourse()
     const stranger = await account('stranger@example.com', '1000002')
 
-    const { status } = await start(course.id, stranger)
+    const { status, body } = await start(course.id, stranger)
 
     expect(status).toBe(403)
+    expect(body.errors).toEqual([{ message: 'You are not allowed to perform this action.' }])
     const { totalDocs } = await payload.count({ collection: 'course-versions' })
     expect(totalDocs).toBe(1)
   })

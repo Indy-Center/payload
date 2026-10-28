@@ -12,7 +12,7 @@ import { idOf } from './ids'
 export async function numberEdition(
   req: PayloadRequest,
   data: Partial<CourseVersion>,
-  /** The version before this save; null when it is being created, even as a duplicate. */
+  /** The version before this save; null when it is being created. */
   before: CourseVersion | null,
 ): Promise<void> {
   const courseId = idOf(data.course ?? before?.course)

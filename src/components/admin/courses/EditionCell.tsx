@@ -5,6 +5,10 @@ import { idOf } from '@/courseware/ids'
 /**
  * The Courses list's Live edition and Draft edition columns: "Edition 2", a dash when the course
  * has none of that kind, and "No editions" in Live for a course with none at all.
+ *
+ * Payload hands a list cell no request or user, so these reads skip access. That shows nothing
+ * extra: the list is for signed-in accounts, every signed-in account may read every course version
+ * (0018), and only an edition's number is shown.
  */
 export async function EditionCell({ field, rowData, payload }: DefaultServerCellComponentProps) {
   const draft = 'name' in field && field.name === 'draftEdition'
