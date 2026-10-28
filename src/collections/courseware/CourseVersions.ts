@@ -3,6 +3,7 @@ import { courseVersionAccess, staffOnlyField } from '@/courseware/access'
 import { numberEdition } from '@/courseware/editions'
 import { idOf } from '@/courseware/ids'
 import { refuseScaleChange, refuseUnpublishable } from '@/courseware/publishing'
+import { rowLabelComponent } from '@/courseware/row-label-component'
 
 export const CourseVersions: CollectionConfig = {
   slug: 'course-versions',
@@ -116,6 +117,7 @@ export const CourseVersions: CollectionConfig = {
     {
       name: 'modules',
       type: 'array',
+      admin: { components: { RowLabel: rowLabelComponent('module') } },
       fields: [
         { name: 'title', type: 'text', required: true },
         { name: 'description', type: 'textarea' },

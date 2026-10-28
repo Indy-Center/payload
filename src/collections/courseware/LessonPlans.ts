@@ -2,6 +2,7 @@ import type { CollectionConfig, FilterOptions, Where } from 'payload'
 import { lexicalEditor, UploadFeature } from '@payloadcms/richtext-lexical'
 import { lessonPlanAccess } from '@/courseware/access'
 import { idOf } from '@/courseware/ids'
+import { rowLabelComponent } from '@/courseware/row-label-component'
 import { refuseAuthorsLessonPlanStructure } from '@/courseware/structure'
 import { expandTaskRows, pickableTask } from '@/courseware/task-rows'
 
@@ -103,7 +104,9 @@ export const LessonPlans: CollectionConfig = {
     {
       name: 'theoryItems',
       type: 'array',
+      labels: { singular: 'Theory item', plural: 'Theory items' },
       admin: {
+        components: { RowLabel: rowLabelComponent('theoryItem') },
         description:
           'Adding a task that has tasks beneath it adds a row for each of them when you save.',
       },

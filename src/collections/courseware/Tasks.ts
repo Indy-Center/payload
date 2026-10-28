@@ -1,6 +1,7 @@
 import type { CollectionConfig, FieldHook } from 'payload'
 import { staffAccess } from '@/courseware/access'
 import { hideRetiredUnlessAsked } from '@/courseware/retired'
+import { rowLabelComponent } from '@/courseware/row-label-component'
 
 /** The GCAP code VATUSA pairs a mapped USA competency with, read fresh from the competency. */
 const pairedGcapCode: FieldHook = async ({ siblingData, req }) => {
@@ -55,6 +56,7 @@ export const Tasks: CollectionConfig = {
       name: 'mappings',
       type: 'array',
       admin: {
+        components: { RowLabel: rowLabelComponent('mapping') },
         description:
           'Competencies this task teaches. A mapping here also applies to every task beneath it.',
       },
@@ -83,6 +85,7 @@ export const Tasks: CollectionConfig = {
     {
       name: 'citations',
       type: 'array',
+      admin: { components: { RowLabel: rowLabelComponent('citation') } },
       fields: [
         { name: 'source', type: 'relationship', relationTo: 'sources', required: true },
         {
