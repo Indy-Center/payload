@@ -1,7 +1,7 @@
 'use client'
 import React, { useEffect } from 'react'
 import type { ListQuery } from 'payload'
-import { Button, Gutter, SearchFilter, useListQuery, useStepNav } from '@payloadcms/ui'
+import { Button, Gutter, SearchFilter, SearchIcon, useListQuery, useStepNav } from '@payloadcms/ui'
 import type { TaskTreeList as List } from '@/courseware/task-tree-list'
 import { TaskTreeTable, useOpenTasks } from './TaskTreeTable'
 
@@ -27,7 +27,7 @@ export const TaskTreeList = ({
   const { setStepNav } = useStepNav()
   useEffect(() => setStepNav([{ label: 'Tasks' }]), [setStepNav])
 
-  const { open, toggle, expandAll } = useOpenTasks(list)
+  const { open, toggle, expandAll, collapseAll, allOpen } = useOpenTasks(list)
 
   return (
     <Gutter className="task-tree-list">
@@ -52,11 +52,15 @@ export const TaskTreeList = ({
         </div>
       </header>
       <div className="task-tree-list__controls">
-        <SearchFilter
-          label="Search by Name"
-          searchQueryParam={search}
-          handleChange={(value) => handleSearchChange?.(value)}
-        />
+        {/* Payload's own search box: its `search-bar` wrapper draws the box and the icon. */}
+        <div className="search-bar">
+          <SearchIcon />
+          <SearchFilter
+            label="Search by Name"
+            searchQueryParam={search}
+            handleChange={(value) => handleSearchChange?.(value)}
+          />
+        </div>
         <div className="task-tree-list__actions">
           <label className="task-tree-list__retired">
             <input
@@ -71,8 +75,13 @@ export const TaskTreeList = ({
             />
             Show retired
           </label>
-          <Button buttonStyle="secondary" size="small" margin={false} onClick={expandAll}>
-            Expand all
+          <Button
+            buttonStyle="secondary"
+            size="small"
+            margin={false}
+            onClick={allOpen ? collapseAll : expandAll}
+          >
+            {allOpen ? 'Collapse all' : 'Expand all'}
           </Button>
         </div>
       </div>

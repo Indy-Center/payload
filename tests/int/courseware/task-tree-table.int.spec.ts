@@ -64,11 +64,15 @@ const tree: TaskTreeList = {
 }
 
 const Harness = ({ list }: { list: TaskTreeList }) => {
-  const { open, toggle, expandAll } = useOpenTasks(list)
+  const { open, toggle, expandAll, collapseAll, allOpen } = useOpenTasks(list)
   return React.createElement(
     'div',
     null,
-    React.createElement('button', { onClick: expandAll }, 'Expand all'),
+    React.createElement(
+      'button',
+      { onClick: allOpen ? collapseAll : expandAll },
+      allOpen ? 'Collapse all' : 'Expand all',
+    ),
     React.createElement(TaskTreeTable, { rows: list.rows, open, onToggle: toggle }),
   )
 }
@@ -129,6 +133,15 @@ describe('the task tree table', () => {
     press('Expand all')
 
     expect(numbersShown()).toEqual(['1', '1.1', '1.1.1', '2', '2.1'])
+  })
+
+  it('closes every task again with "Collapse all" once all are open', () => {
+    show(tree)
+
+    press('Expand all')
+    press('Collapse all')
+
+    expect(numbersShown()).toEqual(['1', '2'])
   })
 
   it('starts with the parents a search opened', () => {

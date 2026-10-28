@@ -1,13 +1,14 @@
 'use client'
 import React, { useState } from 'react'
-import { Link, useConfig } from '@payloadcms/ui'
+import { ChevronIcon, Link, useConfig } from '@payloadcms/ui'
 import { formatAdminURL } from 'payload/shared'
 import type { TaskTreeList, TaskTreeRow } from '@/courseware/task-tree-list'
 
 /**
  * Which tasks are open. Nothing is open at first but what a search opened; each task then opens
- * and closes on its own, and `expandAll` opens every one. A new search opens its parents too and
- * leaves the rest as they were, so clearing it keeps the task found in view where it sits.
+ * and closes on its own, `expandAll` opens every one and `collapseAll` closes them all. A new
+ * search opens its parents too and leaves the rest as they were, so clearing it keeps the task
+ * found in view where it sits.
  */
 export function useOpenTasks(list: TaskTreeList) {
   const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set(list.opened))
@@ -24,10 +25,12 @@ export function useOpenTasks(list: TaskTreeList) {
       if (!next.delete(id)) next.add(id)
       return next
     })
-  const expandAll = () =>
-    setOpen(new Set(list.rows.filter((row) => row.hasChildren).map((row) => row.id)))
+  const parents = list.rows.filter((row) => row.hasChildren).map((row) => row.id)
+  const expandAll = () => setOpen(new Set(parents))
+  const collapseAll = () => setOpen(new Set())
+  const allOpen = parents.length > 0 && parents.every((id) => open.has(id))
 
-  return { open, toggle, expandAll }
+  return { open, toggle, expandAll, collapseAll, allOpen }
 }
 
 /** The rows whose every parent is open, in the order given. */
@@ -90,7 +93,7 @@ export const TaskTreeTable = ({
                         aria-label={`${isOpen ? 'Close' : 'Open'} ${label}`}
                         onClick={() => onToggle(row.id)}
                       >
-                        {isOpen ? '▾' : '▸'}
+                        <ChevronIcon direction={isOpen ? 'down' : 'right'} size="small" />
                       </button>
                     ) : (
                       <span className="task-tree__toggle" aria-hidden="true" />
