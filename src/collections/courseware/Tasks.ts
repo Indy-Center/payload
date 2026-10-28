@@ -19,8 +19,9 @@ const pairedGcapCode: FieldHook = async ({ siblingData, req }) => {
 
 /**
  * The one task tree every course draws from. A task's number is never stored: it comes from its
- * parent and its place among its siblings, which is the collection's drag-and-drop order (sort the
- * list by its order to drag). Inserting a task between two others renumbers the later ones.
+ * parent and its place among its siblings, which is the collection's order (`_order`). Inserting a
+ * task between two others renumbers the later ones. The list is the numbered tree
+ * (`TaskTreeListView`), not Payload's flat list.
  */
 export const Tasks: CollectionConfig = {
   slug: 'tasks',
@@ -30,6 +31,12 @@ export const Tasks: CollectionConfig = {
     defaultColumns: ['name', 'parent', 'retired'],
     group: 'Training',
     baseFilter: hideRetiredUnlessAsked,
+    components: {
+      views: {
+        // The numbered tree in place of Payload's flat list, Columns and Filters with it.
+        list: { Component: '/components/admin/TaskTreeListView#TaskTreeListView' },
+      },
+    },
   },
   access: staffAccess,
   fields: [
