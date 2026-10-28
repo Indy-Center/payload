@@ -77,12 +77,20 @@ export function buildTaskTree(tasks: readonly TreeTask[]): TaskTree {
   }
 }
 
-/** Reads the whole tree. It is small (hundreds of tasks), so it is always read whole. */
-export async function loadTaskTree(req: PayloadRequest): Promise<TaskTree> {
+/**
+ * Reads the whole tree. It is small (hundreds of tasks), so it is always read whole. With
+ * `overrideAccess: false` it reads as the person signed in on `req`; the servers' reads, which
+ * carry a token rather than a person, leave it on.
+ */
+export async function loadTaskTree(
+  req: PayloadRequest,
+  { overrideAccess = true }: { overrideAccess?: boolean } = {},
+): Promise<TaskTree> {
   const { docs } = await req.payload.find({
     collection: 'tasks',
     depth: 0,
     pagination: false,
+    overrideAccess,
     // Leaves out the mappings' paired GCAP code, which costs a lookup per mapping to read.
     select: {
       name: true,
