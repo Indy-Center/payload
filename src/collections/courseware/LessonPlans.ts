@@ -60,6 +60,8 @@ export const LessonPlans: CollectionConfig = {
               collection: 'course-versions',
               id: versionId,
               depth: 0,
+              // An edition that doesn't exist is the relationship field's own error to report.
+              disableErrors: true,
               req,
             })
           : null

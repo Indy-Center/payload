@@ -24,8 +24,11 @@ export async function refuseMinimumOffScale(
     collection: 'grading-scales',
     id: scaleId,
     depth: 0,
+    // A scale that doesn't exist is the relationship field's own error to report.
+    disableErrors: true,
     req,
   })
+  if (!scale) return
   const points = scale.points.length
   if (inScale(minimum, points)) return
   throw new ValidationError({

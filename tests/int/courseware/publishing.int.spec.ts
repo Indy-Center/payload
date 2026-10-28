@@ -1,4 +1,4 @@
-import { ValidationError, type Payload } from 'payload'
+import { NotFound, ValidationError, type Payload } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { User } from '@/payload-types'
 import { callEndpoint, resetDatabase, testPayload } from './helpers'
@@ -213,6 +213,35 @@ describe('lesson plan minimums', () => {
         { path: 'minimum', message: offScale(4) },
       ])
       expect((await save({ minimum: 1 })).minimum).toBe(1)
+    })
+
+    it('does not report a missing scale or edition as not found', async () => {
+      const as = await signedInLead()
+      const { version } = await readyVersion()
+      const missing = '00000000-0000-7000-8000-000000000000'
+
+      // The minimum check steps aside; the saved reference is refused further down, by the
+      // database's own foreign key, as it was before the check existed.
+      const scaleFault = await payload
+        .update({
+          collection: 'course-versions',
+          id: version.id,
+          data: { gradingScale: missing, defaultMinimum: 2 },
+          ...as,
+        })
+        .catch((error: unknown) => error)
+      expect(scaleFault).toBeInstanceOf(Error)
+      expect(scaleFault).not.toBeInstanceOf(NotFound)
+
+      const editionFault = await payload
+        .create({
+          collection: 'lesson-plans',
+          data: { courseVersion: missing, code: 'X-TWR-9', minimum: 2 },
+          ...as,
+        })
+        .catch((error: unknown) => error)
+      expect(editionFault).toBeInstanceOf(Error)
+      expect(editionFault).not.toBeInstanceOf(NotFound)
     })
 
     it('only once the edition has a scale to check against', async () => {
