@@ -104,6 +104,7 @@ export const LessonPlans: CollectionConfig = {
     {
       name: 'theoryItems',
       type: 'array',
+      labels: { singular: 'Theory item', plural: 'Theory items' },
       admin: {
         components: { RowLabel: rowLabelComponent('theoryItem') },
         description:

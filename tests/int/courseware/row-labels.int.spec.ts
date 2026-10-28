@@ -1,7 +1,12 @@
 import type { Payload } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { User } from '@/payload-types'
-import { rowLabel, type RowLabelLookup } from '@/courseware/row-label-text'
+import {
+  rowLabel,
+  SINGULAR,
+  type RowLabelKind,
+  type RowLabelLookup,
+} from '@/courseware/row-label-text'
 import { callEndpoint, resetDatabase, testPayload } from './helpers'
 
 const lookup: RowLabelLookup = {
@@ -68,6 +73,31 @@ describe('what a row says', () => {
     expect(rowLabel('theoryItem', { task: 'gone' }, lookup)).toBeNull()
     expect(rowLabel('prerequisite', { anyOf: [] }, lookup)).toBeNull()
   })
+})
+
+describe('the label of an empty row', () => {
+  const arrays: Record<RowLabelKind, [collection: string, field: string]> = {
+    mapping: ['tasks', 'mappings'],
+    citation: ['tasks', 'citations'],
+    point: ['grading-scales', 'points'],
+    module: ['course-versions', 'modules'],
+    theoryItem: ['lesson-plans', 'theoryItems'],
+    practicalTask: ['scenarios', 'practicalTasks'],
+    prerequisite: ['courses', 'prerequisites'],
+  }
+
+  it.each(Object.entries(arrays) as [RowLabelKind, [string, string]][])(
+    'matches Payload’s own wording for a %s row',
+    async (kind, [collection, field]) => {
+      const payload = await testPayload()
+      const config = payload.collections[collection as 'tasks'].config.fields.find(
+        (candidate) => 'name' in candidate && candidate.name === field,
+      )
+      expect(config?.type).toBe('array')
+      const labels = (config as { labels?: { singular?: unknown } }).labels
+      expect(labels?.singular).toBe(SINGULAR[kind])
+    },
+  )
 })
 
 describe('GET /courseware/row-labels', () => {

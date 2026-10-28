@@ -4,8 +4,9 @@ import { loadTaskTree } from './task-tree'
 
 /**
  * Everything the admin's row labels look up, in one read: relationship values reach the browser as
- * ids, and one read per form is quicker than one per row. Reads as the signed-in user, so a label
- * names only what that user may read.
+ * ids, and one read per form is quicker than one per row. Competencies, frameworks, sources and
+ * credentials are read as the signed-in user. The task tree is read whole, as everywhere else
+ * (tasks are readable by every signed-in account).
  */
 export async function buildRowLabelLookup(req: PayloadRequest): Promise<RowLabelLookup> {
   const read = { depth: 0, pagination: false, overrideAccess: false, user: req.user, req } as const

@@ -94,6 +94,7 @@ export const Scenarios: CollectionConfig = {
     {
       name: 'practicalTasks',
       type: 'array',
+      labels: { singular: 'Practical task', plural: 'Practical tasks' },
       admin: {
         components: { RowLabel: rowLabelComponent('practicalTask') },
         description:
