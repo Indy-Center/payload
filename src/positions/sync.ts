@@ -1,7 +1,7 @@
 import type { PayloadRequest } from 'payload'
-import { positionTitle } from '@/collections/courseware/Positions'
 import { inTransaction } from '@/courseware/edition-actions'
 import type { Position } from '@/payload-types'
+import { generatedShortName } from './short-name'
 import { fetchZidPositions, type VnasPosition } from './vnas'
 
 /** How many positions a sync added, changed (un-retiring counts) and retired. */
@@ -16,7 +16,7 @@ const COPIED = [
   'facilityId',
   'facilityName',
   'starred',
-  'shortName',
+  'vnasShortName',
 ] as const satisfies (keyof VnasPosition & keyof Position)[]
 
 const copied = (from: VnasPosition) =>
@@ -24,6 +24,21 @@ const copied = (from: VnasPosition) =>
     VnasPosition,
     (typeof COPIED)[number]
   >
+
+/**
+ * Indy's facts on a position (`indy-facts.ts`) as the sync generates them from vNAS, afresh every
+ * run. The sync writes only each fact's generated value, never its override.
+ */
+const generated = (from: VnasPosition) => ({
+  indyShortName: { generated: generatedShortName(from) },
+})
+
+/** What the sync stores of a position from vNAS: what vNAS says, and Indy's generated facts. */
+export const storedFrom = (from: VnasPosition) => ({
+  vnasId: from.vnasId,
+  ...copied(from),
+  ...generated(from),
+})
 
 /**
  * Brings the Positions list in line with vNAS (decision 0060): a new position is added and a
@@ -74,11 +89,12 @@ async function apply(req: PayloadRequest, fromVnas: VnasPosition[]): Promise<Syn
   const changed = fromVnas.flatMap((position) => {
     const existing = recordFor(position)
     if (!existing) return []
-    const fields = { vnasId: position.vnasId, ...copied(position) }
+    const fields = storedFrom(position)
     const differs =
       existing.retired === true ||
       existing.vnasId !== fields.vnasId ||
-      COPIED.some((field) => (existing[field] ?? null) !== (fields[field] ?? null))
+      COPIED.some((field) => (existing[field] ?? null) !== (fields[field] ?? null)) ||
+      (existing.indyShortName?.generated ?? null) !== fields.indyShortName.generated
     return differs ? [{ existing, fields }] : []
   })
   const takenOver = new Set(changed.map(({ existing }) => existing.id))
@@ -106,12 +122,8 @@ async function apply(req: PayloadRequest, fromVnas: VnasPosition[]): Promise<Syn
   for (const position of added) {
     await payload.create({
       collection: 'positions',
-      data: {
-        vnasId: position.vnasId,
-        ...copied(position),
-        title: positionTitle(position),
-        retired: false,
-      },
+      // The collection's hook sets the title and the short name served.
+      data: { ...storedFrom(position), title: '', retired: false },
       depth: 0,
       req,
     })

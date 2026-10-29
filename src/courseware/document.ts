@@ -178,7 +178,10 @@ export type CataloguePosition = {
   callsign: string
   /** Such as `Falmouth 83`. */
   name: string
-  /** vNAS's short name, such as `FLM 83`; null where it has none. */
+  /**
+   * As controllers say it, such as `FLM 83`: vNAS's where it has one, else Indy's temporary one
+   * (`SDF LC`, `CRW N`, or a CMS admin's override); null where there is neither.
+   */
   shortName: string | null
   /** Such as `Indy Center`. */
   radioName: string

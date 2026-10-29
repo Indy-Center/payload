@@ -1,5 +1,5 @@
 import { validations, type PayloadRequest, type RelationshipFieldSingleValidation } from 'payload'
-import { positionTitle, servedShortName } from '@/collections/courseware/Positions'
+import { positionTitle, shownShortName } from '@/collections/courseware/Positions'
 import type { Position } from '@/payload-types'
 import { idOf } from './ids'
 
@@ -75,7 +75,7 @@ export async function loadPositionOptions(
   ])
   const words = search.toLowerCase().split(/\s+/).filter(Boolean)
   const matches = (position: Shown) => {
-    const text = [servedShortName(position), position.name, position.callsign]
+    const text = [shownShortName(position), position.name, position.callsign]
       .join(' ')
       .toLowerCase()
     return words.every((word) => text.includes(word))

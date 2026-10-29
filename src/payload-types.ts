@@ -645,6 +645,7 @@ export interface Scenario {
 export interface Position {
   id: string;
   title: string;
+  shortName?: string | null;
   /**
    * Such as IND_83_CTR.
    */
@@ -653,7 +654,7 @@ export interface Position {
   /**
    * vNAS’s own, where it has one: FLM 83.
    */
-  shortName?: string | null;
+  vnasShortName?: string | null;
   radioName: string;
   /**
    * In MHz.
@@ -664,6 +665,19 @@ export interface Position {
    */
   facilityId: string;
   facilityName: string;
+  /**
+   * As controllers say it: the airport and LC, GC or CD for towers, grounds and deliveries, and its STARS sector letter for approach and departure.
+   */
+  indyShortName?: {
+    /**
+     * Worked out by each sync from vNAS.
+     */
+    generated?: string | null;
+    /**
+     * Set by a CMS admin. Clear it to use the generated value.
+     */
+    override?: string | null;
+  };
   vnasId: string;
   /**
    * One of its facility’s main positions.
@@ -1317,13 +1331,20 @@ export interface ScenariosSelect<T extends boolean = true> {
  */
 export interface PositionsSelect<T extends boolean = true> {
   title?: T;
+  shortName?: T;
   callsign?: T;
   name?: T;
-  shortName?: T;
+  vnasShortName?: T;
   radioName?: T;
   frequency?: T;
   facilityId?: T;
   facilityName?: T;
+  indyShortName?:
+    | T
+    | {
+        generated?: T;
+        override?: T;
+      };
   vnasId?: T;
   starred?: T;
   retired?: T;

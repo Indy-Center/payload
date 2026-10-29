@@ -54,7 +54,9 @@ async function fillPositions(db: Db): Promise<void> {
         `vNAS could not be used: ${(error as Error).message} Nothing was changed. Deploy again.`,
     )
   }
-  for (const position of fromVnas) {
+  for (const fromVnasPosition of fromVnas) {
+    // Positions has one `short_name` column at this point, vNAS's; the next migration splits it.
+    const position = { ...fromVnasPosition, shortName: fromVnasPosition.vnasShortName }
     await db.execute(sql`
     INSERT INTO "positions" ("id", "title", "callsign", "name", "short_name", "radio_name",
       "frequency", "facility_id", "facility_name", "vnas_id", "starred", "retired")

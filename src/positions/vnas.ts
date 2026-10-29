@@ -17,7 +17,12 @@ export type VnasPosition = {
   facilityName: string
   starred: boolean
   /** vNAS's own short name, from the ARTCC's ERAM sectors: "FLM 83". Null where it has none. */
-  shortName: string | null
+  vnasShortName: string | null
+  /**
+   * The sector letter of the position's STARS TCP ("N"), found in its facility's TCP list; null
+   * where it has none. Not stored: Indy's short name is generated from it.
+   */
+  tcpSectorId: string | null
 }
 
 /** vNAS couldn't be reached, or answered with something the sync can't trust. */
@@ -82,6 +87,13 @@ export function readPositions(body: unknown): VnasPosition[] {
       throw unusable(`a facility under ${where} has no id or name.`)
     if (!Array.isArray(facility.positions) || !Array.isArray(facility.childFacilities))
       throw unusable(`${String(facility.id)} has no positions or child facilities.`)
+    // A radar position names its STARS TCP; the facility's TCP list holds its sector letter.
+    const stars = isObject(facility.starsConfiguration) ? facility.starsConfiguration : {}
+    const tcps = new Map<string, string>()
+    for (const tcp of Array.isArray(stars.tcps) ? stars.tcps : []) {
+      if (isObject(tcp) && hasText(tcp.id) && hasText(tcp.sectorId))
+        tcps.set(tcp.id, tcp.sectorId.trim())
+    }
     for (const position of facility.positions) {
       if (
         !isObject(position) ||
@@ -98,6 +110,9 @@ export function readPositions(body: unknown): VnasPosition[] {
       const sectorId = isObject(position.eramConfiguration)
         ? position.eramConfiguration.sectorId
         : undefined
+      const tcpId = isObject(position.starsConfiguration)
+        ? position.starsConfiguration.tcpId
+        : undefined
       found.push({
         vnasId: position.id as string,
         callsign: (position.callsign as string).trim(),
@@ -107,7 +122,8 @@ export function readPositions(body: unknown): VnasPosition[] {
         facilityId: facility.id as string,
         facilityName: tidy(facility.name as string),
         starred: position.starred === true,
-        shortName: sectorId == null ? null : (shortNames.get(String(sectorId)) ?? null),
+        vnasShortName: sectorId == null ? null : (shortNames.get(String(sectorId)) ?? null),
+        tcpSectorId: typeof tcpId === 'string' ? (tcps.get(tcpId) ?? null) : null,
       })
     }
     for (const child of facility.childFacilities) walk(child, String(facility.id))

@@ -67,7 +67,7 @@ describe("the catalogue's positions", () => {
       id: '01GMQCS4DB3KJV12D2KM83CWTV',
       callsign: 'PKB_TWR',
       name: 'Local Control',
-      shortName: null,
+      shortName: 'PKB LC',
       radioName: 'Parkersburg Tower',
       frequency: 123700000,
       facility: { id: 'PKB', name: 'Parkersburg ATCT' },
