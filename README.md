@@ -193,6 +193,8 @@ npm run payload migrate:create
 
 and commit what both write. A collection change without a migration works locally and fails on the VPS. A rename or a dropped column makes `migrate:create` stop at a data-loss prompt; `npm run payload migrate:create <name> -- --forceAcceptWarning` skips the prompt, then read the migration and check its SQL keeps the data (a rename as `rename column`, not a drop and add).
 
+To check a screen in a browser, fill an empty local database with made-up data: `npx tsx scripts/seed-check.ts` (add `--reset` to empty the database first; without it a database that has rows is refused). It makes three accounts (`admin@example.test`, `lead@example.test`, `author@example.test`, one shared password, printed at the end), the credentials, two frameworks with competencies, sources, a nine-task tree, a grading scale, courses X-GC (a published and a draft edition, two scenarios) and X-TWR, and the seven positions of the sync's test fixture. It prints a JSON map of every record's id and admin URL. Whoever changes the shape or rules of a collection it fills updates the script in the same commit.
+
 ## Tests
 
 ```bash
