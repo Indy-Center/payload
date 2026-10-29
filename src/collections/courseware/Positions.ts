@@ -1,7 +1,7 @@
 import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import { hideRetiredUnlessAsked } from '@/courseware/retired'
 import type { Position } from '@/payload-types'
-import { mayOverride } from '@/positions/indy-facts'
+import { mayOverride, noEdit } from '@/positions/indy-facts'
 import { indyRequiredCredentialsField } from '@/positions/required-credentials'
 import { indyShortNameField, servedShortName } from '@/positions/short-name'
 
@@ -29,8 +29,6 @@ const setServed: CollectionBeforeChangeHook<Position> = ({ data, originalDoc }) 
   return { ...data, shortName, title: positionTitle({ ...merged, shortName }) }
 }
 
-/** Written by the sync alone, below access: read-only to everyone, the CMS admin included. */
-const noEdit = { create: () => false, update: () => false }
 const fromVnas = { readOnly: true }
 
 /**

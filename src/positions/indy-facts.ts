@@ -25,6 +25,9 @@ import { mayActAs, type RoleHolder } from '@/cms-admin'
  */
 export type IndyFact<T> = { generated?: T | null; override?: T | null } | null | undefined
 
+/** Written by the sync alone, below access: read-only to everyone, the CMS admin included. */
+export const noEdit = { create: () => false, update: () => false }
+
 /** Only the CMS admin edits an override. */
 export const mayOverride = ({ req }: { req: { user?: unknown } }) =>
   mayActAs(req.user as RoleHolder)
@@ -108,7 +111,7 @@ export function indyFact(options: {
             ...value,
             name: 'generated',
             label: 'Generated',
-            access: { create: () => false, update: () => false },
+            access: noEdit,
             admin: {
               ...value.admin,
               readOnly: true,
