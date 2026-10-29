@@ -1,5 +1,4 @@
-import type { Endpoint, PayloadRequest } from 'payload'
-import { unauthorized } from '@/bearer-token'
+import type { PayloadRequest } from 'payload'
 import { idOf } from './ids'
 import { buildTaskTree, loadTaskTree, type TaskTree } from './task-tree'
 
@@ -97,35 +96,3 @@ export const taskPickerComponents = ({ excludeSelf = false }: { excludeSelf?: bo
     clientProps: { excludeSelf },
   },
 })
-
-export const taskPickerEndpoints: Endpoint[] = [
-  {
-    // The admin's task pickers (TaskPicker), for a signed-in browser session.
-    path: '/courseware/task-options',
-    method: 'get',
-    handler: async (req) => {
-      if (!req.user) return unauthorized()
-      const text = (key: string) =>
-        typeof req.query?.[key] === 'string' && req.query[key] ? String(req.query[key]) : undefined
-      return Response.json(
-        await loadTaskOptions(req, {
-          search: text('search'),
-          current: text('current'),
-          exclude: text('exclude'),
-        }),
-      )
-    },
-  },
-  {
-    // A task page's title (TaskTitle): its number alone, as `{ number }`.
-    path: '/courseware/tasks/:id/number',
-    method: 'get',
-    handler: async (req) => {
-      if (!req.user) return unauthorized()
-      const { id } = req.routeParams as { id: string }
-      const number = await loadTaskNumber(req, id)
-      if (number === null) return Response.json({ error: 'Not found' }, { status: 404 })
-      return Response.json({ number })
-    },
-  },
-]

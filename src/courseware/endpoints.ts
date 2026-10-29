@@ -5,8 +5,11 @@ import { buildCompetencyTree } from './competency-tree'
 import { buildRowLabelLookup } from './row-labels'
 import { IMPORT_ENDPOINTS } from './import/form'
 import { importUpload } from './import/upload'
+import type { MoveDirection } from './move-direction'
 import type { TaskGridBatch } from './task-grid'
 import { saveTaskGrid, TaskGridRefused } from './task-grid-batch'
+import { moveTask } from './task-move'
+import { loadTaskNumber, loadTaskOptions } from './task-picker'
 import {
   checkPublishing,
   discardDraft,
@@ -14,7 +17,7 @@ import {
   publishEdition,
   startEdition,
 } from './edition-actions'
-import { moduleOf, moveLessonPlan, placeLessonPlan, type OutlineMove } from './outline'
+import { moduleOf, moveLessonPlan, placeLessonPlan } from './outline'
 import {
   buildCourseList,
   buildCourseVersionDocument,
@@ -35,31 +38,55 @@ const fromTraining = (req: PayloadRequest) => hasBearerToken(req, process.env.TR
 
 const notFound = () => Response.json({ error: 'Not found' }, { status: 404 })
 
-/**
- * Runs one of the course page's or the import page's actions as the signed-in person, in one
- * transaction, and answers with its result, or
- * with the refusal's messages as `{ errors: [{ message }] }`.
- */
-async function act(
+/** A query parameter with something in it, or undefined. */
+const queryText = (req: PayloadRequest, name: string) => {
+  const value = req.query?.[name]
+  return typeof value === 'string' && value !== '' ? value : undefined
+}
+
+/** The request's JSON body, or `{}` when it has none or it isn't JSON: the action then refuses. */
+async function jsonBody(req: PayloadRequest): Promise<Record<string, unknown>> {
+  try {
+    return ((await req.json?.()) ?? {}) as Record<string, unknown>
+  } catch {
+    return {}
+  }
+}
+
+/** A refusal as the admin's screens read it, `{ errors: [{ message }] }`, or null if it isn't one. */
+function refusalOf(error: unknown): Response | null {
+  if (error instanceof TaskGridRefused)
+    return Response.json({ errors: error.refusals }, { status: 400 })
+  if (error instanceof ValidationError) {
+    const errors = error.data.errors.map(({ message }) => ({ message }))
+    return Response.json({ errors }, { status: 400 })
+  }
+  if (error instanceof APIError)
+    return Response.json({ errors: [{ message: error.message }] }, { status: error.status })
+  return null
+}
+
+/** Runs an admin screen's action as the signed-in person, and answers with its result or refusal. */
+async function answer(
   req: PayloadRequest,
   status: number,
-  action: (id: string) => Promise<unknown>,
+  action: () => Promise<unknown>,
 ): Promise<Response> {
   if (!req.user) return unauthorized()
-  const { id } = req.routeParams as { id: string }
   try {
-    return Response.json(await inTransaction(req, () => action(id)), { status })
+    return Response.json(await action(), { status })
   } catch (error) {
-    if (error instanceof ValidationError) {
-      const errors = error.data.errors.map(({ message }) => ({ message }))
-      return Response.json({ errors }, { status: 400 })
-    }
-    if (error instanceof APIError) {
-      return Response.json({ errors: [{ message: error.message }] }, { status: error.status })
-    }
+    const refusal = refusalOf(error)
+    if (refusal) return refusal
     throw error
   }
 }
+
+/** `answer`, for an action on the record the route's `:id` names, in one transaction. */
+const act = (req: PayloadRequest, status: number, action: (id: string) => Promise<unknown>) =>
+  answer(req, status, () =>
+    inTransaction(req, () => action((req.routeParams as { id: string }).id)),
+  )
 
 export const coursewareEndpoints: Endpoint[] = [
   {
@@ -85,11 +112,9 @@ export const coursewareEndpoints: Endpoint[] = [
     method: 'get',
     handler: async (req) => {
       if (!req.user) return unauthorized()
-      const param = (name: string) =>
-        typeof req.query?.[name] === 'string' ? (req.query[name] as string) : undefined
       const tree = await buildCompetencyTree(req, {
-        edition: param('edition'),
-        search: param('search'),
+        edition: queryText(req, 'edition'),
+        search: queryText(req, 'search'),
       })
       return tree ? Response.json(tree) : notFound()
     },
@@ -152,8 +177,8 @@ export const coursewareEndpoints: Endpoint[] = [
     method: 'post',
     handler: (req) =>
       act(req, 200, async (id) => {
-        const { direction } = ((await req.json?.()) ?? {}) as { direction?: OutlineMove }
-        await moveLessonPlan(req, id, direction as OutlineMove)
+        const { direction } = await jsonBody(req)
+        await moveLessonPlan(req, id, direction as MoveDirection)
         return { moved: id }
       }),
   },
@@ -162,7 +187,7 @@ export const coursewareEndpoints: Endpoint[] = [
     method: 'post',
     handler: (req) =>
       act(req, 200, async (id) => {
-        const moduleId = moduleOf(await req.json?.())
+        const moduleId = moduleOf(await jsonBody(req))
         await placeLessonPlan(req, id, moduleId)
         return { placed: id, module: moduleId }
       }),
@@ -178,24 +203,51 @@ export const coursewareEndpoints: Endpoint[] = [
     method: 'post',
     handler: (req) => act(req, 200, () => importUpload(req, { dryRun: false })),
   },
+  // The Tasks list's screens.
   {
-    // The Tasks grid's save: every pending change, all or none. A refusal names each row.
+    // The grid's save: every pending change, all or none. A refusal names each row. The save
+    // runs its own transactions.
     path: '/courseware/task-grid',
     method: 'post',
+    handler: (req) =>
+      answer(req, 200, async () => ({
+        saved: await saveTaskGrid(req, (await jsonBody(req)) as TaskGridBatch),
+      })),
+  },
+  {
+    // The tree's ↑ and ↓: saves at once.
+    path: '/courseware/tasks/:id/move',
+    method: 'post',
+    handler: (req) =>
+      act(req, 200, async (id) => {
+        const { direction } = await jsonBody(req)
+        return moveTask(req, id, direction as MoveDirection)
+      }),
+  },
+  {
+    // The admin's task pickers (TaskPicker).
+    path: '/courseware/task-options',
+    method: 'get',
     handler: async (req) => {
       if (!req.user) return unauthorized()
-      const batch = ((await req.json?.()) ?? {}) as TaskGridBatch
-      try {
-        return Response.json({ saved: await saveTaskGrid(req, batch) })
-      } catch (error) {
-        if (error instanceof TaskGridRefused) {
-          return Response.json({ errors: error.refusals }, { status: 400 })
-        }
-        if (error instanceof APIError) {
-          return Response.json({ errors: [{ message: error.message }] }, { status: error.status })
-        }
-        throw error
-      }
+      return Response.json(
+        await loadTaskOptions(req, {
+          search: queryText(req, 'search'),
+          current: queryText(req, 'current'),
+          exclude: queryText(req, 'exclude'),
+        }),
+      )
+    },
+  },
+  {
+    // A task page's title (TaskTitle): its number alone, as `{ number }`.
+    path: '/courseware/tasks/:id/number',
+    method: 'get',
+    handler: async (req) => {
+      if (!req.user) return unauthorized()
+      const { id } = req.routeParams as { id: string }
+      const number = await loadTaskNumber(req, id)
+      return number === null ? notFound() : Response.json({ number })
     },
   },
 ]

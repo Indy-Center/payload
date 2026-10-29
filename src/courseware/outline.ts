@@ -1,6 +1,7 @@
 import { APIError, docAccessOperation, ValidationError, type PayloadRequest } from 'payload'
 import type { CourseVersion, LessonPlan } from '@/payload-types'
 import { idOf } from './ids'
+import { isMoveDirection, type MoveDirection } from './move-direction'
 
 /**
  * An edition's outline (decisions 0016, 0023): which of its lesson plans sit in which module, in
@@ -9,8 +10,6 @@ import { idOf } from './ids'
  * course author's change to a published edition's outline is refused there (0055, ticket 09). The
  * lesson plan itself is never changed: one taken out of every module stays a record of its edition.
  */
-
-export type OutlineMove = 'up' | 'down'
 
 /** Shown where a course author's outline controls are greyed out in a published edition. */
 export const STRUCTURAL_CHANGES_BY_A_LEAD =
@@ -99,9 +98,9 @@ export async function placeLessonPlan(
 export async function moveLessonPlan(
   req: PayloadRequest,
   planId: string,
-  direction: OutlineMove,
+  direction: MoveDirection,
 ): Promise<void> {
-  if (direction !== 'up' && direction !== 'down') refuse('Move a lesson plan up or down.')
+  if (!isMoveDirection(direction)) refuse('Move a lesson plan up or down.')
   const plan = await loadPlan(req, planId)
   const edition = await loadEdition(req, plan)
   const plans = planIdsOf(edition)

@@ -24,8 +24,6 @@ import { Partners } from './collections/partners/Partners'
 import { TeacherResources } from './globals/TeacherResources'
 import { coursewareEndpoints } from './courseware/endpoints'
 import { IMPORT_FRAMEWORKS_PATH } from './courseware/import/form'
-import { taskMoveEndpoints } from './courseware/task-move'
-import { taskPickerEndpoints } from './courseware/task-picker'
 import { partnersEndpoints } from './partners/endpoints'
 import { positionsEndpoints } from './positions/endpoints'
 import { jobs } from './positions/jobs'
@@ -75,8 +73,6 @@ export default buildConfig({
   globals: [TeacherResources],
   endpoints: [
     ...coursewareEndpoints,
-    ...taskMoveEndpoints,
-    ...taskPickerEndpoints,
     ...partnersEndpoints,
     ...positionsEndpoints,
     ...trainingEndpoints,

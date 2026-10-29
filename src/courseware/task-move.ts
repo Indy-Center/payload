@@ -1,11 +1,9 @@
-import { APIError, ValidationError, type Endpoint, type PayloadRequest } from 'payload'
+import { APIError, type PayloadRequest } from 'payload'
 import { generateKeyBetween } from 'payload/shared'
-import { unauthorized } from '@/bearer-token'
 import type { User } from '@/payload-types'
 import { isStaff } from './access'
+import { isMoveDirection, type MoveDirection } from './move-direction'
 import { loadTaskTree, type TaskTree } from './task-tree'
-
-export type MoveDirection = 'up' | 'down'
 
 export const MOVE_STAFF_ONLY = 'Only the Training Admin and lead instructors may move tasks.'
 const NO_DIRECTION = 'Move a task up or down.'
@@ -39,7 +37,7 @@ export async function moveTask(
   if (!isStaff(req.user as Pick<User, 'roles' | 'cid'> | null)) {
     throw new APIError(MOVE_STAFF_ONLY, 403)
   }
-  if (direction !== 'up' && direction !== 'down') throw new APIError(NO_DIRECTION, 400)
+  if (!isMoveDirection(direction)) throw new APIError(NO_DIRECTION, 400)
 
   const tree = await loadTaskTree(req, { overrideAccess: false })
   const task = tree.get(id)
@@ -81,33 +79,3 @@ export async function moveTask(
   const to = (await loadTaskTree(req, { overrideAccess: false })).number(id)
   return { message: `${label} is now ${to}`, from, to }
 }
-
-export const taskMoveEndpoints: Endpoint[] = [
-  {
-    // The Tasks tree's ↑ and ↓: saves at once. A refusal answers `{ errors: [{ message }] }`.
-    path: '/courseware/tasks/:id/move',
-    method: 'post',
-    handler: async (req) => {
-      if (!req.user) return unauthorized()
-      const { id } = req.routeParams as { id: string }
-      let body: { direction?: MoveDirection }
-      try {
-        body = ((await req.json?.()) ?? {}) as typeof body
-      } catch {
-        return Response.json({ errors: [{ message: NO_DIRECTION }] }, { status: 400 })
-      }
-      try {
-        return Response.json(await moveTask(req, id, body.direction as MoveDirection))
-      } catch (error) {
-        if (error instanceof ValidationError) {
-          const errors = error.data.errors.map(({ message }) => ({ message }))
-          return Response.json({ errors }, { status: 400 })
-        }
-        if (error instanceof APIError) {
-          return Response.json({ errors: [{ message: error.message }] }, { status: error.status })
-        }
-        throw error
-      }
-    },
-  },
-]
