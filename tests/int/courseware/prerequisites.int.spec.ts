@@ -180,6 +180,31 @@ describe("a course's prerequisites", () => {
     expect(saved.credentialIssued).toBe(local.id)
   })
 
+  it('are checked as the admin form does while editing, with no path to the row', async () => {
+    const { id } = await course()
+    const rows = [{ anyOf: [ground.id] }, { anyOf: [local.id, ground.id] }]
+    const array = payload.collections.courses.config.flattenedFields.find(
+      (field) => field.name === 'prerequisites',
+    ) as { flattenedFields: { validate: (value: unknown, options: object) => Promise<unknown> }[] }
+    const anyOf = array.flattenedFields[0]
+    // What addFieldStatePromise passes: the server's req, the whole data, the row, and no `path`.
+    const edit = (row: (typeof rows)[number]) =>
+      anyOf.validate(row.anyOf, {
+        id,
+        data: { prerequisites: rows },
+        siblingData: row,
+        event: 'onChange',
+        req: { payload, t: (key: string) => key },
+        hasMany: true,
+        relationTo: 'credentials',
+      })
+
+    expect(await edit(rows[0])).toBe(true)
+    expect(await edit(rows[1])).toBe(
+      'X-GC is named twice in the prerequisites. Name each credential once.',
+    )
+  })
+
   it('are read by a course author, whose change to them is refused', async () => {
     const { id } = await course()
     await payload.update({

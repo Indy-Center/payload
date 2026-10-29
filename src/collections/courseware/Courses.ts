@@ -88,15 +88,18 @@ const prerequisiteRow: RelationshipFieldValidation = async (value, options) => {
     return 'A prerequisite row names at least one credential. Remove the row if it is empty.'
   const valid = await relationship(value, options)
   if (valid !== true) return valid
-  // The admin form runs validators in the browser, where there is no database to ask for a
-  // credential's code; the server checks again on save.
-  if (!options.req?.payload) return true
 
   const data = options.data as Partial<Course>
   const credentialsOf = (row: { anyOf?: unknown } | undefined) =>
     ((row?.anyOf ?? []) as (string | { id: string })[]).map((credential) => idOf(credential))
-  const position = Number(options.path[1])
-  const seen = new Set((data.prerequisites ?? []).slice(0, position).flatMap(credentialsOf))
+  // The admin builds its form state on the server and calls this without a `path`, so the row's
+  // place comes from the path when there is one, else from the row itself; with neither, only
+  // repeats inside the row are caught here and the save catches the rest.
+  const rows = data.prerequisites ?? []
+  const position = Array.isArray(options.path)
+    ? Number(options.path[1])
+    : rows.indexOf(options.siblingData as (typeof rows)[number])
+  const seen = new Set(rows.slice(0, Math.max(position, 0)).flatMap(credentialsOf))
   const repeated = credentialsOf({ anyOf: value }).find((id, index, own) => {
     if (seen.has(id) || own.indexOf(id) !== index) return true
     return false
@@ -125,8 +128,6 @@ const oneCoursePerCredential: RelationshipFieldValidation = async (value, option
   if (valid !== true) return valid
   const credentialId = typeof value === 'string' ? value : null
   if (!credentialId) return true
-  // No database in the browser; the server checks again on save.
-  if (!options.req?.payload) return true
 
   const { payload } = options.req
   const { docs } = await payload.find({
