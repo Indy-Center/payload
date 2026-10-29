@@ -74,10 +74,13 @@ export function indyFact(options: {
     previousValue: unknown
     position: Record<string, unknown>
   }) => string | null
+  /** The override's field where it differs from the generated one: same shape, other checks. */
+  overrideValue?: ValueField
   /** Shown only where this holds, as a field's `admin.condition`. */
   condition?: Condition
 }): GroupField {
   const { value, refuseOverride } = options
+  const overrideValue = options.overrideValue ?? value
   const refuse: FieldHook = ({ value, previousValue, data, originalDoc, collection, req }) => {
     const message = refuseOverride?.({
       value,
@@ -113,17 +116,17 @@ export function indyFact(options: {
             },
           } as Field,
           {
-            ...value,
+            ...overrideValue,
             name: 'override',
             label: 'Override',
             access: { create: mayOverride, update: mayOverride },
             hooks: {
-              ...value.hooks,
-              beforeValidate: [blankIsNone(value.type === 'array' ? [] : null)],
+              ...overrideValue.hooks,
+              beforeValidate: [blankIsNone(overrideValue.type === 'array' ? [] : null)],
               beforeChange: [refuse],
             },
             admin: {
-              ...value.admin,
+              ...overrideValue.admin,
               description: 'Set by a CMS admin. Clear it to use the generated value.',
             },
           } as Field,
