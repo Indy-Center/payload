@@ -277,13 +277,22 @@ describe('a sync that fails', () => {
       'vNAS answered unexpectedly: no positions.',
     ],
     [
+      'a position with a blank radio name',
+      () => {
+        const blank = response()
+        blank.facility.childFacilities[1].positions[0].radioName = '  '
+        return Response.json(blank)
+      },
+      'vNAS answered unexpectedly: a position at PKB is missing its id, callsign, name, radio name or frequency.',
+    ],
+    [
       'a position with no frequency, below positions that are fine',
       () => {
         const broken = response()
         delete (broken.facility.childFacilities[1].positions[0] as { frequency?: number }).frequency
         return Response.json(broken)
       },
-      'vNAS answered unexpectedly: a position at PKB is missing its id, callsign, name or frequency.',
+      'vNAS answered unexpectedly: a position at PKB is missing its id, callsign, name, radio name or frequency.',
     ],
     [
       'two positions with one callsign',

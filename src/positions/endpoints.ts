@@ -13,7 +13,7 @@ export const positionsEndpoints: Endpoint[] = [
     method: 'post',
     handler: async (req) => {
       if (!req.user) return unauthorized()
-      if (!maySyncPositions(req))
+      if (!maySyncPositions({ req }))
         return Response.json(
           { errors: [{ message: 'Only a CMS admin may sync positions from vNAS.' }] },
           { status: 403 },
@@ -21,12 +21,15 @@ export const positionsEndpoints: Endpoint[] = [
       try {
         return Response.json(await syncPositions(req))
       } catch (error) {
-        if (error instanceof VnasUnusable)
-          return Response.json(
-            { errors: [{ message: `${error.message} Nothing was changed.` }] },
-            { status: 502 },
-          )
-        throw error
+        // Either way the sync's transaction rolled back, and the sync logged it.
+        const vnas = error instanceof VnasUnusable
+        const message = vnas
+          ? error.message
+          : `The sync could not be saved: ${(error as Error).message}`
+        return Response.json(
+          { errors: [{ message: `${message} Nothing was changed.` }] },
+          { status: vnas ? 502 : 500 },
+        )
       }
     },
   },

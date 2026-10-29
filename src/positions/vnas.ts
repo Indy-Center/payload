@@ -49,7 +49,9 @@ export async function fetchZidPositions(): Promise<VnasPosition[]> {
 type Json = Record<string, unknown>
 const isObject = (value: unknown): value is Json =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
-const text = (value: unknown) => typeof value === 'string' && value.trim() !== ''
+/** A string with something in it besides spaces: every copied field must be one. */
+const hasText = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim() !== ''
 
 /** Some radio names carry doubled or trailing spaces ("Cincinnati  Tower"). */
 const tidy = (value: string) => value.trim().replace(/\s+/g, ' ')
@@ -70,28 +72,28 @@ export function readPositions(body: unknown): VnasPosition[] {
   const sectors = Array.isArray(eram.sectors) ? eram.sectors : []
   const shortNames = new Map<string, string>()
   for (const sector of sectors) {
-    if (isObject(sector) && text(sector.shortName) && sector.sectorId != null)
+    if (isObject(sector) && hasText(sector.shortName) && sector.sectorId != null)
       shortNames.set(String(sector.sectorId), tidy(sector.shortName as string))
   }
 
   const found: VnasPosition[] = []
   const walk = (facility: unknown, where: string) => {
-    if (!isObject(facility) || !text(facility.id) || !text(facility.name))
+    if (!isObject(facility) || !hasText(facility.id) || !hasText(facility.name))
       throw unusable(`a facility under ${where} has no id or name.`)
     if (!Array.isArray(facility.positions) || !Array.isArray(facility.childFacilities))
       throw unusable(`${String(facility.id)} has no positions or child facilities.`)
     for (const position of facility.positions) {
       if (
         !isObject(position) ||
-        !text(position.id) ||
-        !text(position.callsign) ||
-        !text(position.name) ||
-        typeof position.radioName !== 'string' ||
+        !hasText(position.id) ||
+        !hasText(position.callsign) ||
+        !hasText(position.name) ||
+        !hasText(position.radioName) ||
         !Number.isInteger(position.frequency) ||
         (position.frequency as number) <= 0
       )
         throw unusable(
-          `a position at ${String(facility.id)} is missing its id, callsign, name or frequency.`,
+          `a position at ${String(facility.id)} is missing its id, callsign, name, radio name or frequency.`,
         )
       const sectorId = isObject(position.eramConfiguration)
         ? position.eramConfiguration.sectorId

@@ -96,6 +96,7 @@ describe('positions by hand', () => {
   it.each([
     ['the CMS admin', () => cmsAdmin],
     ['the Training Admin', () => trainingAdmin],
+    ['a lead', () => lead],
     ['an account with no role', () => member],
   ])('are never created, edited or deleted by %s', async (_, who) => {
     const user = who()

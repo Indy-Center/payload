@@ -1,6 +1,6 @@
 import type { JobsConfig, TaskConfig } from 'payload'
 import { maySyncPositions } from './access'
-import { syncPositions } from './sync'
+import { syncPositions, type SyncReport } from './sync'
 
 /** The queue the daily jobs run in. */
 const DAILY = 'daily'
@@ -9,10 +9,7 @@ const DAILY = 'daily'
  * The sync from vNAS, once a day at 09:00 UTC (early morning in Indiana, after US evening traffic),
  * on Payload's jobs queue. A failure is logged and the job marked failed; the next day tries again.
  */
-export const syncPositionsTask: TaskConfig<{
-  input: Record<string, never>
-  output: { added: number; changed: number; retired: number }
-}> = {
+export const syncPositionsTask: TaskConfig<{ input: Record<string, never>; output: SyncReport }> = {
   slug: 'syncPositions',
   label: 'Sync positions from vNAS',
   outputSchema: [
@@ -35,9 +32,5 @@ export const jobs: JobsConfig = {
   tasks: [syncPositionsTask],
   autoRun: [{ cron: '0 */5 * * * *', queue: DAILY }],
   shouldAutoRun: () => !process.env.VITEST,
-  access: {
-    queue: ({ req }) => maySyncPositions(req),
-    run: ({ req }) => maySyncPositions(req),
-    cancel: ({ req }) => maySyncPositions(req),
-  },
+  access: { queue: maySyncPositions, run: maySyncPositions, cancel: maySyncPositions },
 }
