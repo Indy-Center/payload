@@ -75,6 +75,17 @@ describe("a competency's children", () => {
 
     expect((await page(leaf.id)).children).toEqual([])
   })
+
+  it('is read as the person signed in, so no one signed out sees the page', async () => {
+    const usa = await payload.create({
+      collection: 'frameworks',
+      data: { name: 'USA', edition: '2026-10' },
+    })
+    const leaf = await competency(usa.id, '9.1', 'Example', { text: 'Wording.' })
+    const signedOut = await createLocalReq({}, payload)
+
+    await expect(loadCompetencyPage(signedOut, leaf.id)).rejects.toThrow('You are not allowed')
+  })
 })
 
 describe('taught by', () => {

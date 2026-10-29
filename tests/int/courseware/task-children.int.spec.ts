@@ -151,4 +151,11 @@ describe("a task's children", () => {
 
     expect(children.at(-1)).toMatchObject({ id: added.id, number: '2.1.5' })
   })
+
+  it('is read as the person signed in, so no one signed out sees the children', async () => {
+    const { taxi } = await seedTree()
+    const signedOut = await createLocalReq({}, payload)
+
+    await expect(loadTaskChildren(signedOut, taxi.id)).rejects.toThrow('You are not allowed')
+  })
 })

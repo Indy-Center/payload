@@ -1,6 +1,6 @@
 import { createLocalReq, type Payload } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { loadOutline } from '@/components/admin/courses/editions'
+import { loadEditions, loadOutline } from '@/components/admin/courses/editions'
 import { mayChangeOutline } from '@/courseware/outline'
 import type { CourseVersion, LessonPlan, User } from '@/payload-types'
 import { callEndpoint, resetDatabase, testPayload } from './helpers'
@@ -432,5 +432,34 @@ describe('the outline the Content tab lists', () => {
     ])
     expect(outlined.unplaced.map((plan) => plan.code)).toEqual(['X-TWR-9'])
     expect(outlined.ownLessonPlans).toBe(4)
+  })
+
+  it('is read as the person signed in, so no one signed out sees it', async () => {
+    const { version } = await edition()
+    const signedOut = await createLocalReq({}, payload)
+
+    await expect(loadOutline(signedOut, version.id)).rejects.toThrow('You are not allowed')
+  })
+})
+
+describe('the editions the course page lists', () => {
+  it('sorts a course’s editions into live, draft and replaced, counting plans in modules', async () => {
+    const { course } = await edition()
+    const req = await createLocalReq({ user: { ...author, collection: 'users' } }, payload)
+
+    const editions = await loadEditions(req, course)
+
+    expect(editions).toEqual({
+      live: null,
+      draft: expect.objectContaining({ number: 1, publishedAt: null, lessonPlans: 3 }),
+      replaced: [],
+    })
+  })
+
+  it('is read as the person signed in, so no one signed out sees them', async () => {
+    const { course } = await edition()
+    const signedOut = await createLocalReq({}, payload)
+
+    await expect(loadEditions(signedOut, course)).rejects.toThrow('You are not allowed')
   })
 })

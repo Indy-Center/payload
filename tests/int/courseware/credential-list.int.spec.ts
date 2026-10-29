@@ -96,4 +96,13 @@ describe('the Credentials tab', () => {
       expect.objectContaining({ code: 'X-OLD', retired: true }),
     )
   })
+
+  it('is read as the person signed in, so no one signed out sees the list', async () => {
+    await seed()
+    const signedOut = await createLocalReq({}, payload)
+
+    await expect(loadCredentialList(signedOut, { showRetired: false })).rejects.toThrow(
+      'You are not allowed',
+    )
+  })
 })
