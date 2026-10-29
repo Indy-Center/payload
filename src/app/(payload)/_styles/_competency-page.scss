@@ -1,6 +1,8 @@
 // A competency's page: the import note, its Children grid and its Taught by list
 // (src/components/admin/CompetencyPage.tsx).
 
+@use 'breakpoints';
+
 .competency-page {
   &__note {
     margin-block: 0 var(--base);
@@ -63,7 +65,7 @@
   }
 
   // At phone width the text column drops out, as on the tree.
-  @media (max-width: 767px) {
+  @media (max-width: breakpoints.$phone) {
     &__text {
       display: none;
     }

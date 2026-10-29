@@ -1,6 +1,8 @@
 // The Competencies list: a tab per framework edition, and its competencies as a tree
 // (src/components/admin/CompetenciesList.tsx and CompetencyTree.tsx).
 
+@use 'breakpoints';
+
 .competency-tree {
   // The heading, and "Import framework edition" beside it (below it on a narrow phone).
   &__header {
@@ -129,7 +131,7 @@
   }
 
   // At phone width the GCAP column drops out; a 768px tablet keeps it.
-  @media (max-width: 767px) {
+  @media (max-width: breakpoints.$phone) {
     &__gcap {
       display: none;
     }

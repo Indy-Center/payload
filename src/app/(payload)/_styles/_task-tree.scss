@@ -1,6 +1,8 @@
 // The Tasks list's tree (src/components/admin/TaskTreeList.tsx and TaskTreeTable.tsx), and its
 // grid (TaskGrid.tsx).
 
+@use 'breakpoints';
+
 .task-tree-list__controls {
   display: flex;
   flex-wrap: wrap;
@@ -126,7 +128,7 @@ span.task-tree__toggle {
 }
 
 // Phones lose the description column; a 768px-wide tablet keeps it.
-@media (max-width: 767px) {
+@media (max-width: breakpoints.$phone) {
   .task-tree__description {
     display: none;
   }

@@ -3,6 +3,8 @@
 // length and the line a course author sees; and the Courses list's tabs and Credentials table.
 // Theme-neutral: Payload's own elevation, success and warning colours flip for dark.
 
+@use 'breakpoints';
+
 // The Courses list's tabs, Courses and Credentials. They wrap rather than scroll the page sideways.
 .course-list-tabs {
   display: flex;
@@ -362,7 +364,7 @@
 // On a phone, a module's lesson plans drop minutes and theory items, and a drawer opened from the
 // course page fills the screen: Payload sizes it to leave a strip of the page beside it, by the
 // page's gutter, which is zeroed for the drawer and restored inside it.
-@media (max-width: 767px) {
+@media (max-width: breakpoints.$phone) {
   .edition-outline__wide-only {
     display: none;
   }
@@ -377,7 +379,7 @@
 }
 
 // On a phone the modal's buttons share the width rather than overflow it.
-@media (max-width: 767px) {
+@media (max-width: breakpoints.$phone) {
   .edition-modal .confirmation-modal__controls {
     flex-wrap: wrap;
 
