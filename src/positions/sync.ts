@@ -2,7 +2,7 @@ import type { PayloadRequest } from 'payload'
 import { positionTitle } from '@/collections/courseware/Positions'
 import { inTransaction } from '@/courseware/edition-actions'
 import type { Position } from '@/payload-types'
-import { fetchZidPositions, VnasUnusable, type VnasPosition } from './vnas'
+import { fetchZidPositions, type VnasPosition } from './vnas'
 
 /** How many positions a sync added, changed (un-retiring counts) and retired. */
 export type SyncReport = { added: number; changed: number; retired: number }
@@ -58,33 +58,33 @@ async function apply(req: PayloadRequest, fromVnas: VnasPosition[]): Promise<Syn
   const storedById = new Map(stored.map((position) => [position.vnasId, position]))
   const inVnas = new Set(fromVnas.map((position) => position.vnasId))
 
-  // A retired position keeps its callsign, so scenarios that name it still read. If vNAS has
-  // given that callsign to a new position, the two can't both hold it.
-  const keptCallsigns = new Map(
+  // vNAS never reuses an id, but a position deleted and made again in Data Admin comes back under
+  // a new id with its old callsign. The record that held the callsign, which vNAS no longer lists
+  // under its own id, takes the new id, so whatever names that record keeps naming it.
+  const goneByCallsign = new Map(
     stored.filter((position) => !inVnas.has(position.vnasId)).map((p) => [p.callsign, p]),
   )
-  for (const position of fromVnas) {
-    const holder = keptCallsigns.get(position.callsign)
-    if (holder)
-      throw new VnasUnusable(
-        `vNAS gives ${position.callsign} to position ${position.vnasId}, but ${holder.vnasId}, which vNAS no longer lists, still holds it.`,
-      )
-  }
+  const recordFor = (position: VnasPosition) =>
+    storedById.get(position.vnasId) ?? goneByCallsign.get(position.callsign)
 
   const update = (id: string, data: Partial<Position>) =>
     payload.update({ collection: 'positions', id, data, depth: 0, req })
 
-  const added = fromVnas.filter((position) => !storedById.has(position.vnasId))
+  const added = fromVnas.filter((position) => !recordFor(position))
   const changed = fromVnas.flatMap((position) => {
-    const existing = storedById.get(position.vnasId)
+    const existing = recordFor(position)
     if (!existing) return []
-    const fields = copied(position)
+    const fields = { vnasId: position.vnasId, ...copied(position) }
     const differs =
       existing.retired === true ||
+      existing.vnasId !== fields.vnasId ||
       COPIED.some((field) => (existing[field] ?? null) !== (fields[field] ?? null))
     return differs ? [{ existing, fields }] : []
   })
-  const retiring = stored.filter((position) => !inVnas.has(position.vnasId) && !position.retired)
+  const takenOver = new Set(changed.map(({ existing }) => existing.id))
+  const retiring = stored.filter(
+    (position) => !inVnas.has(position.vnasId) && !position.retired && !takenOver.has(position.id),
+  )
 
   // Callsigns are unique at every step, so a position whose callsign changes first lets go of its
   // old one: vNAS may have swapped two, or given a freed one to a new position.

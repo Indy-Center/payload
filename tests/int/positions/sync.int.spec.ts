@@ -192,6 +192,80 @@ describe('syncing positions from vNAS', () => {
     expect(await byCallsign('PKB_TWR')).toMatchObject({ retired: false })
     expect(await positions()).toHaveLength(7)
   })
+
+  describe('a callsign vNAS gives to a new id (a position deleted and made again in Data Admin)', () => {
+    const NEW_ID = '01HZZZZZZZZZZZZZZZZZZZZZZZ'
+    /** The stored response with PKB_TWR under a new vNAS id and a new frequency. */
+    const remade = () => {
+      const answer = response()
+      const pkb = answer.facility.childFacilities[1].positions[0]
+      pkb.id = NEW_ID
+      pkb.frequency = 118725000
+      return answer
+    }
+
+    it('keeps the record that held the callsign, now under the new id', async () => {
+      vnasReturns(response())
+      await pressSync(cmsAdmin)
+      const before = await byCallsign('PKB_TWR')
+      vi.restoreAllMocks()
+      vnasReturns(remade())
+
+      const { status, body } = await pressSync(cmsAdmin)
+
+      expect(status).toBe(200)
+      expect(body).toEqual({ added: 0, changed: 1, retired: 0 })
+      expect(await byCallsign('PKB_TWR')).toMatchObject({
+        id: before!.id,
+        vnasId: NEW_ID,
+        frequency: 118725000,
+        retired: false,
+      })
+      expect(await positions()).toHaveLength(7)
+    })
+
+    it('un-retires a retired record that held the callsign, under the new id', async () => {
+      vnasReturns(response())
+      await pressSync(cmsAdmin)
+      const before = await byCallsign('PKB_TWR')
+      vi.restoreAllMocks()
+      const dropped = response()
+      dropped.facility.childFacilities.splice(1, 1)
+      vnasReturns(dropped)
+      await pressSync(cmsAdmin)
+      vi.restoreAllMocks()
+      vnasReturns(remade())
+
+      const { body } = await pressSync(cmsAdmin)
+
+      expect(body).toEqual({ added: 0, changed: 1, retired: 0 })
+      expect(await byCallsign('PKB_TWR')).toMatchObject({
+        id: before!.id,
+        vnasId: NEW_ID,
+        retired: false,
+      })
+      expect(await positions()).toHaveLength(7)
+    })
+
+    it('leaves a record vNAS still lists under its own id to that id', async () => {
+      vnasReturns(response())
+      await pressSync(cmsAdmin)
+      vi.restoreAllMocks()
+      // SDF_E_TWR's old id is renamed and its callsign goes to a new id, in one answer.
+      const answer = response()
+      const [, east] = answer.facility.childFacilities[0].positions
+      east.callsign = 'SDF_W_TWR'
+      const positionsAtSdf: unknown[] = answer.facility.childFacilities[0].positions
+      positionsAtSdf.push({ ...east, id: NEW_ID, callsign: 'SDF_E_TWR', name: 'Local Control' })
+      vnasReturns(answer)
+
+      const { body } = await pressSync(cmsAdmin)
+
+      expect(body).toEqual({ added: 1, changed: 1, retired: 0 })
+      expect(await byCallsign('SDF_W_TWR')).toMatchObject({ vnasId: east.id })
+      expect(await byCallsign('SDF_E_TWR')).toMatchObject({ vnasId: NEW_ID, name: 'Local Control' })
+    })
+  })
 })
 
 describe('the daily sync', () => {
@@ -312,21 +386,5 @@ describe('a sync that fails', () => {
     expect(body.errors[0].message).toBe(`${message} Nothing was changed.`)
     expect(await positions()).toEqual(before)
     expect(error).toHaveBeenCalled()
-  })
-
-  it('changes nothing when vNAS gives a retired position’s callsign to a new one', async () => {
-    const { before } = await syncedThen(() => {
-      const reissued = response()
-      reissued.facility.childFacilities[1].positions[0].id = '01HZZZZZZZZZZZZZZZZZZZZZZZ'
-      return Response.json(reissued)
-    })
-
-    const { status, body } = await pressSync(cmsAdmin)
-
-    expect(status).toBe(502)
-    expect(body.errors[0].message).toBe(
-      'vNAS gives PKB_TWR to position 01HZZZZZZZZZZZZZZZZZZZZZZZ, but 01GMQCS4DB3KJV12D2KM83CWTV, which vNAS no longer lists, still holds it. Nothing was changed.',
-    )
-    expect(await positions()).toEqual(before)
   })
 })
