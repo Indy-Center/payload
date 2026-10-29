@@ -10,6 +10,13 @@
         "id": "SDF",
         "type": "AtctTracon",
         "name": "Louisville ATCT/TRACON",
+        "starsConfiguration": {
+          "tcps": [
+            { "subset": 1, "sectorId": "D", "id": "01K2NF1CN2Q3RJXC2NGKD7GHSF" },
+            { "subset": 1, "sectorId": "T", "id": "01K2NF1CN2MA34KXP2N8B3PF59" },
+            { "subset": 1, "sectorId": "Z", "id": "01K2NF1CN2407AYCSSEDC7GZXA" }
+          ]
+        },
         "childFacilities": [
           {
             "id": "LOU",

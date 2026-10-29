@@ -61,17 +61,20 @@ describe("the catalogue's positions", () => {
       frequency: 128225000,
       facility: { id: 'ZID', name: 'Indianapolis ARTCC' },
       starred: true,
+      // The test makes no credentials, so none can be named.
+      requiredCredentials: [],
       retired: false,
     })
     expect(body.positions[3]).toEqual({
       id: '01GMQCS4DB3KJV12D2KM83CWTV',
       callsign: 'PKB_TWR',
       name: 'Local Control',
-      shortName: null,
+      shortName: 'PKB LC',
       radioName: 'Parkersburg Tower',
       frequency: 123700000,
       facility: { id: 'PKB', name: 'Parkersburg ATCT' },
       starred: true,
+      requiredCredentials: [],
       retired: true,
     })
   })

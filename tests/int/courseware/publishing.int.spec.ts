@@ -1,7 +1,7 @@
 import { NotFound, ValidationError, type Payload } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { User } from '@/payload-types'
-import { callEndpoint, resetDatabase, testPayload } from './helpers'
+import { callEndpoint, resetDatabase, scenarioPositions, testPayload } from './helpers'
 
 let payload: Payload
 
@@ -417,7 +417,7 @@ describe('a published edition', () => {
         course: course.id,
         name: 'Quiet',
         airport: 'KXYZ',
-        studentPosition: 'XYZ_TWR',
+        ...(await scenarioPositions(payload)),
         mode: 'sim',
         practicalTasks: [{ task: radio.id }, { task: readbacks.id, required: false }],
       },
@@ -672,7 +672,7 @@ describe('a published edition', () => {
         course: course.id,
         name: 'Busy',
         airport: 'KXYZ',
-        studentPosition: 'XYZ_TWR',
+        ...(await scenarioPositions(payload)),
         mode: 'sim',
         practicalTasks: [{ task: radio.id }],
       },

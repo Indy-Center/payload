@@ -9,6 +9,7 @@ import type { MoveDirection } from './move-direction'
 import type { TaskGridBatch } from './task-grid'
 import { saveTaskGrid, TaskGridRefused } from './task-grid-batch'
 import { moveTask } from './task-move'
+import { loadPositionOptions } from './position-picker'
 import { loadTaskNumber, loadTaskOptions } from './task-picker'
 import {
   checkPublishing,
@@ -235,6 +236,22 @@ export const coursewareEndpoints: Endpoint[] = [
           search: queryText(req, 'search'),
           current: queryText(req, 'current'),
           exclude: queryText(req, 'exclude'),
+        }),
+      )
+    },
+  },
+  {
+    // A scenario's position pickers (PositionPicker).
+    path: '/courseware/position-options',
+    method: 'get',
+    handler: async (req) => {
+      if (!req.user) return unauthorized()
+      return Response.json(
+        await loadPositionOptions(req, {
+          search: queryText(req, 'search'),
+          current: queryText(req, 'current'),
+          scenario: queryText(req, 'scenario'),
+          slot: queryText(req, 'slot'),
         }),
       )
     },

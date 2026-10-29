@@ -85,6 +85,7 @@ describe('syncing positions from vNAS', () => {
       title: 'FLM 83 · Falmouth 83',
       name: 'Falmouth 83',
       shortName: 'FLM 83',
+      vnasShortName: 'FLM 83',
       radioName: 'Indy Center',
       frequency: 128225000,
       facilityId: 'ZID',
@@ -94,14 +95,16 @@ describe('syncing positions from vNAS', () => {
     })
     // A tower two levels down, under its TRACON, belongs to its own facility.
     expect(await byCallsign('LOU_TWR')).toMatchObject({
-      title: 'LOU_TWR · Local Control',
-      shortName: null,
+      // vNAS has no short name for it; Indy's is generated (short-names.int.spec.ts).
+      title: 'LOU LC · Local Control',
+      vnasShortName: null,
       facilityId: 'LOU',
       facilityName: 'Bowman ATCT',
     })
     // A center position whose sector has no short name gets none.
     expect(await byCallsign('ZID_TMU')).toMatchObject({
       title: 'ZID_TMU · ZID TMU',
+      vnasShortName: null,
       shortName: null,
       starred: false,
     })
@@ -127,7 +130,7 @@ describe('syncing positions from vNAS', () => {
     expect(await byCallsign('PKB_TWR')).toBeUndefined()
     expect(await byCallsign('PKB_N_TWR')).toMatchObject({
       vnasId: '01GMQCS4DB3KJV12D2KM83CWTV',
-      title: 'PKB_N_TWR · Local Control',
+      title: 'PKB LC · Local Control',
       frequency: 118725000,
       radioName: 'Parkersburg Tower',
     })
@@ -162,7 +165,7 @@ describe('syncing positions from vNAS', () => {
     expect(await byCallsign('SDF_D_APP')).toMatchObject({ vnasId: east.id })
     expect(await byCallsign('PKB_TWR')).toMatchObject({
       vnasId: '01HZZZZZZZZZZZZZZZZZZZZZZZ',
-      title: 'PKB_TWR · Local Control South',
+      title: 'PKB LC · Local Control South',
     })
   })
 

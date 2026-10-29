@@ -608,14 +608,8 @@ export interface Scenario {
    * Such as KIND.
    */
   airport: string;
-  /**
-   * In VATUSA’s format, such as IND_GND or IND_83_CTR.
-   */
-  studentPosition: string;
-  /**
-   * If the teacher works one. In VATUSA’s format, such as IND_GND or IND_83_CTR.
-   */
-  teacherPosition?: string | null;
+  studentPosition: string | Position;
+  teacherPosition: string | Position;
   difficulty?: ('easy' | 'medium' | 'hard') | null;
   mode: 'sim' | 'live';
   /**
@@ -651,6 +645,7 @@ export interface Scenario {
 export interface Position {
   id: string;
   title: string;
+  shortName?: string | null;
   /**
    * Such as IND_83_CTR.
    */
@@ -659,7 +654,7 @@ export interface Position {
   /**
    * vNAS’s own, where it has one: FLM 83.
    */
-  shortName?: string | null;
+  vnasShortName?: string | null;
   radioName: string;
   /**
    * In MHz.
@@ -670,6 +665,42 @@ export interface Position {
    */
   facilityId: string;
   facilityName: string;
+  /**
+   * As controllers say it: the airport and LC, GC or CD for towers, grounds and deliveries, and its STARS sector letter for approach and departure.
+   */
+  indyShortName?: {
+    /**
+     * Worked out by each sync from vNAS.
+     */
+    generated?: string | null;
+    /**
+     * Set by a CMS admin. Clear it to use the generated value.
+     */
+    override?: string | null;
+  };
+  /**
+   * What a controller must hold to work this position. Every row must be met; a row is met by holding any one of its credentials. A certification is also met by any certification ranked higher (an A-LC holder meets S-GC and A-GC), but an endorsement counts only when named. No rating is stored. An override replaces the whole list.
+   */
+  indyRequiredCredentials?: {
+    /**
+     * Worked out by each sync from vNAS.
+     */
+    generated?:
+      | {
+          anyOf: (string | Credential)[];
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Set by a CMS admin. Clear it to use the generated value.
+     */
+    override?:
+      | {
+          anyOf: (string | Credential)[];
+          id?: string | null;
+        }[]
+      | null;
+  };
   vnasId: string;
   /**
    * One of its facility’s main positions.
@@ -1323,13 +1354,36 @@ export interface ScenariosSelect<T extends boolean = true> {
  */
 export interface PositionsSelect<T extends boolean = true> {
   title?: T;
+  shortName?: T;
   callsign?: T;
   name?: T;
-  shortName?: T;
+  vnasShortName?: T;
   radioName?: T;
   frequency?: T;
   facilityId?: T;
   facilityName?: T;
+  indyShortName?:
+    | T
+    | {
+        generated?: T;
+        override?: T;
+      };
+  indyRequiredCredentials?:
+    | T
+    | {
+        generated?:
+          | T
+          | {
+              anyOf?: T;
+              id?: T;
+            };
+        override?:
+          | T
+          | {
+              anyOf?: T;
+              id?: T;
+            };
+      };
   vnasId?: T;
   starred?: T;
   retired?: T;

@@ -37,14 +37,24 @@ export type TheoryItem = { id: string; task: TaskRef; teacherNotes: string }
 
 export type PracticalTask = { id: string; task: TaskRef; teacherNotes: string; required: boolean }
 
+/**
+ * One of the catalogue's positions as a scenario names it (decision 0060): its vNAS id, to look
+ * it up in the catalogue's `positions`, and its callsign, for VATUSA's record. A position vNAS has
+ * since dropped is still named, and is retired in the catalogue.
+ */
+export type ScenarioPosition = {
+  /** The vNAS id, the catalogue position's `id`. */
+  id: string
+  /** Such as `IND_83_CTR`. */
+  callsign: string
+}
+
 export type Scenario = {
   id: string
   name: string
   airport: string
-  /** VATUSA's format, perhaps with a sector part, such as `IND_GND` or `IND_83_CTR`. */
-  studentPosition: string
-  /** As `studentPosition`; null when the teacher works no position. */
-  teacherPosition: string | null
+  studentPosition: ScenarioPosition
+  teacherPosition: ScenarioPosition
   difficulty: 'easy' | 'medium' | 'hard' | null
   mode: 'live' | 'sim'
   retired: boolean
@@ -168,7 +178,10 @@ export type CataloguePosition = {
   callsign: string
   /** Such as `Falmouth 83`. */
   name: string
-  /** vNAS's short name, such as `FLM 83`; null where it has none. */
+  /**
+   * As controllers say it, such as `FLM 83`: vNAS's where it has one, else Indy's temporary one
+   * (`SDF LC`, `CRW N`, or a CMS admin's override); null where there is neither.
+   */
   shortName: string | null
   /** Such as `Indy Center`. */
   radioName: string
@@ -178,6 +191,14 @@ export type CataloguePosition = {
   facility: { id: string; name: string }
   /** One of its facility's main positions. */
   starred: boolean
+  /**
+   * Credential codes a controller must hold to work it: the CMS admin's override if set, else
+   * worked out from its type. Every row must be met; a row is met by holding any one of its
+   * credentials. A certification is also met by any certification ranked higher (`Credential.rank`;
+   * an A-LC holder meets S-GC and A-GC), but an endorsement counts only when named. No rating is
+   * stored. Apps apply this; the CMS checks nothing against it.
+   */
+  requiredCredentials: { anyOf: string[] }[]
   /** vNAS no longer lists it, though records may still name it. */
   retired: boolean
 }
