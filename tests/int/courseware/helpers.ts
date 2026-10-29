@@ -73,6 +73,54 @@ function matchPath(pattern: string, path: string): Record<string, string> | null
   return params
 }
 
+/**
+ * A made-up position, stored as the sync stores one: its vNAS id is `vnas-` and the callsign.
+ * Positions are never created by hand, so this writes below access.
+ */
+export async function position(
+  payload: Payload,
+  callsign: string,
+  {
+    name = `${callsign} example`,
+    shortName = null,
+    retired = false,
+  }: { name?: string; shortName?: string | null; retired?: boolean } = {},
+) {
+  return payload.create({
+    collection: 'positions',
+    depth: 0,
+    data: {
+      vnasId: `vnas-${callsign}`,
+      callsign,
+      name,
+      shortName,
+      title: callsign,
+      radioName: 'Example Radio',
+      frequency: 118_000_000,
+      facilityId: callsign.split('_')[0],
+      facilityName: 'Example facility',
+      retired,
+    },
+  })
+}
+
+/**
+ * A made-up scenario's positions, `{ studentPosition, teacherPosition }` ids: XYZ_GND and
+ * XYZ_TWR, made the first time they are asked for after a reset.
+ */
+export async function scenarioPositions(payload: Payload) {
+  const idOf = async (callsign: string) => {
+    const { docs } = await payload.find({
+      collection: 'positions',
+      where: { callsign: { equals: callsign } },
+      depth: 0,
+      limit: 1,
+    })
+    return (docs[0] ?? (await position(payload, callsign))).id
+  }
+  return { studentPosition: await idOf('XYZ_GND'), teacherPosition: await idOf('XYZ_TWR') }
+}
+
 /** Lexical rich text holding one paragraph. */
 export function paragraph(text: string) {
   return {

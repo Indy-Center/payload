@@ -284,12 +284,23 @@ type Ctx = {
   credentials: MadeIn
   tasks: MadeIn
   scales: MadeIn
+  positions: MadeIn
 }
 
 type Courseware = Record<'courses' | 'course-versions' | 'lesson-plans' | 'scenarios', MadeIn>
 
-/** X-GC (two editions, two scenarios) and X-TWR (no editions). */
-async function seedCourses({ payload, credentials, tasks, scales }: Ctx): Promise<Courseware> {
+/**
+ * X-GC (two editions, two scenarios) and X-TWR (no editions). The scenarios pick positions: one
+ * shown by short name (IND_83_CTR, "FLM 83 · Falmouth 83"), the others by callsign, and PKB_TWR,
+ * which `seedPositions` retires afterwards, so a scenario names a retired position.
+ */
+async function seedCourses({
+  payload,
+  credentials,
+  tasks,
+  scales,
+  positions,
+}: Ctx): Promise<Courseware> {
   const out: Courseware = { courses: {}, 'course-versions': {}, 'lesson-plans': {}, scenarios: {} }
   const scale = scales['three-point'].id
 
@@ -314,8 +325,8 @@ async function seedCourses({ payload, credentials, tasks, scales }: Ctx): Promis
     course,
     name: 'Example ground push',
     airport: 'KIND',
-    studentPosition: 'IND_GND',
-    teacherPosition: 'IND_TWR',
+    studentPosition: positions.LOU_TWR.id,
+    teacherPosition: positions.SDF_D_APP.id,
     difficulty: 'easy',
     mode: 'sim',
     practicalTasks: [
@@ -327,8 +338,8 @@ async function seedCourses({ payload, credentials, tasks, scales }: Ctx): Promis
     course,
     name: 'Example departure release',
     airport: 'KIND',
-    studentPosition: 'IND_GND',
-    teacherPosition: 'IND_DEL',
+    studentPosition: positions.IND_83_CTR.id,
+    teacherPosition: positions.PKB_TWR.id,
     difficulty: 'medium',
     mode: 'live',
     practicalTasks: [{ task: tasks.R2b.id, teacherNotes: 'Hold the push.', required: false }],
@@ -414,18 +425,32 @@ async function seedCourses({ payload, credentials, tasks, scales }: Ctx): Promis
 // ---------------------------------------------------------------------------------------------
 // Positions
 
-/** The seven in the sync's test fixture, stored as the sync stores them; the last is retired. */
+/** The seven in the sync's test fixture, stored as the sync stores them, none retired yet. */
 async function seedPositions(payload: Payload): Promise<MadeIn> {
   const into: MadeIn = {}
   const fromVnas = readPositions(JSON.parse(readFileSync(POSITIONS_FIXTURE, 'utf8')))
-  for (const [index, position] of fromVnas.entries()) {
+  for (const position of fromVnas) {
     await make(payload, into, 'positions', position.callsign, {
       ...position,
       title: positionTitle(position),
-      retired: index === fromVnas.length - 1,
+      retired: false,
     })
   }
   return into
+}
+
+/**
+ * Retires PKB_TWR, the fixture's last position, as the sync does when vNAS drops one. It runs
+ * after the scenarios are made, since a scenario can only newly pick a live position.
+ */
+async function retireDroppedPosition(payload: Payload, positions: MadeIn): Promise<void> {
+  await payload.update({
+    collection: 'positions',
+    id: positions.PKB_TWR.id,
+    data: { retired: true },
+    depth: 0,
+    overrideAccess: true,
+  })
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -456,6 +481,7 @@ export async function seedCheck(
   records.sources = await seedSources(payload)
   records.tasks = await seedTasks(payload, competencies, records.sources)
   records['grading-scales'] = await seedGradingScales(payload)
+  records.positions = await seedPositions(payload)
   Object.assign(
     records,
     await seedCourses({
@@ -463,9 +489,10 @@ export async function seedCheck(
       credentials: records.credentials,
       tasks: records.tasks,
       scales: records['grading-scales'],
+      positions: records.positions,
     }),
   )
-  records.positions = await seedPositions(payload)
+  await retireDroppedPosition(payload, records.positions)
   return { records, accounts: ACCOUNTS }
 }
 

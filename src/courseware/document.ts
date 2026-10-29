@@ -37,14 +37,24 @@ export type TheoryItem = { id: string; task: TaskRef; teacherNotes: string }
 
 export type PracticalTask = { id: string; task: TaskRef; teacherNotes: string; required: boolean }
 
+/**
+ * One of the catalogue's positions as a scenario names it (decision 0060): its vNAS id, to look
+ * it up in the catalogue's `positions`, and its callsign, for VATUSA's record. A position vNAS has
+ * since dropped is still named, and is retired in the catalogue.
+ */
+export type ScenarioPosition = {
+  /** The vNAS id, the catalogue position's `id`. */
+  id: string
+  /** Such as `IND_83_CTR`. */
+  callsign: string
+}
+
 export type Scenario = {
   id: string
   name: string
   airport: string
-  /** VATUSA's format, perhaps with a sector part, such as `IND_GND` or `IND_83_CTR`. */
-  studentPosition: string
-  /** As `studentPosition`; null when the teacher works no position. */
-  teacherPosition: string | null
+  studentPosition: ScenarioPosition
+  teacherPosition: ScenarioPosition
   difficulty: 'easy' | 'medium' | 'hard' | null
   mode: 'live' | 'sim'
   retired: boolean

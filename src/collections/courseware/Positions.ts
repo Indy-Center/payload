@@ -2,9 +2,16 @@ import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import { hideRetiredUnlessAsked } from '@/courseware/retired'
 import type { Position } from '@/payload-types'
 
+/**
+ * The short name a position is shown and found by: vNAS's own (`FLM 83`), or null. Everything that
+ * shows or searches a short name reads it here.
+ */
+export const servedShortName = (position: Pick<Position, 'shortName'>): string | null =>
+  position.shortName || null
+
 /** "FLM 83 · Falmouth 83", or "ZID_TMU · ZID TMU" where there is no short name. */
 export const positionTitle = (position: Pick<Position, 'shortName' | 'callsign' | 'name'>) =>
-  `${position.shortName || position.callsign} · ${position.name}`
+  `${servedShortName(position) ?? position.callsign} · ${position.name}`
 
 const setTitle: CollectionBeforeChangeHook<Position> = ({ data, originalDoc }) => ({
   ...data,

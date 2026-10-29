@@ -1,7 +1,7 @@
 import type { Payload } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { User } from '@/payload-types'
-import { resetDatabase, testPayload } from './helpers'
+import { resetDatabase, scenarioPositions, testPayload } from './helpers'
 
 let payload: Payload
 let admin: User
@@ -114,7 +114,7 @@ describe('a course author', () => {
         course: own.id,
         name: 'Quiet',
         airport: 'KXYZ',
-        studentPosition: 'XYZ_TWR',
+        ...(await scenarioPositions(payload)),
         mode: 'sim',
       },
       ...as(author),
@@ -160,7 +160,7 @@ describe('a course author', () => {
           course: other.id,
           name: 'Not mine',
           airport: 'KXYZ',
-          studentPosition: 'XYZ_APP',
+          ...(await scenarioPositions(payload)),
           mode: 'sim',
         },
         ...as(author),
@@ -180,7 +180,7 @@ describe('a course author', () => {
         course: own.id,
         name: 'Mine',
         airport: 'KXYZ',
-        studentPosition: 'XYZ_TWR',
+        ...(await scenarioPositions(payload)),
         mode: 'sim',
       },
     })
@@ -260,7 +260,7 @@ describe('a course author', () => {
         course: own.id,
         name: 'Quiet',
         airport: 'KXYZ',
-        studentPosition: 'XYZ_TWR',
+        ...(await scenarioPositions(payload)),
         mode: 'sim',
       },
     })
