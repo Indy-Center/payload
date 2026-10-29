@@ -86,7 +86,7 @@ export type CourseVersionDocument = {
     academyExam: 'S2' | 'S3' | 'C1' | null
     /**
      * The course's override if set, otherwise worked out from its live edition: one week per
-     * lesson plan in its modules, and 20% more rounded up (0058). Null with neither.
+     * lesson plan of that edition, and 20% more rounded up (0058). Null with neither.
      */
     estimatedWeeks: { min: number; max: number } | null
     /** An https link. */

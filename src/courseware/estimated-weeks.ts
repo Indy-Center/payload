@@ -24,8 +24,8 @@ export function overrideOf(course: Pick<Course, 'estimatedWeeks'>): Weeks | null
 }
 
 /**
- * The range worked out from the course's live edition, counting the edition's own lesson plans
- * placed in its modules (what a student on it takes), or null with no live edition.
+ * The range worked out from the course's live edition, counting every lesson plan of that
+ * edition, in a module or not, or null with no live edition.
  */
 export async function workedOutWeeks(
   req: PayloadRequest,
@@ -43,21 +43,11 @@ export async function workedOutWeeks(
     req,
   })
   if (!live) return null
-  const placed = [
-    ...new Set(
-      (live.modules ?? []).flatMap((module) =>
-        (module.lessonPlans ?? []).map(idOf).filter((id): id is string => id !== null),
-      ),
-    ),
-  ]
-  const { totalDocs } =
-    placed.length === 0
-      ? { totalDocs: 0 }
-      : await req.payload.count({
-          collection: 'lesson-plans',
-          where: { and: [{ id: { in: placed } }, { courseVersion: { equals: live.id } }] },
-          req,
-        })
+  const { totalDocs } = await req.payload.count({
+    collection: 'lesson-plans',
+    where: { courseVersion: { equals: live.id } },
+    req,
+  })
   const weeks = weeksFor(totalDocs)
   return weeks ? { edition: live.number, weeks } : null
 }

@@ -262,8 +262,14 @@ describe("a course's estimated weeks", () => {
   const weeksOf = async (which: 'current' | 'draft') =>
     (await callEndpoint(payload, `/courseware/courses/X-APP/${which}`)).body.course.estimatedWeeks
 
-  it('are worked out from the live edition: a week per lesson plan in its modules, and 20% more', async () => {
-    await courseWithPlans(10, { live: true, unplaced: 2 })
+  it('are worked out from the live edition: a week per lesson plan, and 20% more', async () => {
+    await courseWithPlans(10, { live: true })
+
+    expect(await weeksOf('current')).toEqual({ min: 10, max: 12 })
+  })
+
+  it('count the live edition’s lesson plans in no module too', async () => {
+    await courseWithPlans(8, { live: true, unplaced: 2 })
 
     expect(await weeksOf('current')).toEqual({ min: 10, max: 12 })
   })
