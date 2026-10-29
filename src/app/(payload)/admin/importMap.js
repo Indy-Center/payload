@@ -40,6 +40,7 @@ import { RelationshipFeatureClient as RelationshipFeatureClient_e70f5e05f09f93e0
 import { BlockquoteFeatureClient as BlockquoteFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { HorizontalRuleFeatureClient as HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { InlineToolbarFeatureClient as InlineToolbarFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
+import { PositionPicker as PositionPicker_bc532691c8bae6f7b7e39eff86f88f13 } from '../../../components/admin/positions/PositionPicker'
 import { FrequencyCell as FrequencyCell_f3122caea05cacf86ae3a5350c5931cc } from '../../../components/admin/positions/Frequency'
 import { FrequencyField as FrequencyField_f3122caea05cacf86ae3a5350c5931cc } from '../../../components/admin/positions/Frequency'
 import { SyncPositionsButton as SyncPositionsButton_d6aabdefc1aed5d29734081fbdbd74d7 } from '../../../components/admin/positions/SyncPositionsButton'
@@ -96,6 +97,7 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#BlockquoteFeatureClient": BlockquoteFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#HorizontalRuleFeatureClient": HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#InlineToolbarFeatureClient": InlineToolbarFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+  "/components/admin/positions/PositionPicker#PositionPicker": PositionPicker_bc532691c8bae6f7b7e39eff86f88f13,
   "/components/admin/positions/Frequency#FrequencyCell": FrequencyCell_f3122caea05cacf86ae3a5350c5931cc,
   "/components/admin/positions/Frequency#FrequencyField": FrequencyField_f3122caea05cacf86ae3a5350c5931cc,
   "/components/admin/positions/SyncPositionsButton#SyncPositionsButton": SyncPositionsButton_d6aabdefc1aed5d29734081fbdbd74d7,

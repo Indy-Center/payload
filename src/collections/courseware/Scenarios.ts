@@ -2,26 +2,15 @@ import type { CollectionConfig } from 'payload'
 import { scenarioAccess, staffOnlyField } from '@/courseware/access'
 import { hideRetiredUnlessAsked } from '@/courseware/retired'
 import { rowLabelComponent } from '@/courseware/row-label-component'
+import { positionPickerComponents, pickedPosition } from '@/courseware/position-picker'
 import { refuseAuthorsScenarioStructure } from '@/courseware/structure'
 import { taskPickerComponents } from '@/courseware/task-picker'
 import { expandTaskRows, pickableTask } from '@/courseware/task-rows'
 
 /**
- * VATUSA's position pattern: the facility, an optional sector or relief part, and the type
- * (`IND_GND`, `IND_83_CTR`). A scenario may name a sector; the training record drops it
- * (decision 0052).
- */
-const VATUSA_POSITION = /^[A-Z0-9]{2,3}(_[A-Z0-9]{1,3})?_(DEL|GND|TWR|APP|DEP|CTR|FSS)$/
-const POSITION_FORMAT = 'In VATUSA’s format, such as IND_GND or IND_83_CTR.'
-
-const vatusaPosition = (value: string | null | undefined): true | string =>
-  VATUSA_POSITION.test(value ?? '') ||
-  'Write the position as VATUSA does: the facility, an optional sector and the type, ' +
-    'such as IND_GND or IND_83_CTR.'
-
-/**
  * A set of practical tasks posed together at one position. It belongs to one course, and any
- * lesson plan in any version of that course may offer it (decision 0026).
+ * lesson plan in any version of that course may offer it (decision 0026). Its student and
+ * teacher positions are picked from Positions (decision 0060).
  */
 export const Scenarios: CollectionConfig = {
   slug: 'scenarios',
@@ -60,17 +49,22 @@ export const Scenarios: CollectionConfig = {
     {
       name: 'studentPosition',
       label: 'Student position',
-      type: 'text',
+      type: 'relationship',
+      relationTo: 'positions',
       required: true,
-      admin: { description: POSITION_FORMAT },
-      validate: (value: string | null | undefined) => vatusaPosition(value),
+      index: true,
+      validate: pickedPosition,
+      admin: { components: positionPickerComponents() },
     },
     {
       name: 'teacherPosition',
       label: 'Teacher position',
-      type: 'text',
-      admin: { description: `If the teacher works one. ${POSITION_FORMAT}` },
-      validate: (value: string | null | undefined) => !value || vatusaPosition(value),
+      type: 'relationship',
+      relationTo: 'positions',
+      required: true,
+      index: true,
+      validate: pickedPosition,
+      admin: { components: positionPickerComponents() },
     },
     {
       name: 'difficulty',

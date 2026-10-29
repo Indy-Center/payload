@@ -1,7 +1,7 @@
 import type { Payload } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { CourseVersion, LessonPlan, User } from '@/payload-types'
-import { callEndpoint, resetDatabase, testPayload } from './helpers'
+import { callEndpoint, resetDatabase, scenarioPositions, testPayload } from './helpers'
 
 /**
  * The course page's actions (decisions 0056, 0057): starting an edition, publishing and
@@ -53,7 +53,7 @@ async function liveCourse() {
       course: course.id,
       name: 'Quiet morning',
       airport: 'KXYZ',
-      studentPosition: 'XYZ_TWR',
+      ...(await scenarioPositions(payload)),
       mode: 'sim',
     },
   })

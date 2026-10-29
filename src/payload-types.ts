@@ -608,14 +608,8 @@ export interface Scenario {
    * Such as KIND.
    */
   airport: string;
-  /**
-   * In VATUSA’s format, such as IND_GND or IND_83_CTR.
-   */
-  studentPosition: string;
-  /**
-   * If the teacher works one. In VATUSA’s format, such as IND_GND or IND_83_CTR.
-   */
-  teacherPosition?: string | null;
+  studentPosition: string | Position;
+  teacherPosition: string | Position;
   difficulty?: ('easy' | 'medium' | 'hard') | null;
   mode: 'sim' | 'live';
   /**

@@ -57,6 +57,16 @@ describe('the browser-check seed', () => {
     })
     expect([draft.status, draft.number]).toEqual(['draft', 2])
     expect(records.positions.IND_83_CTR.url).toContain('/admin/collections/positions/')
+
+    // A scenario names a position vNAS has since dropped.
+    const release = await payload.findByID({
+      collection: 'scenarios',
+      id: records.scenarios['departure-release'].id,
+      depth: 1,
+      user,
+      overrideAccess: false,
+    })
+    expect(release.teacherPosition).toMatchObject({ callsign: 'PKB_TWR', retired: true })
   })
 
   it('refuses a database that has rows, unless asked to reset it', async () => {
