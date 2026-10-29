@@ -189,6 +189,24 @@ describe('a scenario saved by its course’s author', () => {
     ])
   })
 
+  it('keeps a retired position only in the slot that names it', async () => {
+    const saved = await save({})
+    await payload.update({ collection: 'positions', id: tower.id, data: { retired: true } })
+    await payload.update({ collection: 'positions', id: center.id, data: { retired: true } })
+
+    // Each stays where it is, even when the save sets them again.
+    expect(
+      await change(saved.id, { studentPosition: tower.id, teacherPosition: center.id }),
+    ).toMatchObject({ studentPosition: tower.id, teacherPosition: center.id })
+    // Swapped, each is picked into the slot that doesn't name it.
+    expect(
+      await refusal(change(saved.id, { studentPosition: center.id, teacherPosition: tower.id })),
+    ).toEqual([
+      { path: 'studentPosition', message: RETIRED },
+      { path: 'teacherPosition', message: RETIRED },
+    ])
+  })
+
   it('picks its difficulty from Easy, Medium and Hard, or none', async () => {
     for (const difficulty of ['easy', 'medium', 'hard'] as const) {
       expect(await save({ difficulty })).toMatchObject({ difficulty })

@@ -1,4 +1,4 @@
-import { Forbidden, type Payload } from 'payload'
+import { Forbidden, ValidationError, type Payload } from 'payload'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CREDENTIALS } from '@/migrations/20261026_030346_credentials'
 import type { Position, User } from '@/payload-types'
@@ -228,6 +228,47 @@ describe('a required credentials override', () => {
     await override(cmsAdmin, 'SDF_E_TWR', [['S-LC', 'A-LC']])
 
     expect((await servedInCatalogue()).SDF_E_TWR).toEqual([{ anyOf: ['S-LC', 'A-LC'] }])
+  })
+
+  it('leaves out retired credentials, as a course’s prerequisites do, unless already named', async () => {
+    await override(cmsAdmin, 'SDF_E_TWR', [['S-LC']])
+    for (const code of ['S-LC', 'A-GC'])
+      await payload.update({ collection: 'credentials', id: idOf[code], data: { retired: true } })
+
+    // The retired credential already in the override stays, beside a live one.
+    await override(cmsAdmin, 'SDF_E_TWR', [['S-LC', 'A-LC']])
+    expect(codes((await position('SDF_E_TWR')).indyRequiredCredentials?.override)).toEqual([
+      ['S-LC', 'A-LC'],
+    ])
+
+    // One that is not already named is refused, in a new row or beside others.
+    const paths = async (rows: string[][]) => {
+      try {
+        await override(cmsAdmin, 'SDF_E_TWR', rows)
+      } catch (error) {
+        if (error instanceof ValidationError) return error.data.errors.map(({ path }) => path)
+        throw error
+      }
+      return []
+    }
+    expect(await paths([['S-LC'], ['A-GC']])).toEqual(['indyRequiredCredentials.override.1.anyOf'])
+    expect(await paths([['A-LC', 'A-GC']])).toEqual(['indyRequiredCredentials.override.0.anyOf'])
+    expect(codes((await position('SDF_E_TWR')).indyRequiredCredentials?.override)).toEqual([
+      ['S-LC', 'A-LC'],
+    ])
+
+    // An empty override is none: the generated list is served.
+    await override(cmsAdmin, 'SDF_E_TWR', null)
+    expect((await servedInCatalogue()).SDF_E_TWR).toEqual([{ anyOf: ['A-LC'] }])
+  })
+
+  it('does not hold the sync’s generated list to it', async () => {
+    await payload.update({ collection: 'credentials', id: idOf['A-GC'], data: { retired: true } })
+    await staleGenerated('SDF_E_GND')
+
+    await sync(everyType())
+
+    expect(await generated('SDF_E_GND')).toEqual([['A-GC']])
   })
 })
 

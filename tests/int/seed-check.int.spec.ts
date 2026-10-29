@@ -69,7 +69,7 @@ describe('the browser-check seed', () => {
     // vNAS's, a CMS admin's override, and a generated one.
     expect(await shortName('IND_83_CTR')).toBe('FLM 83')
     expect(await shortName('SDF_D_APP')).toBe('SDF DR')
-    expect(await shortName('SDF_E_TWR')).toBe('SDF LC')
+    expect(await shortName('SDF_E_TWR')).toBe('SDF LC E')
 
     // A scenario names a position vNAS has since dropped.
     const release = await payload.findByID({

@@ -18,9 +18,17 @@ export type PositionOptionsQuery = {
   search?: string
   /** The position already chosen in the form, to label. */
   current?: string
-  /** The scenario being edited: the retired positions it names are still offered. */
+  /** The scenario being edited: the retired position it names in `slot` is still offered. */
   scenario?: string
+  /** The picker's field, `studentPosition` or `teacherPosition`. */
+  slot?: string
 }
+
+/** The two places a scenario names a position. */
+export const POSITION_SLOTS = ['studentPosition', 'teacherPosition'] as const
+export type PositionSlot = (typeof POSITION_SLOTS)[number]
+const isSlot = (value: unknown): value is PositionSlot =>
+  (POSITION_SLOTS as readonly unknown[]).includes(value)
 
 type Shown = Pick<Position, 'id' | 'callsign' | 'name' | 'shortName' | 'retired'>
 
@@ -30,12 +38,16 @@ const optionOf = (position: Shown): PositionOption => ({
 })
 
 /**
- * The positions a stored scenario names, student and teacher. A position vNAS has since dropped
- * stays on the scenario that names it (decision 0060), so these are offered and saved even when
- * retired.
+ * The position a stored scenario names in this slot, or null. A position vNAS has since dropped
+ * stays on the scenario that names it (decision 0060), but only in the slot that names it: it is
+ * offered and saved there even when retired, and refused in the other.
  */
-async function namedBy(req: PayloadRequest, scenarioId: string | number | undefined) {
-  if (!scenarioId) return new Set<string>()
+async function namedIn(
+  req: PayloadRequest,
+  scenarioId: string | number | undefined,
+  slot: string | undefined,
+): Promise<string | null> {
+  if (!scenarioId || !isSlot(slot)) return null
   const stored = await req.payload.findByID({
     collection: 'scenarios',
     id: String(scenarioId),
@@ -44,24 +56,20 @@ async function namedBy(req: PayloadRequest, scenarioId: string | number | undefi
     disableErrors: true,
     req,
   })
-  return new Set(
-    [stored?.studentPosition, stored?.teacherPosition]
-      .map(idOf)
-      .filter((id): id is string => id !== null),
-  )
+  return idOf(stored?.[slot])
 }
 
 /**
  * The options of a scenario's position pickers. Payload's own picker searches one stored field
  * and labels by it; these search the short name, name and callsign and label by short name and
- * name. Retired positions are left out, except those the scenario already names.
+ * name. Retired positions are left out, except the one the scenario already names in this slot.
  */
 export async function loadPositionOptions(
   req: PayloadRequest,
-  { search = '', current, scenario }: PositionOptionsQuery = {},
+  { search = '', current, scenario, slot }: PositionOptionsQuery = {},
 ): Promise<PositionOptions> {
   const [named, { docs }] = await Promise.all([
-    namedBy(req, scenario),
+    namedIn(req, scenario, slot),
     req.payload.find({
       collection: 'positions',
       sort: 'callsign',
@@ -81,7 +89,7 @@ export async function loadPositionOptions(
     return words.every((word) => text.includes(word))
   }
   const options = docs
-    .filter((position) => !position.retired || named.has(position.id))
+    .filter((position) => !position.retired || position.id === named)
     .filter(matches)
     .map(optionOf)
   const chosen = current ? docs.find((position) => position.id === current) : undefined
@@ -92,27 +100,29 @@ export const RETIRED_POSITION = 'This position is retired. Pick one vNAS still l
 
 /**
  * A scenario's student or teacher position: a position in the list, not retired unless the stored
- * scenario already names it. Then Payload's own checks (required).
+ * scenario already names it in this same slot. Then Payload's own checks (required).
  */
-export const pickedPosition: RelationshipFieldSingleValidation = async (value, options) => {
-  const id = idOf(value as string | { id: string } | null | undefined)
-  if (id) {
-    const { req } = options
-    const found = await req.payload.find({
-      collection: 'positions',
-      where: { id: { equals: id } },
-      select: { retired: true },
-      depth: 0,
-      limit: 1,
-      pagination: false,
-      req,
-    })
-    const picked = found.docs[0]
-    if (!picked) return req.t('validation:invalidSelection')
-    if (picked.retired && !(await namedBy(req, options.id)).has(id)) return RETIRED_POSITION
+export const pickedPosition =
+  (slot: PositionSlot): RelationshipFieldSingleValidation =>
+  async (value, options) => {
+    const id = idOf(value as string | { id: string } | null | undefined)
+    if (id) {
+      const { req } = options
+      const found = await req.payload.find({
+        collection: 'positions',
+        where: { id: { equals: id } },
+        select: { retired: true },
+        depth: 0,
+        limit: 1,
+        pagination: false,
+        req,
+      })
+      const picked = found.docs[0]
+      if (!picked) return req.t('validation:invalidSelection')
+      if (picked.retired && (await namedIn(req, options.id, slot)) !== id) return RETIRED_POSITION
+    }
+    return validations.relationship(value, options)
   }
-  return validations.relationship(value, options)
-}
 
 /** `admin.components` for a scenario's position: the picker, `PositionPicker`. */
 export const positionPickerComponents = () => ({

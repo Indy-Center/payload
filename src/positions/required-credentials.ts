@@ -1,3 +1,5 @@
+import type { FilterOptions, FilterOptionsProps, Where } from 'payload'
+import { idOf } from '@/courseware/ids'
 import { rowLabelComponent } from '@/courseware/row-label-component'
 import type { Position } from '@/payload-types'
 import { indyFact, servedFact } from './indy-facts'
@@ -69,22 +71,49 @@ export const indyRequiredCredentialsField = indyFact({
   name: 'indyRequiredCredentials',
   label: 'Required credentials',
   description: `What a controller must hold to work this position. ${HOW_TO_READ} An override replaces the whole list.`,
-  value: {
-    type: 'array',
+  value: rowsField(),
+  overrideValue: rowsField(pickableCredential),
+})
+
+/**
+ * The override offers and accepts credentials as a course's prerequisites do: retired ones are left
+ * out, other than those the position's stored override already names, so it still saves.
+ */
+async function pickableCredential({ id, req }: FilterOptionsProps): Promise<Where> {
+  const live: Where = { retired: { not_equals: true } }
+  if (!id) return live
+  const stored = await req.payload.findByID({
+    collection: 'positions',
+    id,
+    depth: 0,
+    disableErrors: true,
+    req,
+  })
+  const named = (stored?.indyRequiredCredentials?.override ?? [])
+    .flatMap((row) => row.anyOf ?? [])
+    .map((credential) => idOf(credential))
+    .filter((credential): credential is string => credential !== null)
+  return named.length === 0 ? live : { or: [live, { id: { in: named } }] }
+}
+
+function rowsField(filterOptions?: FilterOptions) {
+  return {
+    type: 'array' as const,
     labels: { singular: 'Requirement', plural: 'Requirements' },
     admin: { components: { RowLabel: rowLabelComponent('prerequisite') } },
     fields: [
       {
         name: 'anyOf',
         label: 'Holds one of these',
-        type: 'relationship',
-        relationTo: 'credentials',
-        hasMany: true,
+        type: 'relationship' as const,
+        relationTo: 'credentials' as const,
+        hasMany: true as const,
         required: true,
+        ...(filterOptions ? { filterOptions } : {}),
       },
     ],
-  },
-})
+  }
+}
 
 /** The required credentials served as credential ids: the override if set, else the generated. */
 export const servedRequiredCredentials = (

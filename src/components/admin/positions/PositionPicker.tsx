@@ -8,8 +8,8 @@ import type { PositionOption, PositionOptions } from '@/courseware/position-pick
  * A scenario's student and teacher position pickers, in place of Payload's relationship picker,
  * which searches and labels by one stored field. Positions read as controllers know them,
  * "FLM 83 · Falmouth 83" (or the callsign where there is no short name), and a search matches the
- * short name, name or callsign. Retired positions are left out unless the scenario already names
- * them. The field stays a relationship, so its own check still decides what a save accepts.
+ * short name, name or callsign. A retired position is left out, unless the scenario already names
+ * it in this same slot. The field stays a relationship, so its own check still decides what a save accepts.
  */
 export const PositionPicker: RelationshipFieldClientComponent = (props) => {
   const { field, path: pathFromProps, readOnly } = props
@@ -28,6 +28,7 @@ export const PositionPicker: RelationshipFieldClientComponent = (props) => {
     const query = new URLSearchParams({ search: debouncedSearch })
     if (current) query.set('current', current)
     if (documentId) query.set('scenario', String(documentId))
+    query.set('slot', field.name)
     const controller = new AbortController()
     fetch(`${config.serverURL}${config.routes.api}/courseware/position-options?${query}`, {
       credentials: 'include',
@@ -39,7 +40,7 @@ export const PositionPicker: RelationshipFieldClientComponent = (props) => {
         // Aborted by the next search, or the CMS could not be reached: keep the last options.
       })
     return () => controller.abort()
-  }, [config.serverURL, config.routes.api, debouncedSearch, current, documentId])
+  }, [config.serverURL, config.routes.api, debouncedSearch, current, documentId, field.name])
 
   const matched = answer?.options ?? []
   // The chosen position is labelled even when the search leaves it out.

@@ -251,6 +251,7 @@ export const coursewareEndpoints: Endpoint[] = [
           search: queryText(req, 'search'),
           current: queryText(req, 'current'),
           scenario: queryText(req, 'scenario'),
+          slot: queryText(req, 'slot'),
         }),
       )
     },

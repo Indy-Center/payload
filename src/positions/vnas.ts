@@ -72,13 +72,19 @@ export function readPositions(body: unknown): VnasPosition[] {
   if (artcc.id !== 'ZID') throw unusable(`the facility is ${String(artcc.id)}, not ZID.`)
 
   // A center position names its ERAM sector; the ARTCC's sector list holds vNAS's short name.
-  // The sector's id is a number there and a string on the position.
+  // The sector's id is a number there and a string on the position ("01"): compared as numbers.
   const eram = isObject(artcc.eramConfiguration) ? artcc.eramConfiguration : {}
   const sectors = Array.isArray(eram.sectors) ? eram.sectors : []
-  const shortNames = new Map<string, string>()
+  const sectorNumber = (id: unknown) =>
+    id == null || (typeof id === 'string' && id.trim() === '') ? NaN : Number(id)
+  const shortNames = new Map<number, string>()
   for (const sector of sectors) {
-    if (isObject(sector) && hasText(sector.shortName) && sector.sectorId != null)
-      shortNames.set(String(sector.sectorId), tidy(sector.shortName as string))
+    if (
+      isObject(sector) &&
+      hasText(sector.shortName) &&
+      !Number.isNaN(sectorNumber(sector.sectorId))
+    )
+      shortNames.set(sectorNumber(sector.sectorId), tidy(sector.shortName as string))
   }
 
   const found: VnasPosition[] = []
@@ -122,7 +128,7 @@ export function readPositions(body: unknown): VnasPosition[] {
         facilityId: facility.id as string,
         facilityName: tidy(facility.name as string),
         starred: position.starred === true,
-        vnasShortName: sectorId == null ? null : (shortNames.get(String(sectorId)) ?? null),
+        vnasShortName: shortNames.get(sectorNumber(sectorId)) ?? null,
         tcpSectorId: typeof tcpId === 'string' ? (tcps.get(tcpId) ?? null) : null,
       })
     }
