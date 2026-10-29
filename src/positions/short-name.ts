@@ -4,7 +4,7 @@
  * `indyShortName` field and its rule in the sync, and serve `vnasShortName` alone.
  */
 import type { Position } from '@/payload-types'
-import { indyFact, servedFact } from './indy-facts'
+import { indyFact, servedFact, type RefuseOverride } from './indy-facts'
 import { positionType } from './position-type'
 
 const SUFFIX = { TWR: 'LC', GND: 'GC', DEL: 'CD' } as const
@@ -35,15 +35,7 @@ export function generatedShortName(position: {
   return null
 }
 
-const notWhereVnasNamesIt = ({
-  value,
-  previousValue,
-  position,
-}: {
-  value: unknown
-  previousValue: unknown
-  position: Partial<Position>
-}) => {
+const notWhereVnasNamesIt: RefuseOverride = ({ value, previousValue, position }) => {
   const vnas = position.vnasShortName
   // An override set before vNAS named the position stays stored, and vNAS's name wins.
   if (!vnas || !value || value === previousValue) return null

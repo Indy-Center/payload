@@ -8,6 +8,7 @@ import {
   type TabAsField,
 } from 'payload'
 import { mayActAs, type RoleHolder } from '@/cms-admin'
+import type { Position } from '@/payload-types'
 
 /**
  * Indy's facts on a position (decision 0060): what Indy knows about a position that vNAS doesn't
@@ -27,6 +28,16 @@ export type IndyFact<T> = { generated?: T | null; override?: T | null } | null |
 
 /** Written by the sync alone, below access: read-only to everyone, the CMS admin included. */
 export const noEdit = { create: () => false, update: () => false }
+
+/**
+ * Why an override can't be saved on this position, or null. `position` is the position as it
+ * will be saved: the stored document with this save's changes over it.
+ */
+export type RefuseOverride = (args: {
+  value: unknown
+  previousValue: unknown
+  position: Partial<Position>
+}) => string | null
 
 /** Only the CMS admin edits an override. */
 export const mayOverride = ({ req }: { req: { user?: unknown } }) =>
@@ -69,14 +80,10 @@ export function indyFact(options: {
   /** The field each value is: a text field, an array of rows. */
   value: ValueField
   /**
-   * Why an override can't be saved on this position, or null. Run on every save, as a hook: Payload
-   * skips a field's validation where its `condition` hides it, and an API call can still send it.
+   * Run on every save, as a hook: Payload skips a field's validation where its `condition` hides
+   * it, and an API call can still send it.
    */
-  refuseOverride?: (args: {
-    value: unknown
-    previousValue: unknown
-    position: Record<string, unknown>
-  }) => string | null
+  refuseOverride?: RefuseOverride
   /** The override's field where it differs from the generated one: same shape, other checks. */
   overrideValue?: ValueField
   /** Shown only where this holds, as a field's `admin.condition`. */
