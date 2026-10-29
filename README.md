@@ -191,7 +191,7 @@ npm run generate:types
 npm run payload migrate:create
 ```
 
-and commit what both write. A collection change without a migration works locally and fails on the VPS.
+and commit what both write. A collection change without a migration works locally and fails on the VPS. A rename or a dropped column makes `migrate:create` stop at a data-loss prompt; `npm run payload migrate:create <name> -- --forceAcceptWarning` skips the prompt, then read the migration and check its SQL keeps the data (a rename as `rename column`, not a drop and add).
 
 ## Tests
 
