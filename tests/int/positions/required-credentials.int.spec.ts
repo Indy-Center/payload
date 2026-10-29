@@ -242,17 +242,23 @@ describe('a required credentials override', () => {
     ])
 
     // One that is not already named is refused, in a new row or beside others.
-    const paths = async (rows: string[][]) => {
+    const refusals = async (rows: string[][]) => {
       try {
         await override(cmsAdmin, 'SDF_E_TWR', rows)
       } catch (error) {
-        if (error instanceof ValidationError) return error.data.errors.map(({ path }) => path)
+        if (error instanceof ValidationError)
+          return error.data.errors.map(({ path, message }) => ({ path, message }))
         throw error
       }
       return []
     }
-    expect(await paths([['S-LC'], ['A-GC']])).toEqual(['indyRequiredCredentials.override.1.anyOf'])
-    expect(await paths([['A-LC', 'A-GC']])).toEqual(['indyRequiredCredentials.override.0.anyOf'])
+    const invalid = `This field has the following invalid selections: "${idOf['A-GC']}", `
+    expect(await refusals([['S-LC'], ['A-GC']])).toEqual([
+      { path: 'indyRequiredCredentials.override.1.anyOf', message: invalid },
+    ])
+    expect(await refusals([['A-LC', 'A-GC']])).toEqual([
+      { path: 'indyRequiredCredentials.override.0.anyOf', message: invalid },
+    ])
     expect(codes((await position('SDF_E_TWR')).indyRequiredCredentials?.override)).toEqual([
       ['S-LC', 'A-LC'],
     ])
