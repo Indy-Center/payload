@@ -191,6 +191,14 @@ export type CataloguePosition = {
   facility: { id: string; name: string }
   /** One of its facility's main positions. */
   starred: boolean
+  /**
+   * Credential codes a controller must hold to work it: the CMS admin's override if set, else
+   * worked out from its type. Every row must be met; a row is met by holding any one of its
+   * credentials. A certification is also met by any certification ranked higher (`Credential.rank`;
+   * an A-LC holder meets S-GC and A-GC), but an endorsement counts only when named. No rating is
+   * stored. Apps apply this; the CMS checks nothing against it.
+   */
+  requiredCredentials: { anyOf: string[] }[]
   /** vNAS no longer lists it, though records may still name it. */
   retired: boolean
 }

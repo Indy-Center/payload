@@ -49,8 +49,14 @@ export function servedFact<T>(fact: IndyFact<T>): T | null {
   return isSet(fact?.generated) ? fact!.generated! : null
 }
 
-/** An override saved blank is saved as none, so clearing it falls back. */
-const blankIsNone: FieldHook = ({ value }) => (isSet(value) ? value : null)
+/**
+ * An override saved blank is saved as none, so clearing it falls back. A list is none when empty:
+ * Payload's database layer fails on a null in place of a list.
+ */
+const blankIsNone =
+  (none: [] | null): FieldHook =>
+  ({ value }) =>
+    isSet(value) ? value : none
 
 export function indyFact(options: {
   name: string
@@ -111,7 +117,11 @@ export function indyFact(options: {
             name: 'override',
             label: 'Override',
             access: { create: mayOverride, update: mayOverride },
-            hooks: { ...value.hooks, beforeValidate: [blankIsNone], beforeChange: [refuse] },
+            hooks: {
+              ...value.hooks,
+              beforeValidate: [blankIsNone(value.type === 'array' ? [] : null)],
+              beforeChange: [refuse],
+            },
             admin: {
               ...value.admin,
               description: 'Set by a CMS admin. Clear it to use the generated value.',

@@ -61,6 +61,8 @@ describe("the catalogue's positions", () => {
       frequency: 128225000,
       facility: { id: 'ZID', name: 'Indianapolis ARTCC' },
       starred: true,
+      // The test makes no credentials, so none can be named.
+      requiredCredentials: [],
       retired: false,
     })
     expect(body.positions[3]).toEqual({
@@ -72,6 +74,7 @@ describe("the catalogue's positions", () => {
       frequency: 123700000,
       facility: { id: 'PKB', name: 'Parkersburg ATCT' },
       starred: true,
+      requiredCredentials: [],
       retired: true,
     })
   })

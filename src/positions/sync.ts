@@ -1,6 +1,12 @@
 import type { PayloadRequest } from 'payload'
 import { inTransaction } from '@/courseware/edition-actions'
 import type { Position } from '@/payload-types'
+import {
+  generatedRequiredCredentials,
+  missingCodes,
+  sameRows,
+  type CredentialIds,
+} from './required-credentials'
 import { generatedShortName } from './short-name'
 import { fetchZidPositions, type VnasPosition } from './vnas'
 
@@ -29,15 +35,18 @@ const copied = (from: VnasPosition) =>
  * Indy's facts on a position (`indy-facts.ts`) as the sync generates them from vNAS, afresh every
  * run. The sync writes only each fact's generated value, never its override.
  */
-const generated = (from: VnasPosition) => ({
+const generated = (from: VnasPosition, credentialIds: CredentialIds) => ({
   indyShortName: { generated: generatedShortName(from) },
+  indyRequiredCredentials: {
+    generated: generatedRequiredCredentials(from.callsign, credentialIds),
+  },
 })
 
 /** What the sync stores of a position from vNAS: what vNAS says, and Indy's generated facts. */
-export const storedFrom = (from: VnasPosition) => ({
+export const storedFrom = (from: VnasPosition, credentialIds: CredentialIds) => ({
   vnasId: from.vnasId,
   ...copied(from),
-  ...generated(from),
+  ...generated(from, credentialIds),
 })
 
 /**
@@ -70,6 +79,19 @@ async function apply(req: PayloadRequest, fromVnas: VnasPosition[]): Promise<Syn
     depth: 0,
     req,
   })
+  const { docs: credentials } = await payload.find({
+    collection: 'credentials',
+    pagination: false,
+    depth: 0,
+    select: { code: true },
+    req,
+  })
+  const credentialIds = new Map(credentials.map((credential) => [credential.code, credential.id]))
+  // A code the rule names that Credentials lacks leaves that default empty; the sync goes on.
+  for (const code of missingCodes(credentialIds))
+    payload.logger.warn(
+      `Positions sync: credential ${code} is not in Credentials, so no position requires it.`,
+    )
   const storedById = new Map(stored.map((position) => [position.vnasId, position]))
   const inVnas = new Set(fromVnas.map((position) => position.vnasId))
 
@@ -89,12 +111,16 @@ async function apply(req: PayloadRequest, fromVnas: VnasPosition[]): Promise<Syn
   const changed = fromVnas.flatMap((position) => {
     const existing = recordFor(position)
     if (!existing) return []
-    const fields = storedFrom(position)
+    const fields = storedFrom(position, credentialIds)
     const differs =
       existing.retired === true ||
       existing.vnasId !== fields.vnasId ||
       COPIED.some((field) => (existing[field] ?? null) !== (fields[field] ?? null)) ||
-      (existing.indyShortName?.generated ?? null) !== fields.indyShortName.generated
+      (existing.indyShortName?.generated ?? null) !== fields.indyShortName.generated ||
+      !sameRows(
+        existing.indyRequiredCredentials?.generated,
+        fields.indyRequiredCredentials.generated,
+      )
     return differs ? [{ existing, fields }] : []
   })
   const takenOver = new Set(changed.map(({ existing }) => existing.id))
@@ -123,7 +149,7 @@ async function apply(req: PayloadRequest, fromVnas: VnasPosition[]): Promise<Syn
     await payload.create({
       collection: 'positions',
       // The collection's hook sets the title and the short name served.
-      data: { ...storedFrom(position), title: '', retired: false },
+      data: { ...storedFrom(position, credentialIds), title: '', retired: false },
       depth: 0,
       req,
     })

@@ -429,19 +429,36 @@ async function seedCourses({
 const SHORT_NAME_OVERRIDES: Record<string, string> = { SDF_D_APP: 'SDF DR' }
 
 /**
- * The seven in the sync's test fixture, stored as the sync stores them, none retired yet.
- * IND_83_CTR has vNAS's short name, the towers their generated ones, and SDF_D_APP an override.
+ * A CMS admin's required credentials, in place of the generated ones: each row is the codes of
+ * "holds one of these". The fixture has no ground, so an S-LC holder may work SDF_E_TWR, and
+ * IND_83_CTR drops its T2-CTR row.
  */
-async function seedPositions(payload: Payload): Promise<MadeIn> {
+const REQUIRED_CREDENTIAL_OVERRIDES: Record<string, string[][]> = {
+  SDF_E_TWR: [['S-LC', 'A-LC']],
+  IND_83_CTR: [['E-RC']],
+}
+
+/**
+ * The seven in the sync's test fixture, stored as the sync stores them, none retired yet.
+ * IND_83_CTR has vNAS's short name, the towers their generated ones, and SDF_D_APP an override;
+ * SDF_E_TWR and IND_83_CTR have required credentials overrides.
+ */
+async function seedPositions(payload: Payload, credentials: MadeIn): Promise<MadeIn> {
   const into: MadeIn = {}
   const fromVnas = readPositions(JSON.parse(readFileSync(POSITIONS_FIXTURE, 'utf8')))
+  const credentialIds = new Map(Object.entries(credentials).map(([code, made]) => [code, made.id]))
   for (const position of fromVnas) {
-    const stored = storedFrom(position)
+    const stored = storedFrom(position, credentialIds)
+    const rows = REQUIRED_CREDENTIAL_OVERRIDES[position.callsign]
     await make(payload, into, 'positions', position.callsign, {
       ...stored,
       indyShortName: {
         ...stored.indyShortName,
         override: SHORT_NAME_OVERRIDES[position.callsign] ?? null,
+      },
+      indyRequiredCredentials: {
+        ...stored.indyRequiredCredentials,
+        override: rows?.map((codes) => ({ anyOf: codes.map((code) => credentialIds.get(code)!) })),
       },
       // The collection's hook sets the title and the short name served.
       title: '',
@@ -493,7 +510,7 @@ export async function seedCheck(
   records.sources = await seedSources(payload)
   records.tasks = await seedTasks(payload, competencies, records.sources)
   records['grading-scales'] = await seedGradingScales(payload)
-  records.positions = await seedPositions(payload)
+  records.positions = await seedPositions(payload, records.credentials)
   Object.assign(
     records,
     await seedCourses({
