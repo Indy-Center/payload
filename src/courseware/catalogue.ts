@@ -1,5 +1,6 @@
 import type { PayloadRequest } from 'payload'
 import type { Catalogue, CatalogueTask, Credential } from './document'
+import { servedRequiredCredentials } from '@/positions/required-credentials'
 import { idOf } from './ids'
 import { loadTaskTree, type TaskTree } from './task-tree'
 
@@ -17,6 +18,8 @@ export async function buildCatalogue(req: PayloadRequest): Promise<Catalogue> {
     payload.find({ collection: 'credentials', pagination: false, depth: 0, req }),
     payload.find({ collection: 'positions', pagination: false, depth: 0, req }),
   ])
+
+  const codeOfId = new Map(credentials.docs.map((credential) => [credential.id, credential.code]))
 
   return {
     frameworks: frameworks.docs.map((framework) => ({
@@ -58,6 +61,9 @@ export async function buildCatalogue(req: PayloadRequest): Promise<Catalogue> {
       .sort(compareCredentials),
     positions: positions.docs
       .map((position) => ({
+        requiredCredentials: servedRequiredCredentials(position).map((anyOf) => ({
+          anyOf: anyOf.flatMap((id) => codeOfId.get(id) ?? []),
+        })),
         id: position.vnasId,
         callsign: position.callsign,
         name: position.name,

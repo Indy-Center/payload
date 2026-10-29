@@ -24,6 +24,7 @@ import * as migration_20261028_204506_drop_exam_optional from './20261028_204506
 import * as migration_20261029_001816_positions_from_vnas from './20261029_001816_positions_from_vnas';
 import * as migration_20261029_033815_scenarios_pick_positions from './20261029_033815_scenarios_pick_positions';
 import * as migration_20261029_040720_temporary_short_names from './20261029_040720_temporary_short_names';
+import * as migration_20261029_042847_positions_required_credentials from './20261029_042847_positions_required_credentials';
 
 export const migrations = [
   {
@@ -154,6 +155,11 @@ export const migrations = [
   {
     up: migration_20261029_040720_temporary_short_names.up,
     down: migration_20261029_040720_temporary_short_names.down,
-    name: '20261029_040720_temporary_short_names'
+    name: '20261029_040720_temporary_short_names',
+  },
+  {
+    up: migration_20261029_042847_positions_required_credentials.up,
+    down: migration_20261029_042847_positions_required_credentials.down,
+    name: '20261029_042847_positions_required_credentials'
   },
 ];

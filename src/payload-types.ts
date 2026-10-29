@@ -678,6 +678,29 @@ export interface Position {
      */
     override?: string | null;
   };
+  /**
+   * What a controller must hold to work this position. Every row must be met; a row is met by holding any one of its credentials. A certification is also met by any certification ranked higher (an A-LC holder meets S-GC and A-GC), but an endorsement counts only when named. No rating is stored. An override replaces the whole list.
+   */
+  indyRequiredCredentials?: {
+    /**
+     * Worked out by each sync from vNAS.
+     */
+    generated?:
+      | {
+          anyOf: (string | Credential)[];
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Set by a CMS admin. Clear it to use the generated value.
+     */
+    override?:
+      | {
+          anyOf: (string | Credential)[];
+          id?: string | null;
+        }[]
+      | null;
+  };
   vnasId: string;
   /**
    * One of its facility’s main positions.
@@ -1344,6 +1367,22 @@ export interface PositionsSelect<T extends boolean = true> {
     | {
         generated?: T;
         override?: T;
+      };
+  indyRequiredCredentials?:
+    | T
+    | {
+        generated?:
+          | T
+          | {
+              anyOf?: T;
+              id?: T;
+            };
+        override?:
+          | T
+          | {
+              anyOf?: T;
+              id?: T;
+            };
       };
   vnasId?: T;
   starred?: T;

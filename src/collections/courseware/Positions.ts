@@ -2,6 +2,7 @@ import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import { hideRetiredUnlessAsked } from '@/courseware/retired'
 import type { Position } from '@/payload-types'
 import { mayOverride } from '@/positions/indy-facts'
+import { indyRequiredCredentialsField } from '@/positions/required-credentials'
 import { indyShortNameField, servedShortName } from '@/positions/short-name'
 
 /**
@@ -154,6 +155,7 @@ export const Positions: CollectionConfig = {
       ],
     },
     indyShortNameField,
+    indyRequiredCredentialsField,
     {
       name: 'vnasId',
       label: 'vNAS id',
