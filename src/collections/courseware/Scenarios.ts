@@ -53,7 +53,7 @@ export const Scenarios: CollectionConfig = {
       relationTo: 'positions',
       required: true,
       index: true,
-      validate: pickedPosition,
+      validate: pickedPosition('studentPosition'),
       admin: { components: positionPickerComponents() },
     },
     {
@@ -63,7 +63,7 @@ export const Scenarios: CollectionConfig = {
       relationTo: 'positions',
       required: true,
       index: true,
-      validate: pickedPosition,
+      validate: pickedPosition('teacherPosition'),
       admin: { components: positionPickerComponents() },
     },
     {

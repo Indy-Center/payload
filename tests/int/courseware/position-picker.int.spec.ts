@@ -62,7 +62,7 @@ describe('the scenario position picker', () => {
     expect((await pick({ search: 'ghi ar' })).labels).toEqual(['GHI AR · Approach'])
   })
 
-  it('offers a retired position the scenario already names', async () => {
+  it('offers a retired position only in the slot that names it', async () => {
     const course = await payload.create({
       collection: 'courses',
       data: { code: 'X-TWR', title: 'Example Tower', authors: [author.cid!] },
@@ -80,12 +80,13 @@ describe('the scenario position picker', () => {
     })
     await payload.update({ collection: 'positions', id: tower.id, data: { retired: true } })
 
-    expect((await pick({ scenario: scenario.id })).labels).toEqual([
-      'ABC_TWR · Local Control',
-      'EXA 83 · Exampleton 83',
-    ])
-    // Not for a scenario that doesn't name it.
-    expect((await pick()).labels).toEqual(['EXA 83 · Exampleton 83'])
+    const student = await pick({ scenario: scenario.id, slot: 'studentPosition' })
+    expect(student.labels).toEqual(['ABC_TWR · Local Control', 'EXA 83 · Exampleton 83'])
+    // Not in the other slot, nor for a scenario that doesn't name it.
+    const teacher = await pick({ scenario: scenario.id, slot: 'teacherPosition' })
+    expect(teacher.labels).toEqual(['EXA 83 · Exampleton 83'])
+    expect((await pick({ scenario: scenario.id })).labels).toEqual(['EXA 83 · Exampleton 83'])
+    expect((await pick({ slot: 'studentPosition' })).labels).toEqual(['EXA 83 · Exampleton 83'])
   })
 
   it('labels the chosen position whatever the search', async () => {
