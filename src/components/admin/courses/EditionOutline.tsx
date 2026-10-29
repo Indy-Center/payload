@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, toast, useDocumentDrawer } from '@payloadcms/ui'
 import type { EditionOutline as Outline, OutlinePlan } from './editions'
-import { useEndpoint } from './useEndpoint'
+import { useEndpoint } from '../useEndpoint'
 
 type Props = {
   edition: Outline

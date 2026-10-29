@@ -1,9 +1,8 @@
 'use client'
 import React, { useEffect, useReducer, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button, toast, useConfig } from '@payloadcms/ui'
-import { formatAdminURL } from 'payload/shared'
-import type { GridTask, TaskGridRefusal } from '@/courseware/task-grid'
+import { Button, toast } from '@payloadcms/ui'
+import type { GridTask } from '@/courseware/task-grid'
 import {
   gridBatch,
   gridReducer,
@@ -12,6 +11,7 @@ import {
   pendingCount,
   type GridRow,
 } from './task-grid-state'
+import { useEndpoint } from './useEndpoint'
 
 const baseClass = 'task-grid'
 
@@ -32,9 +32,7 @@ export function TaskGrid({
   /** Whether retired tasks show at first: the tree's own "Show retired". */
   showRetired?: boolean
 }) {
-  const {
-    config: { routes, serverURL },
-  } = useConfig()
+  const call = useEndpoint()
   const router = useRouter()
   const [state, dispatch] = useReducer(gridReducer, tasks, initGrid)
   // The grid's own, so ticking it keeps the pending changes.
@@ -64,41 +62,29 @@ export function TaskGrid({
     setBusy(true)
     // Once saved, the grid stays busy until the tasks read again arrive and start it afresh
     // (its key changes), so a second press can't send the same batch again.
-    let saved = false
-    try {
-      const response = await fetch(
-        formatAdminURL({ apiRoute: routes.api, serverURL, path: '/courseware/task-grid' }),
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(gridBatch(state)),
-        },
-      )
-      const body = await response.json().catch(() => ({}))
-      if (response.ok) {
-        saved = true
-        setRefusals(noRefusals)
-        toast.success(`${pending} ${pending === 1 ? 'change' : 'changes'} saved.`)
-        // The tree, and every number shown elsewhere, are read again from what was saved.
-        router.refresh()
-        return
-      }
-      const next: Refusals = { rows: {}, batch: [] }
-      for (const { row, message } of (body.errors ?? []) as TaskGridRefusal[]) {
-        if (row) (next.rows[row] ??= []).push(message)
-        else next.batch.push(message)
-      }
-      if (!Object.keys(next.rows).length && !next.batch.length) {
-        next.batch.push('Something went wrong. Nothing was saved.')
-      }
-      setRefusals(next)
-      toast.error('Nothing was saved. Each refused row says why.')
-    } catch {
-      setRefusals({ rows: {}, batch: ['The CMS could not be reached. Nothing was saved.'] })
-    } finally {
-      if (!saved) setBusy(false)
+    const outcome = await call('/courseware/task-grid', 'post', gridBatch(state))
+    if (outcome.ok) {
+      setRefusals(noRefusals)
+      toast.success(`${pending} ${pending === 1 ? 'change' : 'changes'} saved.`)
+      // The tree, and every number shown elsewhere, are read again from what was saved.
+      router.refresh()
+      return
     }
+    setBusy(false)
+    if (outcome.unreachable) {
+      setRefusals({ rows: {}, batch: ['The CMS could not be reached. Nothing was saved.'] })
+      return
+    }
+    const next: Refusals = { rows: {}, batch: [] }
+    for (const { row, message } of outcome.errors) {
+      if (row) (next.rows[row] ??= []).push(message)
+      else next.batch.push(message)
+    }
+    if (!Object.keys(next.rows).length && !next.batch.length) {
+      next.batch.push('Something went wrong. Nothing was saved.')
+    }
+    setRefusals(next)
+    toast.error('Nothing was saved. Each refused row says why.')
   }
 
   return (

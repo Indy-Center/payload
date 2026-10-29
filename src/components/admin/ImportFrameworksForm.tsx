@@ -1,7 +1,7 @@
 'use client'
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Button, useConfig, useStepNav } from '@payloadcms/ui'
+import { Button, useStepNav } from '@payloadcms/ui'
 import type { ImportReport, Tally } from '@/courseware/import/import-frameworks'
 import {
   ALL_SHEET_FILES,
@@ -9,6 +9,7 @@ import {
   IMPORT_ENDPOINTS,
   type SheetFile,
 } from '@/courseware/import/form'
+import { useEndpoint } from './useEndpoint'
 
 const baseClass = 'framework-import'
 
@@ -44,7 +45,7 @@ export function ImportStepNav({ competenciesURL }: { competenciesURL: string }) 
  * it. The files go to the CMS with each request and are not kept.
  */
 export function ImportFrameworksForm({ competenciesURL }: { competenciesURL: string }) {
-  const { config } = useConfig()
+  const call = useEndpoint()
   const [files, setFiles] = useState<Partial<Record<SheetFile, File>>>({})
   const [editions, setEditions] = useState({ usa: '', gcap: '' })
   const [busy, setBusy] = useState<'check' | 'import' | null>(null)
@@ -68,24 +69,13 @@ export function ImportFrameworksForm({ competenciesURL }: { competenciesURL: str
 
     setBusy(which)
     setErrors([])
-    try {
-      const response = await fetch(
-        `${config.serverURL}${config.routes.api}${IMPORT_ENDPOINTS[which]}`,
-        { method: 'POST', credentials: 'include', body: form },
-      )
-      const body = await response.json().catch(() => ({}))
-      if (response.ok) {
-        setOutcome(body as Outcome)
-      } else {
-        const messages = (body.errors ?? []).map((error: { message: string }) => error.message)
-        setOutcome(null)
-        setErrors(messages.length ? messages : ['Something went wrong.'])
-      }
-    } catch {
-      setErrors(['The CMS could not be reached. Try again.'])
-    } finally {
-      setBusy(null)
+    const answer = await call(IMPORT_ENDPOINTS[which], 'post', form)
+    if (answer.ok) setOutcome(answer.body as Outcome)
+    else {
+      if (!answer.unreachable) setOutcome(null)
+      setErrors(answer.messages)
     }
+    setBusy(null)
   }
 
   const checked = outcome?.dryRun === true

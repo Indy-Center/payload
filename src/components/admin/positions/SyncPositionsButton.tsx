@@ -1,8 +1,9 @@
 'use client'
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button, useAuth, useConfig } from '@payloadcms/ui'
+import { Button, useAuth } from '@payloadcms/ui'
 import { CMS_ADMIN } from '@/cms-admin'
+import { useEndpoint } from '../useEndpoint'
 import type { User } from '@/payload-types'
 import { POSITIONS_SYNC_PATH } from '@/positions/paths'
 import type { SyncReport } from '@/positions/sync'
@@ -13,7 +14,7 @@ import type { SyncReport } from '@/positions/sync'
  */
 export function SyncPositionsButton() {
   const { user } = useAuth<User>()
-  const { config } = useConfig()
+  const call = useEndpoint()
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ text: string; failed: boolean } | null>(null)
@@ -23,31 +24,22 @@ export function SyncPositionsButton() {
   const sync = async () => {
     setBusy(true)
     setMessage(null)
-    try {
-      const response = await fetch(
-        `${config.serverURL}${config.routes.api}${POSITIONS_SYNC_PATH}`,
-        {
-          method: 'POST',
-          credentials: 'include',
-        },
-      )
-      const body = await response.json().catch(() => ({}))
-      if (response.ok) {
-        const { added, changed, retired } = body as SyncReport
-        setMessage({
-          text: `Synced from vNAS: ${added} added, ${changed} changed, ${retired} retired.`,
-          failed: false,
-        })
-        router.refresh()
-      } else {
-        const text = body.errors?.[0]?.message ?? 'The sync failed. Nothing was changed.'
-        setMessage({ text, failed: true })
-      }
-    } catch {
-      setMessage({ text: 'The CMS could not be reached. Try again.', failed: true })
-    } finally {
-      setBusy(false)
+    const outcome = await call(POSITIONS_SYNC_PATH)
+    if (outcome.ok) {
+      const { added, changed, retired } = outcome.body as SyncReport
+      setMessage({
+        text: `Synced from vNAS: ${added} added, ${changed} changed, ${retired} retired.`,
+        failed: false,
+      })
+      router.refresh()
+    } else {
+      const text =
+        outcome.unreachable || outcome.errors.length
+          ? outcome.messages[0]
+          : 'The sync failed. Nothing was changed.'
+      setMessage({ text, failed: true })
     }
+    setBusy(false)
   }
 
   return (

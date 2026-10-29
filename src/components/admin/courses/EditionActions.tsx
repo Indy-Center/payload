@@ -2,7 +2,7 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Modal, toast, useModal } from '@payloadcms/ui'
-import { useEndpoint, type Call } from './useEndpoint'
+import { useEndpoint, type Call } from '../useEndpoint'
 
 type Props = {
   courseId: string

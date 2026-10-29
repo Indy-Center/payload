@@ -3,43 +3,26 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronIcon, Link, toast, useConfig } from '@payloadcms/ui'
 import { formatAdminURL } from 'payload/shared'
-import type { MoveDirection } from '@/courseware/task-move'
+import type { MoveDirection } from '@/courseware/move-direction'
 import type { TaskTreeList, TaskTreeRow } from '@/courseware/task-tree-list'
+import { useEndpoint } from './useEndpoint'
 
 /**
  * Moves a task one place among its siblings. Each press saves at once, with no confirm; the tree
  * is then read again and a message names what the move renumbered.
  */
 function useMoveTask() {
-  const { config } = useConfig()
+  const call = useEndpoint()
   const router = useRouter()
   const [moving, setMoving] = useState(false)
 
   const move = async (id: string, direction: MoveDirection) => {
     setMoving(true)
-    try {
-      const response = await fetch(
-        `${config.serverURL}${config.routes.api}/courseware/tasks/${id}/move`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ direction }),
-        },
-      )
-      const body = await response.json().catch(() => ({}))
-      if (response.ok) toast.success(body.message)
-      else {
-        const errors: { message: string }[] = body.errors ?? []
-        if (errors.length) errors.forEach(({ message }) => toast.error(message))
-        else toast.error('Something went wrong.')
-      }
-      router.refresh()
-    } catch {
-      toast.error('The CMS could not be reached. Try again.')
-    } finally {
-      setMoving(false)
-    }
+    const outcome = await call(`/courseware/tasks/${id}/move`, 'post', { direction })
+    if (outcome.ok) toast.success(String(outcome.body.message))
+    else outcome.messages.forEach((message) => toast.error(message))
+    if (outcome.ok || !outcome.unreachable) router.refresh()
+    setMoving(false)
   }
 
   return { move, moving }
