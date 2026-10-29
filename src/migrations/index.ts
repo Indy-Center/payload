@@ -21,6 +21,7 @@ import * as migration_20261028_143500_citation_place_and_title from './20261028_
 import * as migration_20261028_194448_edition_published_date from './20261028_194448_edition_published_date';
 import * as migration_20261028_200131_tighter_course_and_credential_rules from './20261028_200131_tighter_course_and_credential_rules';
 import * as migration_20261028_204506_drop_exam_optional from './20261028_204506_drop_exam_optional';
+import * as migration_20261029_001816_positions_from_vnas from './20261029_001816_positions_from_vnas';
 
 export const migrations = [
   {
@@ -136,6 +137,11 @@ export const migrations = [
   {
     up: migration_20261028_204506_drop_exam_optional.up,
     down: migration_20261028_204506_drop_exam_optional.down,
-    name: '20261028_204506_drop_exam_optional'
+    name: '20261028_204506_drop_exam_optional',
+  },
+  {
+    up: migration_20261029_001816_positions_from_vnas.up,
+    down: migration_20261029_001816_positions_from_vnas.down,
+    name: '20261029_001816_positions_from_vnas'
   },
 ];

@@ -5,16 +5,17 @@ import { loadTaskTree, type TaskTree } from './task-tree'
 
 /**
  * The task tree, frameworks, competencies and sources, for task and competency pages, and the
- * credentials Indy issues.
+ * credentials Indy issues and ZID's positions.
  */
 export async function buildCatalogue(req: PayloadRequest): Promise<Catalogue> {
   const { payload } = req
-  const [tree, frameworks, competencies, sources, credentials] = await Promise.all([
+  const [tree, frameworks, competencies, sources, credentials, positions] = await Promise.all([
     loadTaskTree(req),
     payload.find({ collection: 'frameworks', sort: 'name', pagination: false, depth: 0, req }),
     payload.find({ collection: 'competencies', pagination: false, depth: 0, req }),
     payload.find({ collection: 'sources', sort: 'name', pagination: false, depth: 0, req }),
     payload.find({ collection: 'credentials', pagination: false, depth: 0, req }),
+    payload.find({ collection: 'positions', pagination: false, depth: 0, req }),
   ])
 
   return {
@@ -55,6 +56,20 @@ export async function buildCatalogue(req: PayloadRequest): Promise<Catalogue> {
         retired: credential.retired ?? false,
       }))
       .sort(compareCredentials),
+    positions: positions.docs
+      .map((position) => ({
+        id: position.vnasId,
+        callsign: position.callsign,
+        name: position.name,
+        shortName: position.shortName || null,
+        radioName: position.radioName,
+        frequency: position.frequency,
+        facility: { id: position.facilityId, name: position.facilityName },
+        starred: position.starred ?? false,
+        retired: position.retired ?? false,
+      }))
+      // By code unit, so the order doesn't hang on the database's collation.
+      .sort((a, b) => (a.callsign < b.callsign ? -1 : a.callsign > b.callsign ? 1 : 0)),
     tasks: tree.inOrder.map((task) => catalogueTask(tree, task.id)),
   }
 }
