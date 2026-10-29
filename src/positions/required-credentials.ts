@@ -52,11 +52,7 @@ type Rows = { anyOf?: (string | { id: string })[] | null }[] | null | undefined
 
 /** The rows as plain lists of credential ids, whether stored, populated or generated. */
 export const rowsOf = (rows: Rows): string[][] =>
-  (rows ?? []).map((row) =>
-    (row.anyOf ?? []).map((credential) =>
-      typeof credential === 'string' ? credential : credential.id,
-    ),
-  )
+  (rows ?? []).map((row) => (row.anyOf ?? []).flatMap((credential) => idOf(credential) ?? []))
 
 /** Whether two lists of rows name the same credentials in the same places. */
 export const sameRows = (a: Rows, b: Rows): boolean =>
