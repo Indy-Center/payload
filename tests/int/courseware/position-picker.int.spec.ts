@@ -55,6 +55,13 @@ describe('the scenario position picker', () => {
     expect((await pick({ search: 'nowhere' })).labels).toEqual([])
   })
 
+  it('labels and finds a position by the short name served, an override included', async () => {
+    await position(payload, 'GHI_APP', { name: 'Approach', override: 'GHI AR' })
+
+    expect((await pick()).labels).toContain('GHI AR · Approach')
+    expect((await pick({ search: 'ghi ar' })).labels).toEqual(['GHI AR · Approach'])
+  })
+
   it('offers a retired position the scenario already names', async () => {
     const course = await payload.create({
       collection: 'courses',

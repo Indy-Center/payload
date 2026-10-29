@@ -83,8 +83,16 @@ export async function position(
   {
     name = `${callsign} example`,
     shortName = null,
+    override = null,
     retired = false,
-  }: { name?: string; shortName?: string | null; retired?: boolean } = {},
+  }: {
+    name?: string
+    /** vNAS's short name. */
+    shortName?: string | null
+    /** A CMS admin's override, served where vNAS has no short name. */
+    override?: string | null
+    retired?: boolean
+  } = {},
 ) {
   return payload.create({
     collection: 'positions',
@@ -93,7 +101,9 @@ export async function position(
       vnasId: `vnas-${callsign}`,
       callsign,
       name,
-      shortName,
+      // The collection's hook sets `shortName` (the one served) and the title.
+      vnasShortName: shortName,
+      indyShortName: { override },
       title: callsign,
       radioName: 'Example Radio',
       frequency: 118_000_000,
