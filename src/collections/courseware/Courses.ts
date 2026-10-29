@@ -80,6 +80,25 @@ const pickableCredential: FilterOptions = async ({ id, req }) => {
 }
 
 /**
+ * Whether this save sets the course's credential issued: a new course, or one different from the
+ * stored. A prerequisite naming the issued credential is refused on whichever field the save set.
+ */
+async function setsCredentialIssued(options: Parameters<RelationshipFieldValidation>[1]) {
+  if (!options.id) return true
+  const stored = await options.req.payload.findByID({
+    collection: 'courses',
+    id: options.id,
+    depth: 0,
+    disableErrors: true,
+    req: options.req,
+  })
+  return idOf(stored?.credentialIssued) !== idOf((options.data as Partial<Course>).credentialIssued)
+}
+
+const credentialsInRow = (row: { anyOf?: unknown } | undefined) =>
+  ((row?.anyOf ?? []) as (string | { id: string })[]).map((credential) => idOf(credential))
+
+/**
  * A prerequisite row names a credential once, across all the course's rows (a repeat is refused on
  * the later row), and never the credential the course itself issues.
  */
@@ -90,8 +109,6 @@ const prerequisiteRow: RelationshipFieldValidation = async (value, options) => {
   if (valid !== true) return valid
 
   const data = options.data as Partial<Course>
-  const credentialsOf = (row: { anyOf?: unknown } | undefined) =>
-    ((row?.anyOf ?? []) as (string | { id: string })[]).map((credential) => idOf(credential))
   // The admin builds its form state on the server and calls this without a `path`, so the row's
   // place comes from the path when there is one, else from the row itself; with neither, only
   // repeats inside the row are caught here and the save catches the rest.
@@ -99,8 +116,8 @@ const prerequisiteRow: RelationshipFieldValidation = async (value, options) => {
   const position = Array.isArray(options.path)
     ? Number(options.path[1])
     : rows.indexOf(options.siblingData as (typeof rows)[number])
-  const seen = new Set(rows.slice(0, Math.max(position, 0)).flatMap(credentialsOf))
-  const repeated = credentialsOf({ anyOf: value }).find((id, index, own) => {
+  const seen = new Set(rows.slice(0, Math.max(position, 0)).flatMap(credentialsInRow))
+  const repeated = credentialsInRow({ anyOf: value }).find((id, index, own) => {
     if (seen.has(id) || own.indexOf(id) !== index) return true
     return false
   })
@@ -117,7 +134,11 @@ const prerequisiteRow: RelationshipFieldValidation = async (value, options) => {
 
   if (repeated)
     return `${await named(repeated)} is named twice in the prerequisites. Name each credential once.`
-  if (issued && credentialsOf({ anyOf: value }).includes(issued))
+  if (
+    issued &&
+    credentialsInRow({ anyOf: value }).includes(issued) &&
+    !(await setsCredentialIssued(options))
+  )
     return `${await named(issued)} is what ${data.code} issues, so it can’t also be a prerequisite.`
   return true
 }
@@ -130,6 +151,20 @@ const oneCoursePerCredential: RelationshipFieldValidation = async (value, option
   if (!credentialId) return true
 
   const { payload } = options.req
+  const codeOf = async () =>
+    (
+      await payload.findByID({
+        collection: 'credentials',
+        id: credentialId,
+        depth: 0,
+        req: options.req,
+      })
+    ).code
+  const data = options.data as Partial<Course>
+  const required = (data.prerequisites ?? []).flatMap(credentialsInRow)
+  if (required.includes(credentialId) && (await setsCredentialIssued(options)))
+    return `${await codeOf()} is a prerequisite of ${data.code}, so ${data.code} can’t also issue it.`
+
   const { docs } = await payload.find({
     collection: 'courses',
     where: {
@@ -144,13 +179,7 @@ const oneCoursePerCredential: RelationshipFieldValidation = async (value, option
     req: options.req,
   })
   if (docs.length === 0) return true
-  const credential = await payload.findByID({
-    collection: 'credentials',
-    id: credentialId,
-    depth: 0,
-    req: options.req,
-  })
-  return `${docs[0].code} already issues ${credential.code}. A credential is issued by one course only.`
+  return `${docs[0].code} already issues ${await codeOf()}. A credential is issued by one course only.`
 }
 
 /**

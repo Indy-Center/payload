@@ -134,10 +134,12 @@ describe("a course's prerequisites", () => {
     expect(saved.prerequisites).toHaveLength(2)
   })
 
-  it('refuse requiring the credential the course issues', async () => {
+  it('refuse requiring the credential the course issues, on the field the save set', async () => {
     const { id } = await course()
     const own = 'X-LC is what X-TWR issues, so it can’t also be a prerequisite.'
+    const required = 'X-LC is a prerequisite of X-TWR, so X-TWR can’t also issue it.'
 
+    // Both set at once: Credential issued is refused.
     expect(
       await refusal(
         payload.update({
@@ -150,7 +152,26 @@ describe("a course's prerequisites", () => {
           ...as(lead),
         }),
       ),
-    ).toEqual([{ path: 'prerequisites.1.anyOf', message: own }])
+    ).toEqual([{ path: 'credentialIssued', message: required }])
+
+    // Issuing a credential the course already requires is refused on Credential issued.
+    await payload.update({
+      collection: 'courses',
+      id,
+      data: { prerequisites: [{ anyOf: [local.id] }] },
+      ...as(lead),
+    })
+    expect(
+      await refusal(
+        payload.update({
+          collection: 'courses',
+          id,
+          data: { credentialIssued: local.id },
+          ...as(lead),
+        }),
+      ),
+    ).toEqual([{ path: 'credentialIssued', message: required }])
+    await payload.update({ collection: 'courses', id, data: { prerequisites: [] }, ...as(lead) })
 
     await payload.update({
       collection: 'courses',
