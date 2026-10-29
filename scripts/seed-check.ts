@@ -291,8 +291,9 @@ type Courseware = Record<'courses' | 'course-versions' | 'lesson-plans' | 'scena
 
 /**
  * X-GC (two editions, two scenarios) and X-TWR (no editions). The scenarios pick positions: one
- * shown by short name (IND_83_CTR, "FLM 83 · Falmouth 83"), the others by callsign, and PKB_TWR,
- * which `seedPositions` retires afterwards, so a scenario names a retired position.
+ * shown by vNAS's short name (IND_83_CTR, "FLM 83 · Falmouth 83"), the others by a generated one
+ * (LOU_TWR is "LOU LC"), and PKB_TWR, which `seedPositions` retires afterwards, so a scenario
+ * names a retired position.
  */
 async function seedCourses({
   payload,
