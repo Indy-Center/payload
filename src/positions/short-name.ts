@@ -22,10 +22,10 @@ export function generatedShortName(position: {
   tcpSectorId: string | null
 }): string | null {
   const type = positionType(position.callsign)
-  const prefix = position.callsign.split('_')[0]
+  const parts = position.callsign.split('_')
+  const prefix = parts[0]
   if (type === 'TWR' || type === 'GND' || type === 'DEL') {
     // An east or west position (`SDF_E_TWR`) ends with it; other middle parts (`CVG_C_TWR`) don't.
-    const parts = position.callsign.split('_')
     const middle = parts.length === 3 ? parts[1] : null
     const side = middle === 'E' || middle === 'W' ? ` ${middle}` : ''
     return `${prefix} ${SUFFIX[type]}${side}`
