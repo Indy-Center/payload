@@ -40,6 +40,9 @@ import { RelationshipFeatureClient as RelationshipFeatureClient_e70f5e05f09f93e0
 import { BlockquoteFeatureClient as BlockquoteFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { HorizontalRuleFeatureClient as HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { InlineToolbarFeatureClient as InlineToolbarFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
+import { FrequencyCell as FrequencyCell_f3122caea05cacf86ae3a5350c5931cc } from '../../../components/admin/positions/Frequency'
+import { FrequencyField as FrequencyField_f3122caea05cacf86ae3a5350c5931cc } from '../../../components/admin/positions/Frequency'
+import { SyncPositionsButton as SyncPositionsButton_d6aabdefc1aed5d29734081fbdbd74d7 } from '../../../components/admin/positions/SyncPositionsButton'
 import { TeacherResourceRowLabel as TeacherResourceRowLabel_1e7969632505395c0c43b915ff727c07 } from '../../../components/admin/TeacherResourceRowLabel'
 import { Icon as Icon_dfe4008080d895d460898c3a6155e9ba } from '../../../components/admin/Icon'
 import { Logo as Logo_91a09b539d3c86b0aebf520e7564ce08 } from '../../../components/admin/Logo'
@@ -93,6 +96,9 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#BlockquoteFeatureClient": BlockquoteFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#HorizontalRuleFeatureClient": HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#InlineToolbarFeatureClient": InlineToolbarFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+  "/components/admin/positions/Frequency#FrequencyCell": FrequencyCell_f3122caea05cacf86ae3a5350c5931cc,
+  "/components/admin/positions/Frequency#FrequencyField": FrequencyField_f3122caea05cacf86ae3a5350c5931cc,
+  "/components/admin/positions/SyncPositionsButton#SyncPositionsButton": SyncPositionsButton_d6aabdefc1aed5d29734081fbdbd74d7,
   "/components/admin/TeacherResourceRowLabel#TeacherResourceRowLabel": TeacherResourceRowLabel_1e7969632505395c0c43b915ff727c07,
   "/components/admin/Icon#Icon": Icon_dfe4008080d895d460898c3a6155e9ba,
   "/components/admin/Logo#Logo": Logo_91a09b539d3c86b0aebf520e7564ce08,

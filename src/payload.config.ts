@@ -18,6 +18,7 @@ import { Credentials } from './collections/courseware/Credentials'
 import { Tasks } from './collections/courseware/Tasks'
 import { GradingScales } from './collections/courseware/GradingScales'
 import { Scenarios } from './collections/courseware/Scenarios'
+import { Positions } from './collections/courseware/Positions'
 import { PartnerCategories } from './collections/partners/PartnerCategories'
 import { Partners } from './collections/partners/Partners'
 import { TeacherResources } from './globals/TeacherResources'
@@ -26,6 +27,8 @@ import { IMPORT_FRAMEWORKS_PATH } from './courseware/import/form'
 import { taskMoveEndpoints } from './courseware/task-move'
 import { taskPickerEndpoints } from './courseware/task-picker'
 import { partnersEndpoints } from './partners/endpoints'
+import { positionsEndpoints } from './positions/endpoints'
+import { jobs } from './positions/jobs'
 import { trainingEndpoints } from './training/endpoints'
 import { migrations } from './migrations'
 import { storagePlugins } from './storage'
@@ -65,6 +68,7 @@ export default buildConfig({
     CourseVersions,
     LessonPlans,
     Scenarios,
+    Positions,
     PartnerCategories,
     Partners,
   ],
@@ -74,8 +78,10 @@ export default buildConfig({
     ...taskMoveEndpoints,
     ...taskPickerEndpoints,
     ...partnersEndpoints,
+    ...positionsEndpoints,
     ...trainingEndpoints,
   ],
+  jobs,
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
