@@ -1,0 +1,4 @@
+// The one breakpoint the admin's own styles use. Phone is below Tailwind 4's `md` (768px), so a
+// 768px-wide tablet keeps the desktop layout: `@media (max-width: breakpoints.$phone)`.
+// `scripts/check-breakpoints.sh` (run by `npm run lint`) refuses a pixel breakpoint anywhere else.
+$phone: 767px;

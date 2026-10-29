@@ -80,12 +80,15 @@ export type CourseVersionDocument = {
     prerequisitesNote: string
     /** Hours counted across all the listed position types together; null when none is asked. */
     consolidation: { hours: number; positionTypes: PositionType[] } | null
-    /** The rating exam the course ends in. */
+    /** The rating exam the course ends in; null when it ends in none (0059). */
     ratingExam: 'S1' | 'S2' | 'S3' | 'C1' | null
     /** The VATUSA Academy exam a student passes before training. */
     academyExam: 'S2' | 'S3' | 'C1' | null
+    /**
+     * The course's override if set, otherwise worked out from its live edition: one week per
+     * lesson plan of that edition, and 20% more rounded up (0058). Null with neither.
+     */
     estimatedWeeks: { min: number; max: number } | null
-    examOptional: boolean
     /** An https link. */
     moodleUrl: string | null
     /**
@@ -157,6 +160,28 @@ export type Credential = {
   retired: boolean
 }
 
+/** One of ZID's positions as the CMS copies it from vNAS Data Admin; design-system's `VnasPosition`. */
+export type CataloguePosition = {
+  /** vNAS's id, the same its live controller feed uses. */
+  id: string
+  /** Such as `IND_83_CTR`. */
+  callsign: string
+  /** Such as `Falmouth 83`. */
+  name: string
+  /** vNAS's short name, such as `FLM 83`; null where it has none. */
+  shortName: string | null
+  /** Such as `Indy Center`. */
+  radioName: string
+  /** In Hz: 128225000. */
+  frequency: number
+  /** Such as `{ id: 'SDF', name: 'Louisville ATCT/TRACON' }`. */
+  facility: { id: string; name: string }
+  /** One of its facility's main positions. */
+  starred: boolean
+  /** vNAS no longer lists it, though records may still name it. */
+  retired: boolean
+}
+
 export type CatalogueTask = {
   id: string
   number: string
@@ -169,7 +194,7 @@ export type CatalogueTask = {
    * `fromTaskId` is the task the mapping is written on: this task's id, or an ancestor's.
    */
   mappings: { competencyId: string; fromTaskId: string }[]
-  citations: { sourceId: string; section: string }[]
+  citations: { sourceId: string; place: string; title: string | null }[]
 }
 
 export type Catalogue = {
@@ -178,6 +203,8 @@ export type Catalogue = {
   sources: Source[]
   /** Certifications by rank, then endorsements by code, retired ones included. */
   credentials: Credential[]
+  /** ZID's positions by callsign, retired ones included. */
+  positions: CataloguePosition[]
   /** In tree order: each task follows its parent, siblings in their order. */
   tasks: CatalogueTask[]
 }

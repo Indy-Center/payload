@@ -1,6 +1,7 @@
 import { ValidationError, type PayloadRequest } from 'payload'
 import type { CourseVersion, Scenario } from '@/payload-types'
 import { idOf } from './ids'
+import { inScale } from './minimums'
 
 const refuse = (path: string, messages: string[]): never => {
   throw new ValidationError({ errors: messages.map((message) => ({ path, message })) })
@@ -35,6 +36,15 @@ export async function refuseUnpublishable(
   req: PayloadRequest,
   version: Partial<CourseVersion>,
 ): Promise<void> {
+  const faults = await publishingFaults(req, version)
+  if (faults.length > 0) refuse('status', faults)
+}
+
+/** Every fault the publishing check finds, each once; none when the version may be published. */
+export async function publishingFaults(
+  req: PayloadRequest,
+  version: Partial<CourseVersion>,
+): Promise<string[]> {
   const faults: string[] = []
   const scaleId = idOf(version.gradingScale)
   const scale = scaleId
@@ -108,9 +118,5 @@ export async function refuseUnpublishable(
     }
   }
 
-  if (faults.length > 0) refuse('status', [...new Set(faults)])
-}
-
-function inScale(position: number | null | undefined, points: number): boolean {
-  return position != null && Number.isInteger(position) && position >= 1 && position <= points
+  return [...new Set(faults)]
 }

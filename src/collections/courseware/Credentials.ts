@@ -9,13 +9,22 @@ export const ARRIVAL_RATINGS = ['S1', 'S2', 'S3', 'C1', 'C3', 'I1', 'I3'] as con
 type Siblings = Record<string, unknown> | undefined
 const isEndorsement = (siblingData: unknown) => (siblingData as Siblings)?.kind === 'endorsement'
 
-const rank: NumberFieldValidation = async (value, options) => {
+export const rank: NumberFieldValidation = async (value, options) => {
   const valid = number(value, options)
   if (valid !== true) return valid
-  if (value === null || value === undefined) return true
+  const hasRank = value !== null && value !== undefined
   if (isEndorsement(options.siblingData))
-    return 'Only a certification has a rank. Clear it for an endorsement.'
+    return hasRank ? 'Only a certification has a rank. Clear it for an endorsement.' : true
+  if (!hasRank) {
+    // Until a kind is chosen, the kind's own "required" is the fault to show.
+    return (options.siblingData as Siblings)?.kind === 'certification'
+      ? 'A certification needs a rank. Give it its place on the ladder.'
+      : true
+  }
 
+  // The admin form runs validators in the browser, where there is no database to ask; the
+  // server checks again on save.
+  if (!options.req?.payload) return true
   const { docs } = await options.req.payload.find({
     collection: 'credentials',
     where: {
@@ -35,12 +44,41 @@ const rank: NumberFieldValidation = async (value, options) => {
     : `${docs[0].code} already has rank ${value}. Each certification has its own rank.`
 }
 
-const grantedOnArrival: SelectFieldValidation = (value, options) => {
+export const grantedOnArrival: SelectFieldValidation = async (value, options) => {
   const valid = select(value, options)
   if (valid !== true) return valid
-  if (isEndorsement(options.siblingData) && ((value ?? []) as string[]).length > 0)
+  const ratings = (value ?? []) as string[]
+  if (ratings.length === 0) return true
+  if (isEndorsement(options.siblingData))
     return 'Only a certification is granted on arrival. Clear the ratings for an endorsement.'
-  return true
+
+  // Each VATSIM rating brings one certification, so training-tools can map it back. The browser
+  // has no database to ask; the server checks again on save.
+  if (!options.req?.payload) return true
+  const { docs } = await options.req.payload.find({
+    collection: 'credentials',
+    where: {
+      and: [
+        { grantedOnArrival: { in: ratings } },
+        ...(options.id ? [{ id: { not_equals: options.id } }] : []),
+      ],
+    },
+    sort: 'code',
+    pagination: false,
+    depth: 0,
+    req: options.req,
+  })
+  const clashes = ratings.flatMap((rating) => {
+    const holder = docs.find((other) =>
+      (other.grantedOnArrival as string[] | null)?.includes(rating),
+    )
+    return holder
+      ? [
+          `${holder.code} is already granted on arrival for ${rating}. Each rating brings one certification.`,
+        ]
+      : []
+  })
+  return clashes.length === 0 ? true : clashes.join(' ')
 }
 
 /**
@@ -56,7 +94,9 @@ export const Credentials: CollectionConfig = {
   admin: {
     useAsTitle: 'code',
     defaultColumns: ['code', 'name', 'kind', 'rank', 'retired'],
-    group: 'Training',
+    // Kept from the Courses list's Credentials tab, not the nav (ticket 22). Its pages still open
+    // by link; `hidden` would take them away too.
+    group: false,
     baseFilter: hideRetiredUnlessAsked,
   },
   access: staffAccess,
@@ -96,7 +136,7 @@ export const Credentials: CollectionConfig = {
           validate: rank,
           admin: {
             description:
-              'Certifications only: its place on the ladder, higher above lower. No two share one.',
+              'Certifications only, and each needs one: its place on the ladder, higher above lower. No two share one.',
           },
         },
         {

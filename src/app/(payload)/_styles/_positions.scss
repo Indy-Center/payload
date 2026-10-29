@@ -1,0 +1,19 @@
+// "Sync from vNAS" above the Positions list (src/components/admin/positions/SyncPositionsButton.tsx)
+// and what the last sync reported. Theme-neutral: Payload's own error colour flips for dark.
+
+.positions-sync {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(var(--base) * 0.5) var(--base);
+  margin-block-end: var(--base);
+
+  &__message {
+    margin: 0;
+    color: var(--theme-elevation-650);
+
+    &--failed {
+      color: var(--theme-error-500);
+    }
+  }
+}

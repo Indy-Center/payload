@@ -1,7 +1,9 @@
 import type { CollectionConfig } from 'payload'
 import { scenarioAccess, staffOnlyField } from '@/courseware/access'
 import { hideRetiredUnlessAsked } from '@/courseware/retired'
+import { rowLabelComponent } from '@/courseware/row-label-component'
 import { refuseAuthorsScenarioStructure } from '@/courseware/structure'
+import { taskPickerComponents } from '@/courseware/task-picker'
 import { expandTaskRows, pickableTask } from '@/courseware/task-rows'
 
 /**
@@ -93,7 +95,9 @@ export const Scenarios: CollectionConfig = {
     {
       name: 'practicalTasks',
       type: 'array',
+      labels: { singular: 'Practical task', plural: 'Practical tasks' },
       admin: {
+        components: { RowLabel: rowLabelComponent('practicalTask') },
         description:
           'Adding a task that has tasks beneath it adds a row for each of them when you save.',
       },
@@ -104,6 +108,7 @@ export const Scenarios: CollectionConfig = {
           relationTo: 'tasks',
           required: true,
           filterOptions: pickableTask,
+          admin: { components: taskPickerComponents() },
         },
         {
           name: 'teacherNotes',

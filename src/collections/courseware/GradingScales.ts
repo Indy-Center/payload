@@ -1,5 +1,6 @@
 import { ValidationError, type CollectionConfig } from 'payload'
 import { staffAccess } from '@/courseware/access'
+import { rowLabelComponent } from '@/courseware/row-label-component'
 
 /**
  * The grades a teacher chooses from, lowest first, configured rather than fixed (decision 0028).
@@ -45,7 +46,10 @@ export const GradingScales: CollectionConfig = {
       type: 'array',
       required: true,
       minRows: 2,
-      admin: { description: 'Lowest first. A minimum grade is a point’s place here: 1, 2, 3…' },
+      admin: {
+        components: { RowLabel: rowLabelComponent('point') },
+        description: 'Lowest first. A minimum grade is a point’s place here: 1, 2, 3…',
+      },
       fields: [
         { name: 'label', type: 'text', required: true },
         { name: 'description', type: 'textarea' },

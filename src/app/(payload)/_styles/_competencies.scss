@@ -1,0 +1,139 @@
+// The Competencies list: a tab per framework edition, and its competencies as a tree
+// (src/components/admin/CompetenciesList.tsx and CompetencyTree.tsx).
+
+@use 'breakpoints';
+
+.competency-tree {
+  // The heading, and "Import framework edition" beside it (below it on a narrow phone).
+  &__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(var(--base) * 0.5) var(--base);
+    margin-block: calc(var(--base) * 1.5) var(--base);
+  }
+
+  &__header h1 {
+    margin: 0;
+  }
+
+  &__note {
+    color: var(--theme-elevation-500);
+  }
+
+  // Tabs wrap onto a second line rather than scrolling the page sideways on a phone.
+  &__tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc(var(--base) * 0.25);
+    border-bottom: 1px solid var(--theme-border-color);
+  }
+
+  &__tab {
+    padding: calc(var(--base) * 0.4) calc(var(--base) * 0.75);
+    border: 0;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    background: none;
+    color: var(--theme-elevation-500);
+    font: inherit;
+    cursor: pointer;
+
+    &[aria-selected='true'] {
+      border-bottom-color: var(--indy-link);
+      color: var(--theme-text);
+      font-weight: 600;
+    }
+  }
+
+  &__summary {
+    margin-block: var(--base);
+    color: var(--theme-elevation-500);
+
+    strong {
+      color: var(--theme-text);
+    }
+  }
+
+  &__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: calc(var(--base) * 0.5);
+    margin-bottom: var(--base);
+  }
+
+  // Payload's `search-bar` is full width; here it shares its row with Expand all.
+  &__search.search-bar {
+    flex: 1 1 16rem;
+    width: auto;
+    min-width: 0;
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th,
+    td {
+      padding: calc(var(--base) * 0.4) calc(var(--base) * 0.5);
+      border-bottom: 1px solid var(--theme-border-color);
+      text-align: start;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--theme-elevation-500);
+      font-weight: 500;
+    }
+
+    // Long titles wrap; nothing else is wide enough to push the page sideways.
+    td {
+      overflow-wrap: anywhere;
+    }
+  }
+
+  &__id {
+    width: 1%;
+    white-space: nowrap;
+    font-family: var(--font-mono);
+  }
+
+  &__indent {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--base) * 0.25);
+  }
+
+  &__toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--theme-elevation-500);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  &__gcap {
+    white-space: nowrap;
+    font-family: var(--font-mono);
+  }
+
+  &__row--match td {
+    background: color-mix(in oklab, var(--indy-link) 10%, transparent);
+  }
+
+  // At phone width the GCAP column drops out; a 768px tablet keeps it.
+  @media (max-width: breakpoints.$phone) {
+    &__gcap {
+      display: none;
+    }
+  }
+}

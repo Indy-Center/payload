@@ -171,7 +171,7 @@ describe('the catalogue', () => {
     })
     await payload.create({
       collection: 'tasks',
-      data: { name: 'Radio', citations: [{ source: order.id, section: '3-7-2' }] },
+      data: { name: 'Radio', citations: [{ source: order.id, place: '3-7-2' }] },
       ...asLead(),
     })
 
@@ -180,7 +180,34 @@ describe('the catalogue', () => {
     expect(body.sources).toEqual([
       { id: order.id, name: 'Example Order', edition: 'B', url: 'https://example.com/order' },
     ])
-    expect(body.tasks[0].citations).toEqual([{ sourceId: order.id, section: '3-7-2' }])
+    expect(body.tasks[0].citations).toEqual([{ sourceId: order.id, place: '3-7-2', title: null }])
     expect(body).not.toHaveProperty('references')
+  })
+
+  it('carries a citation place and its title when it has one', async () => {
+    const order = await payload.create({
+      collection: 'sources',
+      data: { name: 'Example Order', edition: 'B', url: 'https://example.com/order' },
+      ...asLead(),
+    })
+    await payload.create({
+      collection: 'tasks',
+      data: {
+        name: 'Radio',
+        citations: [
+          { source: order.id, place: '3-7-2', title: 'Radio checks' },
+          { source: order.id, place: 'Chapter 4' },
+        ],
+      },
+      ...asLead(),
+    })
+
+    const { body } = await callEndpoint(payload, '/courseware/catalogue')
+
+    expect(body.tasks[0].citations).toEqual([
+      { sourceId: order.id, place: '3-7-2', title: 'Radio checks' },
+      { sourceId: order.id, place: 'Chapter 4', title: null },
+    ])
+    expect(body.tasks[0].citations[0]).not.toHaveProperty('section')
   })
 })

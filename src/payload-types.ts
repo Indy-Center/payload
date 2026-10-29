@@ -80,9 +80,11 @@ export interface Config {
     'course-versions': CourseVersion;
     'lesson-plans': LessonPlan;
     scenarios: Scenario;
+    positions: Position;
     'partner-categories': PartnerCategory;
     partners: Partner;
     'payload-kv': PayloadKv;
+    'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -106,9 +108,11 @@ export interface Config {
     'course-versions': CourseVersionsSelect<false> | CourseVersionsSelect<true>;
     'lesson-plans': LessonPlansSelect<false> | LessonPlansSelect<true>;
     scenarios: ScenariosSelect<false> | ScenariosSelect<true>;
+    positions: PositionsSelect<false> | PositionsSelect<true>;
     'partner-categories': PartnerCategoriesSelect<false> | PartnerCategoriesSelect<true>;
     partners: PartnersSelect<false> | PartnersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -119,9 +123,11 @@ export interface Config {
   fallbackLocale: null;
   globals: {
     'teacher-resources': TeacherResource;
+    'payload-jobs-stats': PayloadJobsStat;
   };
   globalsSelect: {
     'teacher-resources': TeacherResourcesSelect<false> | TeacherResourcesSelect<true>;
+    'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -129,7 +135,13 @@ export interface Config {
   };
   user: User;
   jobs: {
-    tasks: unknown;
+    tasks: {
+      syncPositions: TaskSyncPositions;
+      inline: {
+        input: unknown;
+        output: unknown;
+      };
+    };
     workflows: unknown;
   };
 }
@@ -335,7 +347,7 @@ export interface Credential {
   name: string;
   description?: string | null;
   /**
-   * Certifications only: its place on the ladder, higher above lower. No two share one.
+   * Certifications only, and each needs one: its place on the ladder, higher above lower. No two share one.
    */
   rank?: number | null;
   /**
@@ -381,9 +393,13 @@ export interface Task {
     | {
         source: string | Source;
         /**
-         * Where in the source, such as 3-7-2.
+         * Chapter, section or paragraph as the source writes it, such as 3-7-2.a.
          */
-        section?: string | null;
+        place?: string | null;
+        /**
+         * The heading at that place.
+         */
+        title?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -427,6 +443,14 @@ export interface Course {
    * VATSIM CIDs of the people who may edit this course’s drafts, lesson plans and scenarios.
    */
   authors?: string[] | null;
+  moodleUrl?: string | null;
+  /**
+   * Empty unless the worked-out range misleads, as for a course with no editions. Filled, it replaces that range everywhere.
+   */
+  estimatedWeeks?: {
+    min?: number | null;
+    max?: number | null;
+  };
   /**
    * Credentials a student holds before enrolling. Every row must be met; a row is met by holding any one of its credentials.
    */
@@ -441,6 +465,10 @@ export interface Course {
    */
   prerequisitesNote?: string | null;
   /**
+   * The VATUSA Academy exam a student passes before training.
+   */
+  academyExam?: ('none' | 'S2' | 'S3' | 'C1') | null;
+  /**
    * Optional. Hours on these position types, counted together, such as 30 hours on GND or TWR.
    */
   consolidation?: {
@@ -448,31 +476,15 @@ export interface Course {
     positionTypes?: ('DEL' | 'GND' | 'TWR' | 'APP' | 'DEP' | 'CTR' | 'FSS')[] | null;
   };
   /**
-   * The rating exam the course ends in.
+   * The rating exam the course ends in. None: it ends in no exam.
    */
   ratingExam?: ('none' | 'S1' | 'S2' | 'S3' | 'C1') | null;
-  /**
-   * The VATUSA Academy exam a student passes before training.
-   */
-  academyExam?: ('none' | 'S2' | 'S3' | 'C1') | null;
-  /**
-   * Optional. How long the course usually runs.
-   */
-  estimatedWeeks?: {
-    min?: number | null;
-    max?: number | null;
-  };
-  /**
-   * The course can finish without its exam.
-   */
-  examOptional?: boolean | null;
-  moodleUrl?: string | null;
   /**
    * What finishing the course earns. Each credential is issued by one course.
    */
   credentialIssued?: (string | null) | Credential;
   /**
-   * Set by publishing a version. The library shows this one.
+   * Set by publishing an edition. The library shows this one.
    */
   currentVersion?: (string | null) | CourseVersion;
   updatedAt: string;
@@ -494,6 +506,10 @@ export interface CourseVersion {
    * Choose Published and save to publish: the version is checked, becomes the course’s current version, and its grading scale is fixed.
    */
   status: 'draft' | 'published';
+  /**
+   * Set when the edition is published.
+   */
+  publishedAt?: string | null;
   description?: string | null;
   /**
    * Minutes.
@@ -526,6 +542,7 @@ export interface CourseVersion {
 export interface LessonPlan {
   id: string;
   courseVersion: string | CourseVersion;
+  module?: string | null;
   /**
    * Such as S-GC-3.
    */
@@ -620,6 +637,46 @@ export interface Scenario {
     | null;
   /**
    * Retired scenarios stay where they are offered but are not offered anew.
+   */
+  retired?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Copied from vNAS Data Admin each day. Fix a position in Data Admin, then sync.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "positions".
+ */
+export interface Position {
+  id: string;
+  title: string;
+  /**
+   * Such as IND_83_CTR.
+   */
+  callsign: string;
+  name: string;
+  /**
+   * vNAS’s own, where it has one: FLM 83.
+   */
+  shortName?: string | null;
+  radioName: string;
+  /**
+   * In MHz.
+   */
+  frequency: number;
+  /**
+   * Such as SDF.
+   */
+  facilityId: string;
+  facilityName: string;
+  vnasId: string;
+  /**
+   * One of its facility’s main positions.
+   */
+  starred?: boolean | null;
+  /**
+   * vNAS no longer lists it. The sync sets this, and clears it if vNAS restores it.
    */
   retired?: boolean | null;
   updatedAt: string;
@@ -730,6 +787,107 @@ export interface PayloadKv {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs".
+ */
+export interface PayloadJob {
+  id: string;
+  /**
+   * Input data provided to the job
+   */
+  input?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  taskStatus?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  completedAt?: string | null;
+  totalTried?: number | null;
+  /**
+   * If hasError is true this job will not be retried
+   */
+  hasError?: boolean | null;
+  /**
+   * If hasError is true, this is the error that caused it
+   */
+  error?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Task execution log
+   */
+  log?:
+    | {
+        executedAt: string;
+        completedAt: string;
+        taskSlug: 'inline' | 'syncPositions';
+        taskID: string;
+        input?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        output?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        state: 'failed' | 'succeeded';
+        error?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  taskSlug?: ('inline' | 'syncPositions') | null;
+  queue?: string | null;
+  waitUntil?: string | null;
+  processing?: boolean | null;
+  meta?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -786,6 +944,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'scenarios';
         value: string | Scenario;
+      } | null)
+    | ({
+        relationTo: 'positions';
+        value: string | Position;
       } | null)
     | ({
         relationTo: 'partner-categories';
@@ -1021,7 +1183,8 @@ export interface TasksSelect<T extends boolean = true> {
     | T
     | {
         source?: T;
-        section?: T;
+        place?: T;
+        title?: T;
         id?: T;
       };
   retired?: T;
@@ -1052,6 +1215,13 @@ export interface CoursesSelect<T extends boolean = true> {
   code?: T;
   title?: T;
   authors?: T;
+  moodleUrl?: T;
+  estimatedWeeks?:
+    | T
+    | {
+        min?: T;
+        max?: T;
+      };
   prerequisites?:
     | T
     | {
@@ -1059,6 +1229,7 @@ export interface CoursesSelect<T extends boolean = true> {
         id?: T;
       };
   prerequisitesNote?: T;
+  academyExam?: T;
   consolidation?:
     | T
     | {
@@ -1066,15 +1237,6 @@ export interface CoursesSelect<T extends boolean = true> {
         positionTypes?: T;
       };
   ratingExam?: T;
-  academyExam?: T;
-  estimatedWeeks?:
-    | T
-    | {
-        min?: T;
-        max?: T;
-      };
-  examOptional?: T;
-  moodleUrl?: T;
   credentialIssued?: T;
   currentVersion?: T;
   updatedAt?: T;
@@ -1089,6 +1251,7 @@ export interface CourseVersionsSelect<T extends boolean = true> {
   course?: T;
   number?: T;
   status?: T;
+  publishedAt?: T;
   description?: T;
   time?: T;
   completionStandard?: T;
@@ -1111,6 +1274,7 @@ export interface CourseVersionsSelect<T extends boolean = true> {
  */
 export interface LessonPlansSelect<T extends boolean = true> {
   courseVersion?: T;
+  module?: T;
   code?: T;
   title?: T;
   description?: T;
@@ -1149,6 +1313,25 @@ export interface ScenariosSelect<T extends boolean = true> {
         required?: T;
         id?: T;
       };
+  retired?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "positions_select".
+ */
+export interface PositionsSelect<T extends boolean = true> {
+  title?: T;
+  callsign?: T;
+  name?: T;
+  shortName?: T;
+  radioName?: T;
+  frequency?: T;
+  facilityId?: T;
+  facilityName?: T;
+  vnasId?: T;
+  starred?: T;
   retired?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1205,6 +1388,38 @@ export interface PartnersSelect<T extends boolean = true> {
 export interface PayloadKvSelect<T extends boolean = true> {
   key?: T;
   data?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs_select".
+ */
+export interface PayloadJobsSelect<T extends boolean = true> {
+  input?: T;
+  taskStatus?: T;
+  completedAt?: T;
+  totalTried?: T;
+  hasError?: T;
+  error?: T;
+  log?:
+    | T
+    | {
+        executedAt?: T;
+        completedAt?: T;
+        taskSlug?: T;
+        taskID?: T;
+        input?: T;
+        output?: T;
+        state?: T;
+        error?: T;
+        id?: T;
+      };
+  taskSlug?: T;
+  queue?: T;
+  waitUntil?: T;
+  processing?: T;
+  meta?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1277,6 +1492,24 @@ export interface TeacherResource {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs-stats".
+ */
+export interface PayloadJobsStat {
+  id: string;
+  stats?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "teacher-resources_select".
  */
 export interface TeacherResourcesSelect<T extends boolean = true> {
@@ -1296,6 +1529,16 @@ export interface TeacherResourcesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs-stats_select".
+ */
+export interface PayloadJobsStatsSelect<T extends boolean = true> {
+  stats?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "collections_widget".
  */
 export interface CollectionsWidget {
@@ -1303,6 +1546,18 @@ export interface CollectionsWidget {
     [k: string]: unknown;
   };
   width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSyncPositions".
+ */
+export interface TaskSyncPositions {
+  input?: unknown;
+  output: {
+    added: number;
+    changed: number;
+    retired: number;
+  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

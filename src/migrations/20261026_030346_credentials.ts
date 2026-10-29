@@ -6,7 +6,7 @@ import { randomBytes } from 'node:crypto'
  * (`src/lib/certifications.ts`), so the CMS can become the list it reads (decision 0054). Their
  * prerequisites are not copied: those belong to the courses that issue them.
  */
-const CREDENTIALS = [
+export const CREDENTIALS = [
   {
     code: 'S-GC',
     kind: 'certification',

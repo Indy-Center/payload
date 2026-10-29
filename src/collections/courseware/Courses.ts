@@ -9,8 +9,12 @@ import type {
 import { number, relationship, select } from 'payload/shared'
 import { staffAccess } from '@/courseware/access'
 import { idOf } from '@/courseware/ids'
+import { rowLabelComponent } from '@/courseware/row-label-component'
+import type { Course } from '@/payload-types'
 
 const POSITION_TYPES = ['DEL', 'GND', 'TWR', 'APP', 'DEP', 'CTR', 'FSS'] as const
+
+const EDITION_CELL = '/components/admin/courses/EditionCell#EditionCell'
 
 const BOTH_WEEKS = 'Give both the fewest and the most weeks, or neither.'
 
@@ -36,6 +40,7 @@ const consolidationTypes: SelectFieldValidation = (value, options) => {
 }
 
 const fewestWeeks: NumberFieldValidation = (value, options) => {
+  if (given(value) && (value as number) < 1) return 'The fewest weeks is at least 1.'
   const valid = number(value, options)
   if (valid !== true) return valid
   return given(value) || !given((options.siblingData as Siblings)?.max) || BOTH_WEEKS
@@ -74,10 +79,68 @@ const pickableCredential: FilterOptions = async ({ id, req }) => {
   return named.length === 0 ? live : { or: [live, { id: { in: named } }] }
 }
 
-const prerequisiteRow: RelationshipFieldValidation = (value, options) => {
+/**
+ * Whether this save sets the course's credential issued: a new course, or one different from the
+ * stored. A prerequisite naming the issued credential is refused on whichever field the save set.
+ */
+async function setsCredentialIssued(options: Parameters<RelationshipFieldValidation>[1]) {
+  if (!options.id) return true
+  const stored = await options.req.payload.findByID({
+    collection: 'courses',
+    id: options.id,
+    depth: 0,
+    disableErrors: true,
+    req: options.req,
+  })
+  return idOf(stored?.credentialIssued) !== idOf((options.data as Partial<Course>).credentialIssued)
+}
+
+const credentialsInRow = (row: { anyOf?: unknown } | undefined) =>
+  ((row?.anyOf ?? []) as (string | { id: string })[]).map((credential) => idOf(credential))
+
+/**
+ * A prerequisite row names a credential once, across all the course's rows (a repeat is refused on
+ * the later row), and never the credential the course itself issues.
+ */
+const prerequisiteRow: RelationshipFieldValidation = async (value, options) => {
   if (!Array.isArray(value) || value.length === 0)
     return 'A prerequisite row names at least one credential. Remove the row if it is empty.'
-  return relationship(value, options)
+  const valid = await relationship(value, options)
+  if (valid !== true) return valid
+
+  const data = options.data as Partial<Course>
+  // The admin builds its form state on the server and calls this without a `path`, so the row's
+  // place comes from the path when there is one, else from the row itself; with neither, only
+  // repeats inside the row are caught here and the save catches the rest.
+  const rows = data.prerequisites ?? []
+  const position = Array.isArray(options.path)
+    ? Number(options.path[1])
+    : rows.indexOf(options.siblingData as (typeof rows)[number])
+  const seen = new Set(rows.slice(0, Math.max(position, 0)).flatMap(credentialsInRow))
+  const repeated = credentialsInRow({ anyOf: value }).find((id, index, own) => {
+    if (seen.has(id) || own.indexOf(id) !== index) return true
+    return false
+  })
+  const issued = idOf(data.credentialIssued)
+  const named = async (id: string | null) =>
+    (
+      await options.req.payload.findByID({
+        collection: 'credentials',
+        id: id!,
+        depth: 0,
+        req: options.req,
+      })
+    ).code
+
+  if (repeated)
+    return `${await named(repeated)} is named twice in the prerequisites. Name each credential once.`
+  if (
+    issued &&
+    credentialsInRow({ anyOf: value }).includes(issued) &&
+    !(await setsCredentialIssued(options))
+  )
+    return `${await named(issued)} is what ${data.code} issues, so it can’t also be a prerequisite.`
+  return true
 }
 
 /** A credential is issued by one course at most (0054), so finishing never grants it twice. */
@@ -88,6 +151,20 @@ const oneCoursePerCredential: RelationshipFieldValidation = async (value, option
   if (!credentialId) return true
 
   const { payload } = options.req
+  const codeOf = async () =>
+    (
+      await payload.findByID({
+        collection: 'credentials',
+        id: credentialId,
+        depth: 0,
+        req: options.req,
+      })
+    ).code
+  const data = options.data as Partial<Course>
+  const required = (data.prerequisites ?? []).flatMap(credentialsInRow)
+  if (required.includes(credentialId) && (await setsCredentialIssued(options)))
+    return `${await codeOf()} is a prerequisite of ${data.code}, so ${data.code} can’t also issue it.`
+
   const { docs } = await payload.find({
     collection: 'courses',
     where: {
@@ -102,13 +179,7 @@ const oneCoursePerCredential: RelationshipFieldValidation = async (value, option
     req: options.req,
   })
   if (docs.length === 0) return true
-  const credential = await payload.findByID({
-    collection: 'credentials',
-    id: credentialId,
-    depth: 0,
-    req: options.req,
-  })
-  return `${docs[0].code} already issues ${credential.code}. A credential is issued by one course only.`
+  return `${docs[0].code} already issues ${await codeOf()}. A credential is issued by one course only.`
 }
 
 /**
@@ -122,20 +193,59 @@ export const Courses: CollectionConfig = {
   slug: 'courses',
   admin: {
     useAsTitle: 'code',
-    defaultColumns: ['code', 'title', 'currentVersion'],
+    defaultColumns: ['code', 'title', 'currentVersion', 'draftEdition', 'credentialIssued'],
     group: 'Training',
+    // The course page has three tabs, Details, Content and History (decision 0056), and no API tab.
+    hideAPIURL: true,
+    components: {
+      views: {
+        // Two tabs, Courses and Credentials; Credentials are kept from here, not the nav.
+        list: { Component: '/components/admin/courses/CoursesListView#CoursesListView' },
+        edit: {
+          default: { tab: { label: 'Details', order: 100 } },
+          content: {
+            path: '/content',
+            Component: '/components/admin/courses/CourseContentView#CourseContentView',
+            tab: { label: 'Content', href: '/content', order: 200 },
+          },
+          history: {
+            path: '/history',
+            Component: '/components/admin/courses/CourseHistoryView#CourseHistoryView',
+            tab: { label: 'History', href: '/history', order: 300 },
+          },
+        },
+      },
+    },
   },
+  defaultSort: 'code',
   access: staffAccess,
+  // Details reads in the order the Training Admin thinks about a course: its basics, then who may
+  // enrol, then what finishing involves and earns (ticket 22). The groups are unnamed, so they
+  // only lay the form out: the stored data and the API keep their shape.
   fields: [
     {
-      name: 'code',
-      type: 'text',
-      required: true,
-      unique: true,
-      index: true,
-      admin: { description: 'The course code training-tools uses, such as S-GC.' },
+      type: 'row',
+      fields: [
+        {
+          name: 'code',
+          type: 'text',
+          required: true,
+          unique: true,
+          index: true,
+          admin: { description: 'The course code training-tools uses, such as S-GC.' },
+        },
+        { name: 'title', type: 'text', required: true },
+      ],
     },
-    { name: 'title', type: 'text', required: true },
+    {
+      // For a course author only, after the course's code and title.
+      name: 'staffOnlyNote',
+      type: 'ui',
+      admin: {
+        components: { Field: '/components/admin/courses/StaffOnlyNote#StaffOnlyNote' },
+        disableListColumn: true,
+      },
+    },
     {
       name: 'authors',
       label: 'Course authors',
@@ -150,109 +260,6 @@ export const Courses: CollectionConfig = {
         (value ?? []).every((cid) => /^\d+$/.test(cid)) || 'A course author is a CID: digits only.',
     },
     {
-      name: 'prerequisites',
-      type: 'array',
-      labels: { singular: 'Prerequisite', plural: 'Prerequisites' },
-      admin: {
-        description:
-          'Credentials a student holds before enrolling. Every row must be met; a row is met by holding any one of its credentials.',
-      },
-      fields: [
-        {
-          name: 'anyOf',
-          label: 'Holds one of these',
-          type: 'relationship',
-          relationTo: 'credentials',
-          hasMany: true,
-          required: true,
-          filterOptions: pickableCredential,
-          validate: prerequisiteRow,
-        },
-      ],
-    },
-    {
-      name: 'prerequisitesNote',
-      label: 'Prerequisites note',
-      type: 'textarea',
-      admin: {
-        description:
-          'Anything a student must do before enrolling that can’t be said otherwise, such as a policy to read.',
-      },
-    },
-    {
-      name: 'consolidation',
-      type: 'group',
-      admin: {
-        description:
-          'Optional. Hours on these position types, counted together, such as 30 hours on GND or TWR.',
-      },
-      fields: [
-        {
-          type: 'row',
-          fields: [
-            { name: 'hours', type: 'number', min: 1, validate: consolidationHours },
-            {
-              name: 'positionTypes',
-              label: 'Position types',
-              type: 'select',
-              hasMany: true,
-              options: [...POSITION_TYPES],
-              validate: consolidationTypes,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      name: 'ratingExam',
-      label: 'Rating exam',
-      type: 'select',
-      defaultValue: 'none',
-      options: [
-        { label: 'None', value: 'none' },
-        { label: 'S1', value: 'S1' },
-        { label: 'S2', value: 'S2' },
-        { label: 'S3', value: 'S3' },
-        { label: 'C1', value: 'C1' },
-      ],
-      admin: { description: 'The rating exam the course ends in.' },
-    },
-    {
-      name: 'academyExam',
-      label: 'VATUSA Academy exam',
-      type: 'select',
-      defaultValue: 'none',
-      options: [
-        { label: 'None', value: 'none' },
-        { label: 'S2', value: 'S2' },
-        { label: 'S3', value: 'S3' },
-        { label: 'C1', value: 'C1' },
-      ],
-      admin: { description: 'The VATUSA Academy exam a student passes before training.' },
-    },
-    {
-      name: 'estimatedWeeks',
-      label: 'Estimated weeks',
-      type: 'group',
-      admin: { description: 'Optional. How long the course usually runs.' },
-      fields: [
-        {
-          type: 'row',
-          fields: [
-            { name: 'min', label: 'Fewest', type: 'number', min: 0, validate: fewestWeeks },
-            { name: 'max', label: 'Most', type: 'number', min: 0, validate: mostWeeks },
-          ],
-        },
-      ],
-    },
-    {
-      name: 'examOptional',
-      label: 'Exam optional',
-      type: 'checkbox',
-      defaultValue: false,
-      admin: { description: 'The course can finish without its exam.' },
-    },
-    {
       name: 'moodleUrl',
       label: 'Moodle link',
       type: 'text',
@@ -260,25 +267,157 @@ export const Courses: CollectionConfig = {
         !value || value.startsWith('https://') || 'A link starts with https://.',
     },
     {
-      name: 'credentialIssued',
-      label: 'Credential issued',
-      type: 'relationship',
-      relationTo: 'credentials',
-      unique: true,
-      filterOptions: pickableCredential,
-      validate: oneCoursePerCredential,
+      // Worked out from the live edition, not stored (0058).
+      name: 'estimatedLength',
+      type: 'ui',
       admin: {
-        description: 'What finishing the course earns. Each credential is issued by one course.',
+        components: { Field: '/components/admin/courses/EstimatedLength#EstimatedLength' },
+        disableListColumn: true,
       },
     },
     {
+      name: 'estimatedWeeks',
+      label: 'Estimated weeks (override)',
+      type: 'group',
+      admin: {
+        description:
+          'Empty unless the worked-out range misleads, as for a course with no editions. Filled, it replaces that range everywhere.',
+      },
+      fields: [
+        {
+          type: 'row',
+          fields: [
+            { name: 'min', label: 'Fewest', type: 'number', min: 1, validate: fewestWeeks },
+            { name: 'max', label: 'Most', type: 'number', min: 0, validate: mostWeeks },
+          ],
+        },
+      ],
+    },
+    {
+      type: 'group',
+      label: 'Enrolment',
+      fields: [
+        {
+          name: 'prerequisites',
+          type: 'array',
+          labels: { singular: 'Prerequisite', plural: 'Prerequisites' },
+          admin: {
+            components: { RowLabel: rowLabelComponent('prerequisite') },
+            description:
+              'Credentials a student holds before enrolling. Every row must be met; a row is met by holding any one of its credentials.',
+          },
+          fields: [
+            {
+              name: 'anyOf',
+              label: 'Holds one of these',
+              type: 'relationship',
+              relationTo: 'credentials',
+              hasMany: true,
+              required: true,
+              filterOptions: pickableCredential,
+              validate: prerequisiteRow,
+            },
+          ],
+        },
+        {
+          name: 'prerequisitesNote',
+          label: 'Prerequisites note',
+          type: 'textarea',
+          admin: {
+            description:
+              'Anything a student must do before enrolling that can’t be said otherwise, such as a policy to read.',
+          },
+        },
+        {
+          name: 'academyExam',
+          label: 'VATUSA Academy exam',
+          type: 'select',
+          defaultValue: 'none',
+          options: [
+            { label: 'None', value: 'none' },
+            { label: 'S2', value: 'S2' },
+            { label: 'S3', value: 'S3' },
+            { label: 'C1', value: 'C1' },
+          ],
+          admin: { description: 'The VATUSA Academy exam a student passes before training.' },
+        },
+      ],
+    },
+    {
+      type: 'group',
+      label: 'Completion',
+      fields: [
+        {
+          name: 'consolidation',
+          type: 'group',
+          admin: {
+            description:
+              'Optional. Hours on these position types, counted together, such as 30 hours on GND or TWR.',
+          },
+          fields: [
+            {
+              type: 'row',
+              fields: [
+                { name: 'hours', type: 'number', min: 1, validate: consolidationHours },
+                {
+                  name: 'positionTypes',
+                  label: 'Position types',
+                  type: 'select',
+                  hasMany: true,
+                  options: [...POSITION_TYPES],
+                  validate: consolidationTypes,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'ratingExam',
+          label: 'Rating exam',
+          type: 'select',
+          defaultValue: 'none',
+          options: [
+            { label: 'None', value: 'none' },
+            { label: 'S1', value: 'S1' },
+            { label: 'S2', value: 'S2' },
+            { label: 'S3', value: 'S3' },
+            { label: 'C1', value: 'C1' },
+          ],
+          admin: { description: 'The rating exam the course ends in. None: it ends in no exam.' },
+        },
+        {
+          name: 'credentialIssued',
+          label: 'Credential issued',
+          type: 'relationship',
+          relationTo: 'credentials',
+          unique: true,
+          filterOptions: pickableCredential,
+          validate: oneCoursePerCredential,
+          admin: {
+            description:
+              'What finishing the course earns. Each credential is issued by one course.',
+            components: { Cell: '/components/admin/courses/CredentialCell#CredentialCell' },
+          },
+        },
+      ],
+    },
+    {
       name: 'currentVersion',
+      label: 'Live edition',
       type: 'relationship',
       relationTo: 'course-versions',
       admin: {
         readOnly: true,
-        description: 'Set by publishing a version. The library shows this one.',
+        description: 'Set by publishing an edition. The library shows this one.',
+        components: { Cell: EDITION_CELL },
       },
+    },
+    {
+      // A column in the Courses list only: the course's draft edition, looked up, not stored.
+      name: 'draftEdition',
+      label: 'Draft edition',
+      type: 'ui',
+      admin: { components: { Cell: EDITION_CELL } },
     },
   ],
 }

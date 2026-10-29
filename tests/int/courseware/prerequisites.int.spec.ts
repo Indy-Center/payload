@@ -31,8 +31,18 @@ beforeEach(async () => {
   admin = await account('admin@example.com', '1000000', ['training:admin'])
   lead = await account('lead@example.com', '1000009', ['training:lead'])
   author = await account('author@example.com', '1000001')
-  ground = await credential({ code: 'X-GC', kind: 'certification', name: 'Example Ground' })
-  approach = await credential({ code: 'Y-GC', kind: 'certification', name: 'Other Ground' })
+  ground = await credential({
+    code: 'X-GC',
+    kind: 'certification',
+    name: 'Example Ground',
+    rank: 1,
+  })
+  approach = await credential({
+    code: 'Y-GC',
+    kind: 'certification',
+    name: 'Other Ground',
+    rank: 2,
+  })
   local = await credential({ code: 'X-LC', kind: 'endorsement', name: 'Example Local' })
 })
 
@@ -105,6 +115,115 @@ describe("a course's prerequisites", () => {
         message: 'A prerequisite row names at least one credential. Remove the row if it is empty.',
       },
     ])
+  })
+
+  it('refuse a credential named twice, in one row or across rows', async () => {
+    const { id } = await course()
+    const twice = 'X-GC is named twice in the prerequisites. Name each credential once.'
+    const save = (prerequisites: { anyOf: string[] }[]) =>
+      payload.update({ collection: 'courses', id, data: { prerequisites }, ...as(lead) })
+
+    expect(await refusal(save([{ anyOf: [ground.id, approach.id, ground.id] }]))).toEqual([
+      { path: 'prerequisites.0.anyOf', message: twice },
+    ])
+    expect(await refusal(save([{ anyOf: [ground.id] }, { anyOf: [local.id, ground.id] }]))).toEqual(
+      [{ path: 'prerequisites.1.anyOf', message: twice }],
+    )
+
+    const saved = await save([{ anyOf: [ground.id, approach.id] }, { anyOf: [local.id] }])
+    expect(saved.prerequisites).toHaveLength(2)
+  })
+
+  it('refuse requiring the credential the course issues, on the field the save set', async () => {
+    const { id } = await course()
+    const own = 'X-LC is what X-TWR issues, so it can’t also be a prerequisite.'
+    const required = 'X-LC is a prerequisite of X-TWR, so X-TWR can’t also issue it.'
+
+    // Both set at once: Credential issued is refused.
+    expect(
+      await refusal(
+        payload.update({
+          collection: 'courses',
+          id,
+          data: {
+            prerequisites: [{ anyOf: [ground.id] }, { anyOf: [approach.id, local.id] }],
+            credentialIssued: local.id,
+          },
+          ...as(lead),
+        }),
+      ),
+    ).toEqual([{ path: 'credentialIssued', message: required }])
+
+    // Issuing a credential the course already requires is refused on Credential issued.
+    await payload.update({
+      collection: 'courses',
+      id,
+      data: { prerequisites: [{ anyOf: [local.id] }] },
+      ...as(lead),
+    })
+    expect(
+      await refusal(
+        payload.update({
+          collection: 'courses',
+          id,
+          data: { credentialIssued: local.id },
+          ...as(lead),
+        }),
+      ),
+    ).toEqual([{ path: 'credentialIssued', message: required }])
+    await payload.update({ collection: 'courses', id, data: { prerequisites: [] }, ...as(lead) })
+
+    await payload.update({
+      collection: 'courses',
+      id,
+      data: { credentialIssued: local.id },
+      ...as(lead),
+    })
+    // Naming it on a course that already issues it is refused too.
+    expect(
+      await refusal(
+        payload.update({
+          collection: 'courses',
+          id,
+          data: { prerequisites: [{ anyOf: [local.id] }] },
+          ...as(lead),
+        }),
+      ),
+    ).toEqual([{ path: 'prerequisites.0.anyOf', message: own }])
+
+    const saved = await payload.update({
+      collection: 'courses',
+      id,
+      data: { prerequisites: [{ anyOf: [ground.id] }] },
+      depth: 0,
+      ...as(lead),
+    })
+    expect(saved.credentialIssued).toBe(local.id)
+  })
+
+  it('are checked as the admin form does while editing, with no path to the row', async () => {
+    const { id } = await course()
+    const rows = [{ anyOf: [ground.id] }, { anyOf: [local.id, ground.id] }]
+    const array = payload.collections.courses.config.flattenedFields.find(
+      (field) => field.name === 'prerequisites',
+    ) as { flattenedFields: { validate: (value: unknown, options: object) => Promise<unknown> }[] }
+    const anyOf = array.flattenedFields[0]
+    // What addFieldStatePromise passes: the server's req, the whole data, the row, and no `path`.
+    const edit = (row: (typeof rows)[number]) =>
+      anyOf.validate(row.anyOf, {
+        id,
+        data: { prerequisites: rows },
+        siblingData: row,
+        event: 'onChange',
+        req: { payload, t: (key: string) => key },
+        hasMany: true,
+        relationTo: 'credentials',
+      })
+
+    expect(await edit(rows[0])).toBe(true)
+    expect(await edit(rows[1])).toBe(
+      'X-GC is named twice in the prerequisites. Name each credential once.',
+    )
   })
 
   it('are read by a course author, whose change to them is refused', async () => {
@@ -277,12 +396,13 @@ describe("the course document's prerequisites and credential issued", () => {
 
   it('are rows of credential codes and a code', async () => {
     const { id } = await course()
+    const issued = await credential({ code: 'X-RC', kind: 'endorsement', name: 'Example Radar' })
     await payload.update({
       collection: 'courses',
       id,
       data: {
         prerequisites: [{ anyOf: [approach.id, ground.id] }, { anyOf: [local.id] }],
-        credentialIssued: local.id,
+        credentialIssued: issued.id,
       },
     })
     await draftOf(id)
@@ -290,7 +410,7 @@ describe("the course document's prerequisites and credential issued", () => {
     const { body } = await callEndpoint(payload, '/courseware/courses/X-TWR/draft')
 
     expect(body.course.prerequisites).toEqual([{ anyOf: ['Y-GC', 'X-GC'] }, { anyOf: ['X-LC'] }])
-    expect(body.course.credentialIssued).toBe('X-LC')
+    expect(body.course.credentialIssued).toBe('X-RC')
   })
 
   it('are an empty list and null when unset', async () => {
