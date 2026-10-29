@@ -110,6 +110,9 @@ function everyKind() {
       '01K2NF1CN2EXAMPLETCP00000M1',
     ),
     at('SDF_Q_APP', '01EXAMPLEPOSITION000000APQ', 'Example Radar 2', 'Louisville Approach'),
+    at('CVG_W_TWR', '01EXAMPLEPOSITION0000CVGWT', 'Local Control West', 'Cincinnati Tower'),
+    at('CVG_W_GND', '01EXAMPLEPOSITION0000CVGWG', 'Ground Control West', 'Cincinnati Ground'),
+    at('CVG_C_TWR', '01EXAMPLEPOSITION0000CVGCT', 'Local Control Center', 'Cincinnati Tower'),
   )
   return body
 }
@@ -142,8 +145,12 @@ describe('generated short names', () => {
       // Tower, ground and delivery: the callsign's prefix and LC, GC or CD.
       LOU_TWR: 'LOU LC',
       PKB_TWR: 'PKB LC',
-      SDF_E_TWR: 'SDF LC',
-      SDF_E_GND: 'SDF GC',
+      // An east or west position ends with it; another middle part does not.
+      SDF_E_TWR: 'SDF LC E',
+      SDF_E_GND: 'SDF GC E',
+      CVG_W_TWR: 'CVG LC W',
+      CVG_W_GND: 'CVG GC W',
+      CVG_C_TWR: 'CVG LC',
       SDF_DEL: 'SDF CD',
       // Approach and departure: the prefix and the TCP's sector letter.
       SDF_D_APP: 'SDF D',
@@ -205,15 +212,15 @@ describe('a short name override', () => {
     await override(cmsAdmin, 'SDF_E_TWR', null)
 
     expect(await position('SDF_E_TWR')).toMatchObject({
-      title: 'SDF LC · Local Control East',
-      shortName: 'SDF LC',
-      indyShortName: { generated: 'SDF LC', override: null },
+      title: 'SDF LC E · Local Control East',
+      shortName: 'SDF LC E',
+      indyShortName: { generated: 'SDF LC E', override: null },
     })
 
     await override(cmsAdmin, 'SDF_E_TWR', 'SDF LE')
     await override(cmsAdmin, 'SDF_E_TWR', '  ')
     expect(await position('SDF_E_TWR')).toMatchObject({
-      shortName: 'SDF LC',
+      shortName: 'SDF LC E',
       indyShortName: { override: null },
     })
   })
@@ -245,6 +252,26 @@ describe('a short name override', () => {
       indyShortName: { override: 'ZID TM' },
     })
     expect((await servedInCatalogue()).ZID_TMU).toBe('TMU 99')
+  })
+
+  it('is vNAS’s for a center sector whose id has a leading zero', async () => {
+    // vNAS sends the position's sector id as the string "01" and the sector's as the number 1.
+    const published = response()
+    expect(published.facility.positions[1].eramConfiguration.sectorId).toBe('01')
+    published.facility.eramConfiguration.sectors.push({
+      id: '01EXAMPLESECTOR00000000001',
+      sectorId: 1,
+      name: 'ZID TMU',
+      shortName: 'TMU 1',
+      isFromEramData: true,
+      isExcluded: false,
+    })
+    await sync(published)
+
+    expect(await position('ZID_TMU')).toMatchObject({ shortName: 'TMU 1', vnasShortName: 'TMU 1' })
+    expect((await servedInCatalogue()).ZID_TMU).toBe('TMU 1')
+    // Sector "00" has no sector in the list, so its position still has none.
+    expect((await servedInCatalogue()).IND_EM_CTR).toBeNull()
   })
 
   it('is refused where vNAS has a short name', async () => {

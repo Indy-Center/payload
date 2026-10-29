@@ -12,7 +12,8 @@ const SUFFIX = { TWR: 'LC', GND: 'GC', DEL: 'CD' } as const
 /**
  * The short name generated from the callsign's prefix, the airport (not the facility: `DAY_M_APP`
  * sits in the CMH TRACON and gives `DAY M`): a tower `SDF LC`, a ground `SDF GC`, a delivery
- * `CRW CD`, and an approach or departure the prefix and its STARS TCP's sector letter
+ * `CRW CD`, each ending `E` or `W` where the callsign's middle part is that (`SDF_E_TWR` gives
+ * `SDF LC E`), and an approach or departure the prefix and its STARS TCP's sector letter
  * (`CRW_N_APP` → `CRW N`). Ramp, TMU, guard and anything else get none, as does a radar
  * position with no TCP.
  */
@@ -22,7 +23,13 @@ export function generatedShortName(position: {
 }): string | null {
   const type = positionType(position.callsign)
   const prefix = position.callsign.split('_')[0]
-  if (type === 'TWR' || type === 'GND' || type === 'DEL') return `${prefix} ${SUFFIX[type]}`
+  if (type === 'TWR' || type === 'GND' || type === 'DEL') {
+    // An east or west position (`SDF_E_TWR`) ends with it; other middle parts (`CVG_C_TWR`) don't.
+    const parts = position.callsign.split('_')
+    const middle = parts.length === 3 ? parts[1] : null
+    const side = middle === 'E' || middle === 'W' ? ` ${middle}` : ''
+    return `${prefix} ${SUFFIX[type]}${side}`
+  }
   if (type === 'APP' || type === 'DEP')
     return position.tcpSectorId ? `${prefix} ${position.tcpSectorId}` : null
   return null
