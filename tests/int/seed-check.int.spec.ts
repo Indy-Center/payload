@@ -57,6 +57,19 @@ describe('the browser-check seed', () => {
     })
     expect([draft.status, draft.number]).toEqual(['draft', 2])
     expect(records.positions.IND_83_CTR.url).toContain('/admin/collections/positions/')
+    const shortName = async (callsign: string) =>
+      (
+        await payload.findByID({
+          collection: 'positions',
+          id: records.positions[callsign].id,
+          user,
+          overrideAccess: false,
+        })
+      ).shortName
+    // vNAS's, a CMS admin's override, and a generated one.
+    expect(await shortName('IND_83_CTR')).toBe('FLM 83')
+    expect(await shortName('SDF_D_APP')).toBe('SDF DR')
+    expect(await shortName('SDF_E_TWR')).toBe('SDF LC')
   })
 
   it('refuses a database that has rows, unless asked to reset it', async () => {

@@ -93,12 +93,13 @@ describe('positions by hand', () => {
     }
   })
 
+  // The CMS admin may save a position, but only its overrides change (short-names.int.spec.ts).
   it.each([
-    ['the CMS admin', () => cmsAdmin],
-    ['the Training Admin', () => trainingAdmin],
-    ['a lead', () => lead],
-    ['an account with no role', () => member],
-  ])('are never created, edited or deleted by %s', async (_, who) => {
+    ['the CMS admin', () => cmsAdmin, false],
+    ['the Training Admin', () => trainingAdmin, true],
+    ['a lead', () => lead, true],
+    ['an account with no role', () => member, true],
+  ])('are never created, deleted or changed from vNAS by %s', async (_, who, refusedEdit) => {
     const user = who()
     await expect(
       payload.create({
@@ -107,14 +108,14 @@ describe('positions by hand', () => {
         ...as(user),
       }),
     ).rejects.toThrow(Forbidden)
-    await expect(
-      payload.update({
-        collection: 'positions',
-        id: position.id,
-        data: { name: 'Renamed' },
-        ...as(user),
-      }),
-    ).rejects.toThrow(Forbidden)
+    const edit = payload.update({
+      collection: 'positions',
+      id: position.id,
+      data: { name: 'Renamed' },
+      ...as(user),
+    })
+    if (refusedEdit) await expect(edit).rejects.toThrow(Forbidden)
+    else await edit
     await expect(
       payload.delete({ collection: 'positions', id: position.id, ...as(user) }),
     ).rejects.toThrow(Forbidden)

@@ -17,11 +17,11 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { createLocalReq, getPayload, type CollectionSlug, type Payload } from 'payload'
-import { positionTitle } from '../src/collections/courseware/Positions'
 import { publishingFaults } from '../src/courseware/publishing'
 import { resetDatabase } from '../src/dev/reset-database'
 import { CREDENTIALS } from '../src/migrations/20261026_030346_credentials'
 import config from '../src/payload.config'
+import { storedFrom } from '../src/positions/sync'
 import { readPositions } from '../src/positions/vnas'
 
 /** A record the seed made, and where the admin shows it. */
@@ -414,14 +414,26 @@ async function seedCourses({ payload, credentials, tasks, scales }: Ctx): Promis
 // ---------------------------------------------------------------------------------------------
 // Positions
 
-/** The seven in the sync's test fixture, stored as the sync stores them; the last is retired. */
+/** A CMS admin's short name, in place of the generated `SDF D`. */
+const SHORT_NAME_OVERRIDES: Record<string, string> = { SDF_D_APP: 'SDF DR' }
+
+/**
+ * The seven in the sync's test fixture, stored as the sync stores them; the last is retired.
+ * IND_83_CTR has vNAS's short name, the towers their generated ones, and SDF_D_APP an override.
+ */
 async function seedPositions(payload: Payload): Promise<MadeIn> {
   const into: MadeIn = {}
   const fromVnas = readPositions(JSON.parse(readFileSync(POSITIONS_FIXTURE, 'utf8')))
   for (const [index, position] of fromVnas.entries()) {
+    const stored = storedFrom(position)
     await make(payload, into, 'positions', position.callsign, {
-      ...position,
-      title: positionTitle(position),
+      ...stored,
+      indyShortName: {
+        ...stored.indyShortName,
+        override: SHORT_NAME_OVERRIDES[position.callsign] ?? null,
+      },
+      // The collection's hook sets the title and the short name served.
+      title: '',
       retired: index === fromVnas.length - 1,
     })
   }
