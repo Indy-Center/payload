@@ -82,12 +82,20 @@ async function apply(req: PayloadRequest, fromVnas: VnasPosition[]): Promise<Syn
     return differs ? [{ existing, fields }] : []
   })
   const takenOver = new Set(changed.map(({ existing }) => existing.id))
-  const retiring = stored.filter(
-    (position) => !inVnas.has(position.vnasId) && !position.retired && !takenOver.has(position.id),
+  const dropped = stored.filter(
+    (position) => !inVnas.has(position.vnasId) && !takenOver.has(position.id),
   )
+  const retiring = dropped.filter((position) => !position.retired)
+  // A position vNAS still lists may be renamed to the callsign of one it dropped. The dropped
+  // record keeps its old callsign with its vNAS id beside it, so the two never clash.
+  const wanted = new Set(fromVnas.map((position) => position.callsign))
+  const releasing = dropped.filter((position) => wanted.has(position.callsign))
 
   // Callsigns are unique at every step, so a position whose callsign changes first lets go of its
   // old one: vNAS may have swapped two, or given a freed one to a new position.
+  for (const position of releasing) {
+    await update(position.id, { callsign: `${position.callsign} (retired ${position.vnasId})` })
+  }
   for (const { existing, fields } of changed) {
     if (existing.callsign !== fields.callsign)
       await update(existing.id, { callsign: `${existing.vnasId}.syncing` })

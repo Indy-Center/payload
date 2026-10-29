@@ -266,6 +266,77 @@ describe('syncing positions from vNAS', () => {
       expect(await byCallsign('SDF_E_TWR')).toMatchObject({ vnasId: NEW_ID, name: 'Local Control' })
     })
   })
+
+  describe('a callsign vNAS gives to a position it still lists, from one it dropped', () => {
+    const PKB_ID = '01GMQCS4DB3KJV12D2KM83CWTV'
+    /** The stored response without PKB_TWR, and SDF_D_APP renamed to PKB_TWR. */
+    const renamedOnto = () => {
+      const answer = response()
+      answer.facility.childFacilities.splice(1, 1)
+      const [departure] = answer.facility.childFacilities[0].positions
+      departure.callsign = 'PKB_TWR'
+      return { answer, departureId: departure.id }
+    }
+
+    it('retires the dropped record under a callsign of its own, and renames the listed one', async () => {
+      vnasReturns(response())
+      await pressSync(cmsAdmin)
+      const before = await byCallsign('PKB_TWR')
+      vi.restoreAllMocks()
+      const { answer, departureId } = renamedOnto()
+      vnasReturns(answer)
+
+      const { status, body } = await pressSync(cmsAdmin)
+
+      expect(status).toBe(200)
+      expect(body).toEqual({ added: 0, changed: 1, retired: 1 })
+      expect(await byCallsign('PKB_TWR')).toMatchObject({ vnasId: departureId, retired: false })
+      expect(await byCallsign(`PKB_TWR (retired ${PKB_ID})`)).toMatchObject({
+        id: before!.id,
+        vnasId: PKB_ID,
+        retired: true,
+      })
+      expect(await positions()).toHaveLength(7)
+    })
+
+    it('does the same for a record retired by an earlier sync', async () => {
+      vnasReturns(response())
+      await pressSync(cmsAdmin)
+      vi.restoreAllMocks()
+      const dropped = response()
+      dropped.facility.childFacilities.splice(1, 1)
+      vnasReturns(dropped)
+      await pressSync(cmsAdmin)
+      vi.restoreAllMocks()
+      const { answer, departureId } = renamedOnto()
+      vnasReturns(answer)
+
+      const { status, body } = await pressSync(cmsAdmin)
+
+      expect(status).toBe(200)
+      expect(body).toEqual({ added: 0, changed: 1, retired: 0 })
+      expect(await byCallsign('PKB_TWR')).toMatchObject({ vnasId: departureId })
+      expect(await byCallsign(`PKB_TWR (retired ${PKB_ID})`)).toMatchObject({ retired: true })
+      // The next day's sync goes through as well.
+      expect((await pressSync(cmsAdmin)).body).toEqual({ added: 0, changed: 0, retired: 0 })
+    })
+
+    it('gives the record its callsign back when vNAS lists it again', async () => {
+      vnasReturns(response())
+      await pressSync(cmsAdmin)
+      vi.restoreAllMocks()
+      vnasReturns(renamedOnto().answer)
+      await pressSync(cmsAdmin)
+      vi.restoreAllMocks()
+      vnasReturns(response())
+
+      const { body } = await pressSync(cmsAdmin)
+
+      expect(body).toEqual({ added: 0, changed: 2, retired: 0 })
+      expect(await byCallsign('PKB_TWR')).toMatchObject({ vnasId: PKB_ID, retired: false })
+      expect(await byCallsign('SDF_D_APP')).toBeDefined()
+    })
+  })
 })
 
 describe('the daily sync', () => {
