@@ -13,7 +13,7 @@
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
     "import:frameworks": "tsx scripts/import-frameworks.ts",
-    "lint": "cross-env NODE_OPTIONS=--no-deprecation eslint .",
+    "lint": "cross-env NODE_OPTIONS=--no-deprecation eslint . && bash scripts/check-breakpoints.sh",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
     "test": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",

@@ -11,7 +11,7 @@
 import path from 'node:path'
 import { parseArgs } from 'node:util'
 import { importFrameworks, type Tally } from '../src/courseware/import/import-frameworks'
-import { readSheets, SHEET_FILES } from '../src/courseware/import/sheets'
+import { ALL_SHEET_FILES, NotTheSheet, readSheets } from '../src/courseware/import/sheets'
 import { restStore, signIn } from '../src/courseware/import/store'
 
 const { values } = parseArgs({
@@ -40,11 +40,14 @@ if (folder === repo || folder.startsWith(repo + path.sep)) {
   fail(`Keep the sheets outside this repository: ${folder} is inside ${repo}.`)
 }
 
-console.log(`Reading ${[SHEET_FILES.usa, SHEET_FILES.gcap, ...SHEET_FILES.rubrics].join(', ')}`)
+console.log(`Reading ${ALL_SHEET_FILES.join(', ')}`)
 console.log(`from ${folder}, into ${url}.`)
+const sheetsRead = await readSheets(folder).catch((error) =>
+  error instanceof NotTheSheet ? fail(error.faults.join('\n')) : Promise.reject(error),
+)
 const report = await importFrameworks(
   restStore(url, await signIn(url, email, password)),
-  await readSheets(folder),
+  sheetsRead,
   { usa: usaEdition, gcap: gcapEdition },
 )
 

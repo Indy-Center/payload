@@ -1,0 +1,73 @@
+// A competency's page: the import note, its Children grid and its Taught by list
+// (src/components/admin/CompetencyPage.tsx).
+
+@use 'breakpoints';
+
+.competency-page {
+  &__note {
+    margin-block: 0 var(--base);
+    color: var(--theme-elevation-500);
+  }
+
+  &__section {
+    margin-bottom: var(--base);
+  }
+
+  &__heading {
+    margin-block: 0 calc(var(--base) * 0.5);
+  }
+
+  &__count {
+    color: var(--theme-elevation-500);
+    font-size: 0.875rem;
+    font-weight: 400;
+  }
+
+  &__none {
+    margin: 0;
+    color: var(--theme-elevation-500);
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th,
+    td {
+      padding: calc(var(--base) * 0.4) calc(var(--base) * 0.5);
+      border-bottom: 1px solid var(--theme-border-color);
+      text-align: start;
+      vertical-align: top;
+      // Long wording wraps; nothing is wide enough to push the page sideways.
+      overflow-wrap: anywhere;
+    }
+
+    th {
+      color: var(--theme-elevation-500);
+      font-weight: 500;
+    }
+  }
+
+  &__id {
+    white-space: nowrap;
+    font-family: var(--font-mono);
+  }
+
+  &__tasks {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      padding-block: calc(var(--base) * 0.25);
+      overflow-wrap: anywhere;
+    }
+  }
+
+  // At phone width the text column drops out, as on the tree.
+  @media (max-width: breakpoints.$phone) {
+    &__text {
+      display: none;
+    }
+  }
+}

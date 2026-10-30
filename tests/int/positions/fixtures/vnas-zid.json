@@ -1,0 +1,137 @@
+{
+  "id": "ZID",
+  "lastUpdatedAt": "2026-10-24T22:32:46.805Z",
+  "facility": {
+    "id": "ZID",
+    "type": "Artcc",
+    "name": "Indianapolis ARTCC",
+    "childFacilities": [
+      {
+        "id": "SDF",
+        "type": "AtctTracon",
+        "name": "Louisville ATCT/TRACON",
+        "starsConfiguration": {
+          "tcps": [
+            { "subset": 1, "sectorId": "D", "id": "01K2NF1CN2Q3RJXC2NGKD7GHSF" },
+            { "subset": 1, "sectorId": "T", "id": "01K2NF1CN2MA34KXP2N8B3PF59" },
+            { "subset": 1, "sectorId": "Z", "id": "01K2NF1CN2407AYCSSEDC7GZXA" }
+          ]
+        },
+        "childFacilities": [
+          {
+            "id": "LOU",
+            "type": "Atct",
+            "name": "Bowman ATCT",
+            "childFacilities": [],
+            "positions": [
+              {
+                "id": "01GRVKE3K4X2FEBXGSMW9XSD6M",
+                "name": "Local Control",
+                "starred": true,
+                "radioName": "Bowman Tower",
+                "callsign": "LOU_TWR",
+                "frequency": 119500000,
+                "starsConfiguration": {
+                  "areaId": "01JK673FW69WV7JXA0CA42ZQBC",
+                  "colorSet": "Tdw",
+                  "tcpId": "01K2NF1CN2407AYCSSEDC7GZXA"
+                }
+              }
+            ]
+          }
+        ],
+        "positions": [
+          {
+            "id": "01GRSYB41TN9CXF6QM1MBBWB1Y",
+            "name": "Departure Radar 1",
+            "starred": true,
+            "radioName": "Louisville Approach",
+            "callsign": "SDF_D_APP",
+            "frequency": 132075000,
+            "starsConfiguration": {
+              "areaId": "01GSFT7WPBFT3Z4Z0ZNPVSMY72",
+              "colorSet": "Tcw",
+              "tcpId": "01K2NF1CN2Q3RJXC2NGKD7GHSF"
+            }
+          },
+          {
+            "id": "01GRSY0X97QHN3PF6FQ9ZFGPYE",
+            "name": "Local Control East",
+            "starred": true,
+            "radioName": "Louisville Tower",
+            "callsign": "SDF_E_TWR",
+            "frequency": 124200000,
+            "starsConfiguration": {
+              "areaId": "01GSG6DE8RKAHF244B5SY9QADT",
+              "colorSet": "Tdw",
+              "tcpId": "01K2NF1CN2MA34KXP2N8B3PF59"
+            }
+          }
+        ]
+      },
+      {
+        "id": "PKB",
+        "type": "Atct",
+        "name": "Parkersburg ATCT",
+        "childFacilities": [],
+        "positions": [
+          {
+            "id": "01GMQCS4DB3KJV12D2KM83CWTV",
+            "name": "Local Control",
+            "starred": true,
+            "radioName": "Parkersburg Tower",
+            "callsign": "PKB_TWR",
+            "frequency": 123700000
+          }
+        ]
+      }
+    ],
+    "positions": [
+      {
+        "id": "01GFTXMTZDDJ9XKMJ7AX0EXKQF",
+        "name": "Falmouth 83",
+        "starred": true,
+        "radioName": "Indy Center",
+        "callsign": "IND_83_CTR",
+        "frequency": 128225000,
+        "eramConfiguration": {
+          "sectorId": "83"
+        }
+      },
+      {
+        "id": "01HDV6M4SSRDHMVE6HHST8X5WT",
+        "name": "ZID TMU",
+        "starred": false,
+        "radioName": "ZID TMU",
+        "callsign": "ZID_TMU",
+        "frequency": 123450000,
+        "eramConfiguration": {
+          "sectorId": "01"
+        }
+      },
+      {
+        "id": "01JA39G206AP7SFT998ADPTYXK",
+        "name": "ZID GUARD",
+        "starred": false,
+        "radioName": "Indianapolis Center",
+        "callsign": "IND_EM_CTR",
+        "frequency": 121500000,
+        "eramConfiguration": {
+          "sectorId": "00"
+        }
+      }
+    ],
+    "eramConfiguration": {
+      "sectors": [
+        {
+          "id": "01KS8JGDQ5ZZYBXR6EB8RPC3C8",
+          "sectorId": 83,
+          "name": "Falmouth 83",
+          "shortName": "FLM 83",
+          "isFromEramData": true,
+          "isExcluded": false
+        }
+      ]
+    }
+  }
+}

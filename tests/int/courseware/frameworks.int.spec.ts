@@ -79,32 +79,6 @@ describe('mappings', () => {
   })
 })
 
-describe('references', () => {
-  it('needs a link or an Indy document', async () => {
-    await expect(
-      payload.create({ collection: 'references', data: { name: 'Order', edition: 'A' } }),
-    ).rejects.toThrow()
-  })
-
-  it('are cited by tasks with a section, and served in the catalogue', async () => {
-    const order = await payload.create({
-      collection: 'references',
-      data: { name: 'Example Order', edition: 'B', url: 'https://example.com/order' },
-    })
-    await payload.create({
-      collection: 'tasks',
-      data: { name: 'Radio', citations: [{ reference: order.id, section: '3-7-2' }] },
-    })
-
-    const { body } = await callEndpoint(payload, '/courseware/catalogue')
-
-    expect(body.references).toEqual([
-      { id: order.id, name: 'Example Order', edition: 'B', url: 'https://example.com/order' },
-    ])
-    expect(body.tasks[0].citations).toEqual([{ referenceId: order.id, section: '3-7-2' }])
-  })
-})
-
 describe('the catalogue', () => {
   it('serves frameworks and their competencies', async () => {
     const { usa, heading, standard } = await framework()

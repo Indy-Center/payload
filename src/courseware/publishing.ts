@@ -1,42 +1,18 @@
 import { ValidationError, type PayloadRequest } from 'payload'
-import type { CourseVersion, LessonPlan, Scenario } from '@/payload-types'
+import type { CourseVersion, Scenario } from '@/payload-types'
 import { idOf } from './ids'
-
-type Ref = string | { id: string } | null | undefined
-const ids = (refs: readonly Ref[] | null | undefined) => (refs ?? []).map(idOf).join()
+import { inScale } from './minimums'
 
 const refuse = (path: string, messages: string[]): never => {
   throw new ValidationError({ errors: messages.map((message) => ({ path, message })) })
 }
 
 /**
- * What a published course version may no longer change (decisions 0007, 0009): which course and
- * number it is, its scale and default minimum, and its modules and their lesson plans in order.
- * Module titles and descriptions, and the version's other wording, still save.
+ * The only lock on a published course version (decision 0055): it stays published, and its grading
+ * scale cannot be swapped, because grades are stored as a point's position on it. Everything else
+ * stays editable; who may change its structure is a permission (`structure.ts`).
  */
-function versionShape(version: Partial<CourseVersion>): string {
-  return JSON.stringify([
-    idOf(version.course),
-    version.number,
-    idOf(version.gradingScale),
-    version.defaultMinimum ?? null,
-    (version.modules ?? []).map((module) => [module.id, ids(module.lessonPlans)]),
-  ])
-}
-
-/** What a published version's lesson plan may no longer change; teacher notes and wording save. */
-function lessonPlanShape(plan: Partial<LessonPlan>): string {
-  return JSON.stringify([
-    idOf(plan.courseVersion),
-    plan.minimum ?? null,
-    (plan.theoryItems ?? []).map((item) => [item.id, idOf(item.task)]),
-    ids(plan.scenarios),
-  ])
-}
-
-const FROZEN = 'This course version is published, so its shape cannot change; only its wording can.'
-
-export function refuseVersionShapeChange(
+export function refuseScaleChange(
   data: Partial<CourseVersion>,
   originalDoc: CourseVersion | undefined,
 ): void {
@@ -44,27 +20,10 @@ export function refuseVersionShapeChange(
   if (data.status !== 'published') {
     refuse('status', ['A published course version stays published.'])
   }
-  if (versionShape(data) !== versionShape(originalDoc)) refuse('modules', [FROZEN])
-}
-
-export async function refuseLessonPlanShapeChange(
-  req: PayloadRequest,
-  data: Partial<LessonPlan>,
-  /** The plan before this save, or null when it is being created. */
-  before: LessonPlan | null,
-): Promise<void> {
-  for (const versionId of new Set([idOf(before?.courseVersion), idOf(data.courseVersion)])) {
-    if (!versionId) continue
-    const version = await req.payload.findByID({
-      collection: 'course-versions',
-      id: versionId,
-      depth: 0,
-      req,
-    })
-    if (version.status !== 'published') continue
-    if (!before || lessonPlanShape(data) !== lessonPlanShape(before)) {
-      refuse('theoryItems', [FROZEN])
-    }
+  if (idOf(data.gradingScale) !== idOf(originalDoc.gradingScale)) {
+    refuse('gradingScale', [
+      'This edition is published, so its grading scale cannot change: grades already given are points on it.',
+    ])
   }
 }
 
@@ -77,6 +36,15 @@ export async function refuseUnpublishable(
   req: PayloadRequest,
   version: Partial<CourseVersion>,
 ): Promise<void> {
+  const faults = await publishingFaults(req, version)
+  if (faults.length > 0) refuse('status', faults)
+}
+
+/** Every fault the publishing check finds, each once; none when the version may be published. */
+export async function publishingFaults(
+  req: PayloadRequest,
+  version: Partial<CourseVersion>,
+): Promise<string[]> {
   const faults: string[] = []
   const scaleId = idOf(version.gradingScale)
   const scale = scaleId
@@ -150,9 +118,5 @@ export async function refuseUnpublishable(
     }
   }
 
-  if (faults.length > 0) refuse('status', [...new Set(faults)])
-}
-
-function inScale(position: number | null | undefined, points: number): boolean {
-  return position != null && Number.isInteger(position) && position >= 1 && position <= points
+  return [...new Set(faults)]
 }

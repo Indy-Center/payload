@@ -1,8 +1,14 @@
-import type { Payload } from 'payload'
+import type { PostgresAdapter } from '@payloadcms/db-postgres'
+import { ValidationError, type Payload, type PayloadRequest } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { callEndpoint, resetDatabase, testPayload } from './helpers'
+import * as scenarioMigration from '@/migrations/20261026_021707_scenario_positions_and_difficulty'
+import type { Position, Scenario, User } from '@/payload-types'
+import { callEndpoint, position, resetDatabase, testPayload } from './helpers'
 
 let payload: Payload
+/** Live positions any scenario here may pick. */
+let tower: Position
+let center: Position
 
 beforeAll(async () => {
   payload = await testPayload()
@@ -10,10 +16,15 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetDatabase(payload)
+  tower = await position(payload, 'XYZ_TWR', { name: 'Example Tower' })
+  center = await position(payload, 'XYZ_83_CTR', { name: 'Example 83', shortName: 'EXA 83' })
 })
 
-async function course(code: string) {
-  const record = await payload.create({ collection: 'courses', data: { code, title: code } })
+async function course(code: string, authors: string[] = []) {
+  const record = await payload.create({
+    collection: 'courses',
+    data: { code, title: code, authors },
+  })
   const version = await payload.create({
     collection: 'course-versions',
     data: { course: record.id, number: 1, status: 'draft' },
@@ -33,12 +44,24 @@ function scenario(courseId: string, practicalTasks: { task: string; required?: b
       course: courseId,
       name: 'Busy afternoon',
       airport: 'KXYZ',
-      position: 'XYZ_TWR',
-      difficulty: 'Hard',
+      studentPosition: tower.id,
+      teacherPosition: center.id,
+      difficulty: 'hard',
       mode: 'sim',
       practicalTasks,
     },
   })
+}
+
+async function refusal(promise: Promise<unknown>): Promise<{ path: string; message: string }[]> {
+  try {
+    await promise
+  } catch (error) {
+    if (error instanceof ValidationError)
+      return error.data.errors.map(({ path, message }) => ({ path, message }))
+    throw error
+  }
+  throw new Error('Expected the save to be refused')
 }
 
 describe('scenarios', () => {
@@ -57,16 +80,6 @@ describe('scenarios', () => {
       { task: takeoff.id, required: true },
       { task: luaw.id, required: true },
     ])
-  })
-
-  it('refuses a position not in VATUSA format', async () => {
-    const { course: owner } = await course('X-TWR')
-    await expect(
-      payload.create({
-        collection: 'scenarios',
-        data: { course: owner.id, name: 'Bad', airport: 'KXYZ', position: 'tower', mode: 'live' },
-      }),
-    ).rejects.toThrow()
   })
 
   it('is retired, not deleted', async () => {
@@ -89,6 +102,186 @@ describe('scenarios', () => {
   })
 })
 
+describe('a scenario saved by its course’s author', () => {
+  const RETIRED = 'This position is retired. Pick one vNAS still lists.'
+
+  let author: User
+  let courseId: string
+
+  beforeEach(async () => {
+    author = await payload.create({
+      collection: 'users',
+      data: { email: 'author@example.com', password: 'example-password', cid: '1000001' },
+    })
+    courseId = (await course('X-TWR', [author.cid!])).course.id
+  })
+
+  function save(data: Partial<Scenario>) {
+    return payload.create({
+      collection: 'scenarios',
+      depth: 0,
+      data: {
+        course: courseId,
+        name: 'Busy afternoon',
+        airport: 'KXYZ',
+        studentPosition: tower.id,
+        teacherPosition: center.id,
+        mode: 'sim',
+        ...data,
+      },
+      user: author,
+      overrideAccess: false,
+    })
+  }
+
+  function change(id: string, data: Partial<Scenario>) {
+    return payload.update({
+      collection: 'scenarios',
+      id,
+      depth: 0,
+      data,
+      user: author,
+      overrideAccess: false,
+    })
+  }
+
+  it('picks its student position and teacher position from Positions', async () => {
+    const saved = await save({ studentPosition: center.id, teacherPosition: tower.id })
+
+    expect(saved).toMatchObject({ studentPosition: center.id, teacherPosition: tower.id })
+  })
+
+  it('needs a student position and a teacher position', async () => {
+    const refused = await refusal(save({ studentPosition: null!, teacherPosition: null! }))
+
+    expect(refused).toEqual([
+      { path: 'studentPosition', message: 'This field is required.' },
+      { path: 'teacherPosition', message: 'This field is required.' },
+    ])
+  })
+
+  it('refuses a retired position', async () => {
+    const dropped = await position(payload, 'XYZ_GND', { retired: true })
+
+    expect(await refusal(save({ studentPosition: dropped.id }))).toEqual([
+      { path: 'studentPosition', message: RETIRED },
+    ])
+    expect(await refusal(save({ teacherPosition: dropped.id }))).toEqual([
+      { path: 'teacherPosition', message: RETIRED },
+    ])
+  })
+
+  it('keeps a position it already names when vNAS drops it', async () => {
+    const saved = await save({})
+    await payload.update({ collection: 'positions', id: center.id, data: { retired: true } })
+
+    const changed = await change(saved.id, { name: 'Busy evening' })
+
+    expect(changed).toMatchObject({ name: 'Busy evening', teacherPosition: center.id })
+  })
+
+  it('refuses a retired position it does not already name', async () => {
+    const saved = await save({})
+    const dropped = await position(payload, 'XYZ_GND', { retired: true })
+
+    expect(await refusal(change(saved.id, { teacherPosition: dropped.id }))).toEqual([
+      { path: 'teacherPosition', message: RETIRED },
+    ])
+  })
+
+  it('keeps a retired position only in the slot that names it', async () => {
+    const saved = await save({})
+    await payload.update({ collection: 'positions', id: tower.id, data: { retired: true } })
+    await payload.update({ collection: 'positions', id: center.id, data: { retired: true } })
+
+    // Each stays where it is, even when the save sets them again.
+    expect(
+      await change(saved.id, { studentPosition: tower.id, teacherPosition: center.id }),
+    ).toMatchObject({ studentPosition: tower.id, teacherPosition: center.id })
+    // Swapped, each is picked into the slot that doesn't name it.
+    expect(
+      await refusal(change(saved.id, { studentPosition: center.id, teacherPosition: tower.id })),
+    ).toEqual([
+      { path: 'studentPosition', message: RETIRED },
+      { path: 'teacherPosition', message: RETIRED },
+    ])
+  })
+
+  it('picks its difficulty from Easy, Medium and Hard, or none', async () => {
+    for (const difficulty of ['easy', 'medium', 'hard'] as const) {
+      expect(await save({ difficulty })).toMatchObject({ difficulty })
+    }
+    expect((await save({})).difficulty ?? null).toBeNull()
+  })
+
+  it('refuses any other difficulty', async () => {
+    for (const difficulty of ['Hard', 'very hard']) {
+      const refused = await refusal(save({ difficulty: difficulty as Scenario['difficulty'] }))
+      expect(refused.map(({ path }) => path)).toEqual(['difficulty'])
+    }
+  })
+})
+
+describe('the migration to Easy, Medium and Hard', () => {
+  type OldScenario = { course: string; name: string; difficulty: string | null }
+
+  /**
+   * Runs the migration over scenarios in the old shape, as far as its check reads them, and
+   * returns the message it stopped with. Every scenario is still there afterwards, unchanged.
+   */
+  async function refusalOver(scenarios: OldScenario[]): Promise<string> {
+    const { pool, drizzle } = payload.db as unknown as PostgresAdapter
+    const courses = new Map<string, string>()
+    for (const { course: code } of scenarios) {
+      if (!courses.has(code)) courses.set(code, (await course(code)).course.id)
+    }
+    await pool.query(`alter table "scenarios" rename to "scenarios_aside"`)
+    try {
+      await pool.query(`create table "scenarios" ("id" uuid primary key, "course_id" uuid not null,
+        "name" varchar not null, "difficulty" varchar)`)
+      for (const { course: code, name, difficulty } of scenarios) {
+        await pool.query(`insert into "scenarios" values (gen_random_uuid(), $1, $2, $3)`, [
+          courses.get(code),
+          name,
+          difficulty,
+        ])
+      }
+      const message = await scenarioMigration
+        .up({ db: drizzle, payload, req: {} as PayloadRequest })
+        .then(
+          () => 'The migration did not stop',
+          (error: Error) => error.message,
+        )
+      const { rows } = await pool.query(`select "name", "difficulty" from "scenarios"`)
+      expect(rows).toHaveLength(scenarios.length)
+      expect(rows).toEqual(
+        expect.arrayContaining(scenarios.map(({ name, difficulty }) => ({ name, difficulty }))),
+      )
+      return message
+    } finally {
+      await pool.query(`drop table if exists "scenarios"`)
+      await pool.query(`alter table "scenarios_aside" rename to "scenarios"`)
+    }
+  }
+
+  it('stops, naming them, when a difficulty is not Easy, Medium or Hard', async () => {
+    expect(
+      await refusalOver([
+        { course: 'X-TWR', name: 'Busy afternoon', difficulty: 'Hard' },
+        { course: 'X-TWR', name: 'Quiet morning', difficulty: 'EASY' },
+        { course: 'X-TWR', name: 'Night shift', difficulty: 'Very hard' },
+        { course: 'X-APP', name: 'Arrival push', difficulty: '3/5' },
+        { course: 'X-APP', name: 'Light traffic', difficulty: null },
+        { course: 'X-APP', name: 'Blank', difficulty: '' },
+      ]),
+    ).toBe(
+      'These scenarios have a difficulty other than Easy, Medium or Hard: ' +
+        'X-APP Arrival push ("3/5"), X-TWR Night shift ("Very hard"). ' +
+        'Change each to Easy, Medium or Hard, or clear it, then migrate again.',
+    )
+  })
+})
+
 describe('scenarios offered by a lesson plan', () => {
   it('may only be scenarios of the lesson plan’s own course', async () => {
     const { version } = await course('X-TWR')
@@ -103,7 +296,7 @@ describe('scenarios offered by a lesson plan', () => {
     ).rejects.toThrow()
   })
 
-  it('are served with their practical tasks and teacher notes', async () => {
+  async function served(data: Partial<Scenario>) {
     const { course: owner, version } = await course('X-TWR')
     const takeoff = await task('Takeoff clearance')
     const offered = await payload.create({
@@ -112,12 +305,13 @@ describe('scenarios offered by a lesson plan', () => {
         course: owner.id,
         name: 'Busy afternoon',
         airport: 'KXYZ',
-        position: 'XYZ_TWR',
-        difficulty: 'Hard',
+        studentPosition: tower.id,
+        teacherPosition: center.id,
         mode: 'live',
         practicalTasks: [
           { task: takeoff.id, teacherNotes: 'Hold one for wake turbulence', required: false },
         ],
+        ...data,
       },
     })
     const plan = await payload.create({
@@ -131,14 +325,21 @@ describe('scenarios offered by a lesson plan', () => {
     })
 
     const { body } = await callEndpoint(payload, '/courseware/courses/X-TWR/draft')
+    return { offered, takeoff, scenarios: body.modules[0].lessonPlans[0].scenarios }
+  }
 
-    expect(body.modules[0].lessonPlans[0].scenarios).toEqual([
+  it('are served with their positions, difficulty, practical tasks and teacher notes', async () => {
+    const { offered, takeoff, scenarios } = await served({ difficulty: 'hard' })
+
+    expect(scenarios).toEqual([
       {
         id: offered.id,
         name: 'Busy afternoon',
         airport: 'KXYZ',
-        position: 'XYZ_TWR',
-        difficulty: 'Hard',
+        // Each position by its vNAS id and callsign.
+        studentPosition: { id: 'vnas-XYZ_TWR', callsign: 'XYZ_TWR' },
+        teacherPosition: { id: 'vnas-XYZ_83_CTR', callsign: 'XYZ_83_CTR' },
+        difficulty: 'hard',
         mode: 'live',
         retired: false,
         practicalTasks: [
@@ -151,5 +352,24 @@ describe('scenarios offered by a lesson plan', () => {
         ],
       },
     ])
+  })
+
+  it('serve null for a difficulty not given', async () => {
+    const { scenarios } = await served({})
+
+    expect(scenarios[0]).toMatchObject({ difficulty: null })
+    expect(scenarios[0]).not.toHaveProperty('position')
+  })
+
+  it('serve a position vNAS has since dropped, as the scenario names it', async () => {
+    await served({})
+    await payload.update({ collection: 'positions', id: center.id, data: { retired: true } })
+
+    const { body } = await callEndpoint(payload, '/courseware/courses/X-TWR/draft')
+
+    expect(body.modules[0].lessonPlans[0].scenarios[0].teacherPosition).toEqual({
+      id: 'vnas-XYZ_83_CTR',
+      callsign: 'XYZ_83_CTR',
+    })
   })
 })

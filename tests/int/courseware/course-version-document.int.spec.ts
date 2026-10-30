@@ -29,7 +29,7 @@ async function courseWithVersion(status: 'draft' | 'published' = 'draft') {
       status: 'draft',
       description: 'The first edition',
       time: 600,
-      academyRequired: true,
+      completionStandard: 'Pass every lesson plan.',
     },
   })
   const first = await payload.create({
@@ -91,14 +91,23 @@ describe('the one-document course version', () => {
       code: 'X-TWR',
       title: 'Example Tower',
       authors: ['1000001'],
+      prerequisitesNote: '',
+      consolidation: null,
+      ratingExam: null,
+      academyExam: null,
+      estimatedWeeks: null,
+      moodleUrl: null,
+      prerequisites: [],
+      credentialIssued: null,
     })
-    expect(body.version).toMatchObject({
+    expect(body.version).toEqual({
       id: version.id,
       number: 1,
       status: 'draft',
       description: 'The first edition',
       time: 600,
-      academyRequired: true,
+      completionStandard: 'Pass every lesson plan.',
+      updatedAt: expect.any(String),
     })
     expect(body.modules).toHaveLength(1)
     expect(body.modules[0]).toMatchObject({ title: 'Tower', description: 'Working the tower' })
@@ -114,6 +123,39 @@ describe('the one-document course version', () => {
       isExam: false,
     })
     expect(body.modules[0].lessonPlans[1].bodyHtml).toContain('Read about runways.')
+  })
+
+  it("carries the course's enrolment facts, exams as their rating", async () => {
+    const { course } = await courseWithVersion()
+    await payload.update({
+      collection: 'courses',
+      id: course.id,
+      data: {
+        prerequisitesNote: 'Read the example policy first.',
+        consolidation: { hours: 12, positionTypes: ['GND', 'TWR'] },
+        ratingExam: 'S2',
+        academyExam: 'S3',
+        estimatedWeeks: { min: 4, max: 8 },
+        moodleUrl: 'https://moodle.example.com/course/1',
+      },
+    })
+
+    const { body } = await callEndpoint(payload, '/courseware/courses/X-TWR/draft')
+
+    expect(body.course).toEqual({
+      id: course.id,
+      code: 'X-TWR',
+      title: 'Example Tower',
+      authors: ['1000001'],
+      prerequisitesNote: 'Read the example policy first.',
+      consolidation: { hours: 12, positionTypes: ['GND', 'TWR'] },
+      ratingExam: 'S2',
+      academyExam: 'S3',
+      estimatedWeeks: { min: 4, max: 8 },
+      moodleUrl: 'https://moodle.example.com/course/1',
+      prerequisites: [],
+      credentialIssued: null,
+    })
   })
 
   it('has no current version until one is published', async () => {
@@ -163,6 +205,158 @@ describe('the one-document course version', () => {
     expect(fromTraining.status).toBe(200)
     expect(fromTraining.body.version).toMatchObject({ id: version.id, status: 'published' })
     expect(fromTraining.body).toEqual(fromLibrary.body)
+  })
+})
+
+/**
+ * A made-up course whose edition holds `placed` lesson plans in its modules and `unplaced` more of
+ * its own outside them; the edition is live when `live`, otherwise a draft.
+ */
+async function courseWithPlans(placed: number, options: { live: boolean; unplaced?: number }) {
+  const course = await payload.create({
+    collection: 'courses',
+    data: { code: 'X-APP', title: 'Example Approach' },
+  })
+  const edition = await payload.create({
+    collection: 'course-versions',
+    // Numbered on save; the number given is ignored.
+    data: { course: course.id, number: 1, status: 'draft' },
+  })
+  const plans = []
+  for (let index = 0; index < placed + (options.unplaced ?? 0); index++) {
+    plans.push(
+      await payload.create({
+        collection: 'lesson-plans',
+        data: { courseVersion: edition.id, code: `X-APP-${index + 1}`, title: 'Example' },
+      }),
+    )
+  }
+  const inModules = plans.slice(0, placed).map((plan) => plan.id)
+  await payload.update({
+    collection: 'course-versions',
+    id: edition.id,
+    data: {
+      modules: [
+        { title: 'First half', lessonPlans: inModules.slice(0, 3) },
+        { title: 'Second half', lessonPlans: inModules.slice(3) },
+      ],
+    },
+  })
+  if (options.live) {
+    // Below the API: publishing has its own rules and tests.
+    await payload.db.updateOne({
+      collection: 'course-versions',
+      id: edition.id,
+      data: { status: 'published' },
+    })
+    await payload.db.updateOne({
+      collection: 'courses',
+      id: course.id,
+      data: { currentVersion: edition.id },
+    })
+  }
+  return course
+}
+
+describe("a course's estimated weeks", () => {
+  const weeksOf = async (which: 'current' | 'draft') =>
+    (await callEndpoint(payload, `/courseware/courses/X-APP/${which}`)).body.course.estimatedWeeks
+
+  it('are worked out from the live edition: a week per lesson plan, and 20% more', async () => {
+    await courseWithPlans(10, { live: true })
+
+    expect(await weeksOf('current')).toEqual({ min: 10, max: 12 })
+  })
+
+  it('count the live edition’s lesson plans in no module too', async () => {
+    await courseWithPlans(8, { live: true, unplaced: 2 })
+
+    expect(await weeksOf('current')).toEqual({ min: 10, max: 12 })
+  })
+
+  it('round the long end up', async () => {
+    await courseWithPlans(7, { live: true })
+
+    expect(await weeksOf('current')).toEqual({ min: 7, max: 9 })
+  })
+
+  it('are the override when one is set, in place of the worked-out range', async () => {
+    const course = await courseWithPlans(10, { live: true })
+    await payload.update({
+      collection: 'courses',
+      id: course.id,
+      data: { estimatedWeeks: { min: 4, max: 6 } },
+    })
+
+    expect(await weeksOf('current')).toEqual({ min: 4, max: 6 })
+  })
+
+  it('come from the live edition in a draft edition’s document too', async () => {
+    const course = await courseWithPlans(7, { live: true })
+    await payload.create({
+      collection: 'course-versions',
+      data: { course: course.id, number: 2, status: 'draft' },
+    })
+
+    expect(await weeksOf('draft')).toEqual({ min: 7, max: 9 })
+  })
+
+  it('are null with no live edition and no override, whatever a draft holds', async () => {
+    await courseWithPlans(10, { live: false })
+
+    expect(await weeksOf('draft')).toBeNull()
+  })
+
+  it('are the override for a course with no editions', async () => {
+    await payload.create({
+      collection: 'courses',
+      data: { code: 'X-CTR', title: 'Example Center', estimatedWeeks: { min: 4, max: 8 } },
+    })
+    // The document needs an edition to be served; a draft adds no live one.
+    const course = await payload.find({
+      collection: 'courses',
+      where: { code: { equals: 'X-CTR' } },
+    })
+    await payload.create({
+      collection: 'course-versions',
+      data: { course: course.docs[0].id, number: 1, status: 'draft' },
+    })
+
+    const { body } = await callEndpoint(payload, '/courseware/courses/X-CTR/draft')
+
+    expect(body.course.estimatedWeeks).toEqual({ min: 4, max: 8 })
+  })
+
+  it('leave out a lesson plan of another edition placed in a live module', async () => {
+    const course = await courseWithPlans(7, { live: true })
+    const liveId = (await payload.findByID({ collection: 'courses', id: course.id, depth: 0 }))
+      .currentVersion as string
+    const live = await payload.findByID({ collection: 'course-versions', id: liveId, depth: 0 })
+    const other = await payload.create({
+      collection: 'course-versions',
+      data: { course: course.id, number: 2, status: 'draft' },
+    })
+    const stray = await payload.create({
+      collection: 'lesson-plans',
+      data: { courseVersion: other.id, code: 'X-APP-99', title: 'Elsewhere' },
+    })
+    // Below the API, which would not place another edition's plan.
+    await payload.db.updateOne({
+      collection: 'course-versions',
+      id: liveId,
+      data: {
+        modules: (live.modules ?? []).map((module, index) => ({
+          ...module,
+          lessonPlans: [...(module.lessonPlans ?? []), ...(index === 0 ? [stray.id] : [])],
+        })),
+      },
+    })
+    const placed = (
+      await payload.findByID({ collection: 'course-versions', id: liveId, depth: 0 })
+    ).modules?.flatMap((module) => module.lessonPlans ?? [])
+    expect(placed).toContain(stray.id)
+
+    expect(await weeksOf('current')).toEqual({ min: 7, max: 9 })
   })
 })
 

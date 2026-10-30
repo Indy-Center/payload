@@ -1,5 +1,4 @@
 import { createLocalReq, getPayload, type Payload } from 'payload'
-import type { PostgresAdapter } from '@payloadcms/db-postgres'
 import config from '@/payload.config'
 
 export const TOKEN = 'test-library-token'
@@ -12,16 +11,7 @@ export async function testPayload(): Promise<Payload> {
   return cached
 }
 
-/** Empties the test database's tables, below the API so retire-not-delete doesn't stop it. */
-export async function resetDatabase(payload: Payload): Promise<void> {
-  const { pool } = payload.db as unknown as PostgresAdapter
-  const { rows } = await pool.query<{ tablename: string }>(
-    `select tablename from pg_tables where schemaname = 'public' and tablename not like 'payload_migrations%'`,
-  )
-  if (rows.length === 0) return
-  const tables = rows.map((row) => `"${row.tablename}"`).join(', ')
-  await pool.query(`truncate ${tables} cascade`)
-}
+export { resetDatabase } from '@/dev/reset-database'
 
 /**
  * Calls one of the CMS's own endpoints the way an HTTP request would reach it, and returns the
@@ -33,12 +23,18 @@ export async function callEndpoint(
   options: {
     token?: string | null
     method?: string
+    /** The JSON body, or an Error for `req.json()` to throw. */
     body?: unknown
+    /** A multipart body, as a browser's form upload sends it. */
+    formData?: FormData
     user?: Awaited<ReturnType<Payload['create']>>
   } = {},
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- tests read the JSON freely
 ): Promise<{ status: number; body: any }> {
   const method = options.method ?? 'get'
+  // A query string becomes `req.query`, as Payload parses it.
+  const [pathname, search = ''] = path.split('?')
+  path = pathname
   const endpoint = payload.config.endpoints.find(
     (candidate) => candidate.method === method && matchPath(candidate.path, path) !== null,
   )
@@ -50,8 +46,16 @@ export async function callEndpoint(
   if (token !== null) headers.set('authorization', `Bearer ${token}`)
   req.headers = headers
   if (options.user) req.user = { ...options.user, collection: 'users' } as typeof req.user
-  if (options.body !== undefined) req.json = async () => options.body
+  // An Error for a body is what `req.json()` throws, as for a body that isn't JSON.
+  if (options.body instanceof Error) {
+    const error = options.body
+    req.json = async () => {
+      throw error
+    }
+  } else if (options.body !== undefined) req.json = async () => options.body
+  if (options.formData !== undefined) req.formData = async () => options.formData!
   req.routeParams = matchPath(endpoint.path, path) ?? {}
+  req.query = Object.fromEntries(new URLSearchParams(search))
 
   const response = await endpoint.handler(req)
   return { status: response.status, body: await response.json() }
@@ -67,6 +71,64 @@ function matchPath(pattern: string, path: string): Record<string, string> | null
     else if (part !== given[index]) return null
   }
   return params
+}
+
+/**
+ * A made-up position, stored as the sync stores one: its vNAS id is `vnas-` and the callsign.
+ * Positions are never created by hand, so this writes below access.
+ */
+export async function position(
+  payload: Payload,
+  callsign: string,
+  {
+    name = `${callsign} example`,
+    shortName = null,
+    override = null,
+    retired = false,
+  }: {
+    name?: string
+    /** vNAS's short name. */
+    shortName?: string | null
+    /** A CMS admin's override, served where vNAS has no short name. */
+    override?: string | null
+    retired?: boolean
+  } = {},
+) {
+  return payload.create({
+    collection: 'positions',
+    depth: 0,
+    data: {
+      vnasId: `vnas-${callsign}`,
+      callsign,
+      name,
+      // The collection's hook sets `shortName` (the one served) and the title.
+      vnasShortName: shortName,
+      indyShortName: { override },
+      title: callsign,
+      radioName: 'Example Radio',
+      frequency: 118_000_000,
+      facilityId: callsign.split('_')[0],
+      facilityName: 'Example facility',
+      retired,
+    },
+  })
+}
+
+/**
+ * A made-up scenario's positions, `{ studentPosition, teacherPosition }` ids: XYZ_GND and
+ * XYZ_TWR, made the first time they are asked for after a reset.
+ */
+export async function scenarioPositions(payload: Payload) {
+  const idOf = async (callsign: string) => {
+    const { docs } = await payload.find({
+      collection: 'positions',
+      where: { callsign: { equals: callsign } },
+      depth: 0,
+      limit: 1,
+    })
+    return (docs[0] ?? (await position(payload, callsign))).id
+  }
+  return { studentPosition: await idOf('XYZ_GND'), teacherPosition: await idOf('XYZ_TWR') }
 }
 
 /** Lexical rich text holding one paragraph. */

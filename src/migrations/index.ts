@@ -11,6 +11,20 @@ import * as migration_20261015_040842_partner_links from './20261015_040842_part
 import * as migration_20261016_173341_teacher_resources from './20261016_173341_teacher_resources';
 import * as migration_20261016_180115_teacher_resource_descriptions_and_icons from './20261016_180115_teacher_resource_descriptions_and_icons';
 import * as migration_20261017_194306_cms_admin_role from './20261017_194306_cms_admin_role';
+import * as migration_20261026_014802_sources_replace_references from './20261026_014802_sources_replace_references';
+import * as migration_20261026_021707_scenario_positions_and_difficulty from './20261026_021707_scenario_positions_and_difficulty';
+import * as migration_20261026_024810_course_enrolment_facts from './20261026_024810_course_enrolment_facts';
+import * as migration_20261026_030346_credentials from './20261026_030346_credentials';
+import * as migration_20261026_032117_course_prerequisites_and_credential_issued from './20261026_032117_course_prerequisites_and_credential_issued';
+import * as migration_20261026_034520_edition_numbers from './20261026_034520_edition_numbers';
+import * as migration_20261028_143500_citation_place_and_title from './20261028_143500_citation_place_and_title';
+import * as migration_20261028_194448_edition_published_date from './20261028_194448_edition_published_date';
+import * as migration_20261028_200131_tighter_course_and_credential_rules from './20261028_200131_tighter_course_and_credential_rules';
+import * as migration_20261028_204506_drop_exam_optional from './20261028_204506_drop_exam_optional';
+import * as migration_20261029_001816_positions_from_vnas from './20261029_001816_positions_from_vnas';
+import * as migration_20261029_033815_scenarios_pick_positions from './20261029_033815_scenarios_pick_positions';
+import * as migration_20261029_040720_temporary_short_names from './20261029_040720_temporary_short_names';
+import * as migration_20261029_042847_positions_required_credentials from './20261029_042847_positions_required_credentials';
 
 export const migrations = [
   {
@@ -76,6 +90,76 @@ export const migrations = [
   {
     up: migration_20261017_194306_cms_admin_role.up,
     down: migration_20261017_194306_cms_admin_role.down,
-    name: '20261017_194306_cms_admin_role'
+    name: '20261017_194306_cms_admin_role',
+  },
+  {
+    up: migration_20261026_014802_sources_replace_references.up,
+    down: migration_20261026_014802_sources_replace_references.down,
+    name: '20261026_014802_sources_replace_references',
+  },
+  {
+    up: migration_20261026_021707_scenario_positions_and_difficulty.up,
+    down: migration_20261026_021707_scenario_positions_and_difficulty.down,
+    name: '20261026_021707_scenario_positions_and_difficulty',
+  },
+  {
+    up: migration_20261026_024810_course_enrolment_facts.up,
+    down: migration_20261026_024810_course_enrolment_facts.down,
+    name: '20261026_024810_course_enrolment_facts',
+  },
+  {
+    up: migration_20261026_030346_credentials.up,
+    down: migration_20261026_030346_credentials.down,
+    name: '20261026_030346_credentials',
+  },
+  {
+    up: migration_20261026_032117_course_prerequisites_and_credential_issued.up,
+    down: migration_20261026_032117_course_prerequisites_and_credential_issued.down,
+    name: '20261026_032117_course_prerequisites_and_credential_issued',
+  },
+  {
+    up: migration_20261026_034520_edition_numbers.up,
+    down: migration_20261026_034520_edition_numbers.down,
+    name: '20261026_034520_edition_numbers',
+  },
+  {
+    up: migration_20261028_143500_citation_place_and_title.up,
+    down: migration_20261028_143500_citation_place_and_title.down,
+    name: '20261028_143500_citation_place_and_title',
+  },
+  {
+    up: migration_20261028_194448_edition_published_date.up,
+    down: migration_20261028_194448_edition_published_date.down,
+    name: '20261028_194448_edition_published_date',
+  },
+  {
+    up: migration_20261028_200131_tighter_course_and_credential_rules.up,
+    down: migration_20261028_200131_tighter_course_and_credential_rules.down,
+    name: '20261028_200131_tighter_course_and_credential_rules',
+  },
+  {
+    up: migration_20261028_204506_drop_exam_optional.up,
+    down: migration_20261028_204506_drop_exam_optional.down,
+    name: '20261028_204506_drop_exam_optional',
+  },
+  {
+    up: migration_20261029_001816_positions_from_vnas.up,
+    down: migration_20261029_001816_positions_from_vnas.down,
+    name: '20261029_001816_positions_from_vnas',
+  },
+  {
+    up: migration_20261029_033815_scenarios_pick_positions.up,
+    down: migration_20261029_033815_scenarios_pick_positions.down,
+    name: '20261029_033815_scenarios_pick_positions',
+  },
+  {
+    up: migration_20261029_040720_temporary_short_names.up,
+    down: migration_20261029_040720_temporary_short_names.down,
+    name: '20261029_040720_temporary_short_names',
+  },
+  {
+    up: migration_20261029_042847_positions_required_credentials.up,
+    down: migration_20261029_042847_positions_required_credentials.down,
+    name: '20261029_042847_positions_required_credentials'
   },
 ];

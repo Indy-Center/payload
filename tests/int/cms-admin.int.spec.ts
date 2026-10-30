@@ -1,7 +1,7 @@
 import { Forbidden, type Payload } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { User } from '@/payload-types'
-import { resetDatabase, testPayload } from './courseware/helpers'
+import { resetDatabase, scenarioPositions, testPayload } from './courseware/helpers'
 
 let payload: Payload
 let cmsAdmin: User
@@ -106,7 +106,13 @@ describe('the CMS admin', () => {
     })
     const scenario = await payload.create({
       collection: 'scenarios',
-      data: { course: course.id, name: 'Quiet', airport: 'KXYZ', position: 'XYZ_TWR', mode: 'sim' },
+      data: {
+        course: course.id,
+        name: 'Quiet',
+        airport: 'KXYZ',
+        ...(await scenarioPositions(payload)),
+        mode: 'sim',
+      },
       ...as(cmsAdmin),
     })
     const retired = await payload.update({

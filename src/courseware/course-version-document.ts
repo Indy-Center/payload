@@ -12,8 +12,10 @@ import type {
   GradePoint,
   LessonPlan,
   Scenario,
+  ScenarioPosition,
   TaskRef,
 } from './document'
+import { estimateCourse } from './estimated-weeks'
 import { idOf } from './ids'
 import { BODY_DEPTH, BODY_POPULATE } from './rich-text'
 import { loadTaskTree, type TaskTree } from './task-tree'
@@ -133,7 +135,13 @@ export async function buildCourseVersionDocument(
     depth: 0,
     req,
   })
-  const scenariosById = new Map(scenarios.docs.map((scenario) => [scenario.id, scenario]))
+  const positionOf = await loadScenarioPositions(
+    req,
+    scenarios.docs.flatMap((record) => [record.studentPosition, record.teacherPosition]),
+  )
+  const scenariosById = new Map(
+    scenarios.docs.map((record) => [record.id, scenario(record, tree, positionOf)]),
+  )
   const scaleId = idOf(version.gradingScale)
   const scale = scaleId
     ? await payload.findByID({ collection: 'grading-scales', id: scaleId, depth: 0, req })
@@ -145,6 +153,10 @@ export async function buildCourseVersionDocument(
   }))
   const point = (position: number | null | undefined) =>
     points.find((candidate) => candidate.position === position) ?? null
+  const codeOf = await loadCredentialCodes(req, [
+    ...(course.prerequisites ?? []).flatMap((row) => row.anyOf ?? []),
+    course.credentialIssued,
+  ])
 
   return {
     course: {
@@ -152,6 +164,23 @@ export async function buildCourseVersionDocument(
       code: course.code,
       title: course.title,
       authors: course.authors ?? [],
+      prerequisitesNote: course.prerequisitesNote ?? '',
+      // Saving keeps hours and position types together, so hours alone say whether it is set.
+      consolidation:
+        course.consolidation?.hours != null
+          ? {
+              hours: course.consolidation.hours,
+              positionTypes: course.consolidation.positionTypes ?? [],
+            }
+          : null,
+      ratingExam: course.ratingExam === 'none' ? null : (course.ratingExam ?? null),
+      academyExam: course.academyExam === 'none' ? null : (course.academyExam ?? null),
+      estimatedWeeks: (await estimateCourse(req, course))?.weeks ?? null,
+      moodleUrl: course.moodleUrl || null,
+      prerequisites: (course.prerequisites ?? []).map((row) => ({
+        anyOf: (row.anyOf ?? []).map(codeOf).filter((code): code is string => code !== null),
+      })),
+      credentialIssued: codeOf(course.credentialIssued),
     },
     version: {
       id: version.id,
@@ -159,7 +188,7 @@ export async function buildCourseVersionDocument(
       status: version.status,
       description: version.description ?? '',
       time: version.time ?? null,
-      academyRequired: version.academyRequired ?? false,
+      completionStandard: version.completionStandard ?? '',
       updatedAt: version.updatedAt,
     },
     scale: scale ? { id: scale.id, name: scale.name, points } : null,
@@ -179,18 +208,71 @@ export async function buildCourseVersionDocument(
   }
 }
 
+/** Looks up the codes of the named credentials, retired ones included. */
+async function loadCredentialCodes(
+  req: PayloadRequest,
+  named: (string | { id: string } | null | undefined)[],
+): Promise<(credential: string | { id: string } | null | undefined) => string | null> {
+  const ids = [...new Set(named.map(idOf).filter((id): id is string => id !== null))]
+  const { docs } =
+    ids.length === 0
+      ? { docs: [] }
+      : await req.payload.find({
+          collection: 'credentials',
+          where: { id: { in: ids } },
+          select: { code: true },
+          pagination: false,
+          depth: 0,
+          req,
+        })
+  const codes = new Map(docs.map((credential) => [credential.id, credential.code]))
+  return (credential) => codes.get(idOf(credential) ?? '') ?? null
+}
+
 function taskRef(tree: TaskTree, task: string | { id: string }): TaskRef {
   const id = idOf(task)!
   return { id, number: tree.number(id), name: tree.get(id)?.name ?? '' }
 }
 
-function scenario(record: ScenarioRecord, tree: TaskTree): Scenario {
+/**
+ * Looks up the named positions as a scenario serves them, `{ id: vNAS id, callsign }`, retired
+ * ones included: a position vNAS has dropped stays on the scenario that names it.
+ */
+async function loadScenarioPositions(
+  req: PayloadRequest,
+  named: (string | { id: string } | null | undefined)[],
+): Promise<(position: string | { id: string }) => ScenarioPosition> {
+  const ids = [...new Set(named.map(idOf).filter((id): id is string => id !== null))]
+  const { docs } =
+    ids.length === 0
+      ? { docs: [] }
+      : await req.payload.find({
+          collection: 'positions',
+          where: { id: { in: ids } },
+          select: { vnasId: true, callsign: true },
+          pagination: false,
+          depth: 0,
+          req,
+        })
+  const served = new Map(
+    docs.map((position) => [position.id, { id: position.vnasId, callsign: position.callsign }]),
+  )
+  // A scenario's positions are required and never deleted, so every one is found.
+  return (position) => served.get(idOf(position)!)!
+}
+
+function scenario(
+  record: ScenarioRecord,
+  tree: TaskTree,
+  positionOf: (position: string | { id: string }) => ScenarioPosition,
+): Scenario {
   return {
     id: record.id,
     name: record.name,
     airport: record.airport,
-    position: record.position,
-    difficulty: record.difficulty ?? '',
+    studentPosition: positionOf(record.studentPosition),
+    teacherPosition: positionOf(record.teacherPosition),
+    difficulty: record.difficulty ?? null,
     mode: record.mode,
     retired: record.retired ?? false,
     practicalTasks: (record.practicalTasks ?? []).map((row) => ({
@@ -207,7 +289,7 @@ function lessonPlan(
   /** The body filled in for the library: `plan.body` is filled in fully, for `bodyHtml`. */
   body: LessonPlanRecord['body'],
   tree: TaskTree,
-  scenarios: Map<string, ScenarioRecord>,
+  scenarios: Map<string, Scenario>,
 ): LessonPlan {
   return {
     id: plan.id,
@@ -228,7 +310,6 @@ function lessonPlan(
     })),
     scenarios: (plan.scenarios ?? [])
       .map((offered) => scenarios.get(idOf(offered) ?? ''))
-      .filter((offered): offered is ScenarioRecord => offered !== undefined)
-      .map((offered) => scenario(offered, tree)),
+      .filter((offered): offered is Scenario => offered !== undefined),
   }
 }

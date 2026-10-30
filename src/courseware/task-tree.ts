@@ -11,7 +11,7 @@ export type TreeTask = {
   order: string
   /** Competencies mapped on this task itself, not inherited. */
   competencyIds: string[]
-  citations: { referenceId: string; section: string }[]
+  citations: { sourceId: string; place: string; title: string | null }[]
 }
 
 /**
@@ -77,12 +77,20 @@ export function buildTaskTree(tasks: readonly TreeTask[]): TaskTree {
   }
 }
 
-/** Reads the whole tree. It is small (hundreds of tasks), so it is always read whole. */
-export async function loadTaskTree(req: PayloadRequest): Promise<TaskTree> {
+/**
+ * Reads the whole tree. It is small (hundreds of tasks), so it is always read whole. With
+ * `overrideAccess: false` it reads as the person signed in on `req`; the servers' reads, which
+ * carry a token rather than a person, leave it on.
+ */
+export async function loadTaskTree(
+  req: PayloadRequest,
+  { overrideAccess = true }: { overrideAccess?: boolean } = {},
+): Promise<TaskTree> {
   const { docs } = await req.payload.find({
     collection: 'tasks',
     depth: 0,
     pagination: false,
+    overrideAccess,
     // Leaves out the mappings' paired GCAP code, which costs a lookup per mapping to read.
     select: {
       name: true,
@@ -105,8 +113,9 @@ export async function loadTaskTree(req: PayloadRequest): Promise<TaskTree> {
       order: task._order ?? '',
       competencyIds: (task.mappings ?? []).map((row) => idOf(row.competency)!),
       citations: (task.citations ?? []).map((row) => ({
-        referenceId: idOf(row.reference)!,
-        section: row.section ?? '',
+        sourceId: idOf(row.source)!,
+        place: row.place ?? '',
+        title: row.title || null,
       })),
     })),
   )

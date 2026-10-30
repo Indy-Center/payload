@@ -13,15 +13,20 @@ import { CourseVersions } from './collections/courseware/CourseVersions'
 import { LessonPlans } from './collections/courseware/LessonPlans'
 import { Frameworks } from './collections/courseware/Frameworks'
 import { Competencies } from './collections/courseware/Competencies'
-import { References } from './collections/courseware/References'
+import { Sources } from './collections/courseware/Sources'
+import { Credentials } from './collections/courseware/Credentials'
 import { Tasks } from './collections/courseware/Tasks'
 import { GradingScales } from './collections/courseware/GradingScales'
 import { Scenarios } from './collections/courseware/Scenarios'
+import { Positions } from './collections/courseware/Positions'
 import { PartnerCategories } from './collections/partners/PartnerCategories'
 import { Partners } from './collections/partners/Partners'
 import { TeacherResources } from './globals/TeacherResources'
 import { coursewareEndpoints } from './courseware/endpoints'
+import { IMPORT_FRAMEWORKS_PATH } from './courseware/import/form'
 import { partnersEndpoints } from './partners/endpoints'
+import { positionsEndpoints } from './positions/endpoints'
+import { jobs } from './positions/jobs'
 import { trainingEndpoints } from './training/endpoints'
 import { migrations } from './migrations'
 import { storagePlugins } from './storage'
@@ -36,6 +41,16 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+    components: {
+      views: {
+        // Opened from the Competencies list, for the Training Admin; not in the nav.
+        importFrameworks: {
+          Component: '/components/admin/ImportFrameworksView#ImportFrameworksView',
+          path: IMPORT_FRAMEWORKS_PATH,
+          exact: true,
+        },
+      },
+    },
   },
   collections: [
     Users,
@@ -43,18 +58,26 @@ export default buildConfig({
     PrivateMedia,
     Frameworks,
     Competencies,
-    References,
+    Sources,
+    Credentials,
     Tasks,
     GradingScales,
     Courses,
     CourseVersions,
     LessonPlans,
     Scenarios,
+    Positions,
     PartnerCategories,
     Partners,
   ],
   globals: [TeacherResources],
-  endpoints: [...coursewareEndpoints, ...partnersEndpoints, ...trainingEndpoints],
+  endpoints: [
+    ...coursewareEndpoints,
+    ...partnersEndpoints,
+    ...positionsEndpoints,
+    ...trainingEndpoints,
+  ],
+  jobs,
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
