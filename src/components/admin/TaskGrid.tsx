@@ -153,7 +153,11 @@ export function TaskGrid({
 }
 
 type Dispatch = React.Dispatch<Parameters<typeof gridReducer>[1]>
-const indent = (depth: number) => ({ paddingInlineStart: `${0.75 + depth * 1.25}rem` })
+// A child sits one step further in than its parent, in the number column and the name column alike.
+const indent = (depth: number, base = 0.75) => ({
+  paddingInlineStart: `${base + depth * 1.25}rem`,
+})
+const cellPadding = 0.5
 
 function Placeholder({
   row,
@@ -168,7 +172,7 @@ function Placeholder({
         <span className={`${baseClass}__arrows`} aria-hidden="true" />
         <span data-number>{row.number}</span>
       </td>
-      <td colSpan={3}>
+      <td colSpan={3} style={indent(row.depth, cellPadding)}>
         <button
           type="button"
           className={`${baseClass}__new`}
@@ -232,7 +236,7 @@ function TaskRow({
         </span>
         <span data-number>{row.number}</span>
       </td>
-      <td className={`${baseClass}__name`}>
+      <td className={`${baseClass}__name`} style={indent(row.depth, cellPadding)}>
         <input
           name="name"
           aria-label={`Name of ${row.number}`}
