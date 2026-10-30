@@ -153,7 +153,7 @@ export function TaskGrid({
 }
 
 type Dispatch = React.Dispatch<Parameters<typeof gridReducer>[1]>
-// A child sits one step further in than its parent, in the number column and the name column alike.
+// A child sits one step further in than its parent, in the number, name and description columns.
 const indent = (depth: number, base = 0.75) => ({
   paddingInlineStart: `${base + depth * 1.25}rem`,
 })
@@ -264,7 +264,7 @@ function TaskRow({
           </div>
         ))}
       </td>
-      <td className={`${baseClass}__description`}>
+      <td className={`${baseClass}__description`} style={indent(row.depth, cellPadding)}>
         <textarea
           name="description"
           rows={1}
