@@ -16,22 +16,22 @@ import {
  */
 
 /** The collection a citation's source is a record of. */
-export const SOURCES = 'references'
+export const SOURCES = 'sources'
 
 /**
  * What a linked record carries in the course-version document: only the fields the page draws.
  * Server-side reads skip access checks, so without this a link could carry a whole record to the
- * browser. Payload selects by collection, so a source's attached file carries the media fields.
+ * browser.
  */
 export const BODY_POPULATE = {
   'lesson-plans': { code: true, title: true },
   // Payload makes `url` from `filename`, so a file's url needs its name.
   media: { url: true, filename: true, alt: true, width: true, height: true, sizes: true },
-  [SOURCES]: { name: true, edition: true, url: true, document: true },
+  [SOURCES]: { name: true, edition: true, url: true },
 } satisfies PopulateType
 
-/** Deep enough to fill in a citation's source and the file attached to it. */
-export const BODY_DEPTH = 2
+/** Deep enough to fill in a link, an upload or a citation's source. */
+export const BODY_DEPTH = 1
 
 const CONTROLLER_RATINGS = [
   'INAC',

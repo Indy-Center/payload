@@ -162,19 +162,9 @@ async function planWithEveryNode() {
     data: { courseVersion: version.id, code: 'X-TWR-0', title: 'Before', description: 'No body' },
   })
   const media = await upload(payload, { ...(await image(800, 600)), name: 'runway.png' })
-  const pdf = await payload.create({
-    collection: 'media',
-    data: { alt: 'The order' },
-    file: {
-      data: Buffer.from('%PDF-1.4\n'),
-      mimetype: 'application/pdf',
-      name: 'order.pdf',
-      size: 9,
-    },
-  })
   const source = await payload.create({
-    collection: 'references',
-    data: { name: 'JO 0000.00', edition: 'A', url: 'https://example.com/order', document: pdf.id },
+    collection: 'sources',
+    data: { name: 'JO 0000.00', edition: 'A', url: 'https://example.com/order' },
   })
   const ids = { plan: other.id, media: media.id, source: source.id }
   const plan = await payload.create({
@@ -188,7 +178,7 @@ async function planWithEveryNode() {
   })
   const { body } = await callEndpoint(payload, '/courseware/courses/X-TWR/draft')
   const [before, served] = body.modules[0].lessonPlans
-  return { ids, before, served, other, media, pdf, source }
+  return { ids, before, served, other, media, source }
 }
 
 /** The body with each filled-in record put back to its id, as it was saved. */
@@ -227,11 +217,11 @@ function nodes(value: unknown): Record<string, unknown>[] {
 
 describe('a lesson plan body in the course-version document', () => {
   it('reads back every node and block as Lexical JSON', async () => {
-    const { ids, served, pdf } = await planWithEveryNode()
+    const { ids, served } = await planWithEveryNode()
 
     // Linked records are filled in; everything else is as saved.
     expect(unfilled(served.body)).toEqual(everyNode(ids))
-    await expect(await fixture(served.body, { ...ids, pdf: pdf.id })).toMatchFileSnapshot(
+    await expect(await fixture(served.body, ids)).toMatchFileSnapshot(
       './fixtures/lesson-plan-body.json',
     )
   })
@@ -250,7 +240,7 @@ describe('a lesson plan body in the course-version document', () => {
   })
 
   it('fills in a link, an upload and a citation with only the fields the page draws', async () => {
-    const { served, other, media, source, pdf } = await planWithEveryNode()
+    const { served, other, media, source } = await planWithEveryNode()
     const all = nodes(served.body.root)
 
     const internal = all.find(
@@ -294,13 +284,12 @@ describe('a lesson plan body in the course-version document', () => {
     expect(citations).toHaveLength(2)
     for (const each of citations) {
       const cited = (each.fields as { source: Record<string, unknown> }).source
-      expect(Object.keys(cited).sort()).toEqual(['document', 'edition', 'id', 'name', 'url'])
+      expect(Object.keys(cited).sort()).toEqual(['edition', 'id', 'name', 'url'])
       expect(cited).toMatchObject({
         id: source.id,
         name: 'JO 0000.00',
         edition: 'A',
         url: 'https://example.com/order',
-        document: { id: pdf.id, url: '/api/media/file/order.pdf' },
       })
     }
   })

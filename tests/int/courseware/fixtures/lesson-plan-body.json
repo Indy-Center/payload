@@ -830,49 +830,7 @@
                           "id": "<source-id>",
                           "name": "JO 0000.00",
                           "edition": "A",
-                          "url": "https://example.com/order",
-                          "document": {
-                            "id": "<pdf-id>",
-                            "alt": "The order",
-                            "url": "/api/media/file/order.pdf",
-                            "filename": "order.pdf",
-                            "width": null,
-                            "height": null,
-                            "sizes": {
-                              "logo": {
-                                "url": null,
-                                "width": null,
-                                "height": null,
-                                "mimeType": null,
-                                "filesize": null,
-                                "filename": null
-                              },
-                              "banner": {
-                                "url": null,
-                                "width": null,
-                                "height": null,
-                                "mimeType": null,
-                                "filesize": null,
-                                "filename": null
-                              },
-                              "thumbnail": {
-                                "url": null,
-                                "width": null,
-                                "height": null,
-                                "mimeType": null,
-                                "filesize": null,
-                                "filename": null
-                              },
-                              "large": {
-                                "url": null,
-                                "width": null,
-                                "height": null,
-                                "mimeType": null,
-                                "filesize": null,
-                                "filename": null
-                              }
-                            }
-                          }
+                          "url": "https://example.com/order"
                         },
                         "blockType": "citation"
                       },
@@ -1102,49 +1060,7 @@
                 "id": "<source-id>",
                 "name": "JO 0000.00",
                 "edition": "A",
-                "url": "https://example.com/order",
-                "document": {
-                  "id": "<pdf-id>",
-                  "alt": "The order",
-                  "url": "/api/media/file/order.pdf",
-                  "filename": "order.pdf",
-                  "width": null,
-                  "height": null,
-                  "sizes": {
-                    "logo": {
-                      "url": null,
-                      "width": null,
-                      "height": null,
-                      "mimeType": null,
-                      "filesize": null,
-                      "filename": null
-                    },
-                    "banner": {
-                      "url": null,
-                      "width": null,
-                      "height": null,
-                      "mimeType": null,
-                      "filesize": null,
-                      "filename": null
-                    },
-                    "thumbnail": {
-                      "url": null,
-                      "width": null,
-                      "height": null,
-                      "mimeType": null,
-                      "filesize": null,
-                      "filename": null
-                    },
-                    "large": {
-                      "url": null,
-                      "width": null,
-                      "height": null,
-                      "mimeType": null,
-                      "filesize": null,
-                      "filename": null
-                    }
-                  }
-                }
+                "url": "https://example.com/order"
               },
               "blockType": "citation"
             },
