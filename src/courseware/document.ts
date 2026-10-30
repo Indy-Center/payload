@@ -1,3 +1,5 @@
+import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
+
 /**
  * What the CMS serves to the library (and, in release 2, training-tools): the contract.
  *
@@ -66,7 +68,17 @@ export type LessonPlan = {
   code: string
   title: string
   description: string
-  /** The rich-text body as HTML, written in the CMS. Images point at the public media store. */
+  /**
+   * The rich-text body as Lexical's JSON, drawn by `@indy-center/svelte`'s `RichText`; null when
+   * the plan has none. Its blocks are that package's. Linked records (an internal link's lesson
+   * plan, an upload, a citation's source) are filled in with only the fields the page draws:
+   * `BODY_POPULATE` in `rich-text.ts` lists them.
+   */
+  body: SerializedEditorState | null
+  /**
+   * The rich-text body as HTML, written in the CMS. Images point at the public media store.
+   * Dropped once the library draws `body`.
+   */
   bodyHtml: string
   /** Minutes. */
   time: number | null

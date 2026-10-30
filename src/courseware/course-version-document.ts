@@ -17,6 +17,7 @@ import type {
 } from './document'
 import { estimateCourse } from './estimated-weeks'
 import { idOf } from './ids'
+import { BODY_DEPTH, BODY_POPULATE } from './rich-text'
 import { loadTaskTree, type TaskTree } from './task-tree'
 
 /**
@@ -115,6 +116,17 @@ export async function buildCourseVersionDocument(
     req,
   })
   const plansById = new Map(plans.docs.map((plan) => [plan.id, plan]))
+  // The bodies again, filled in with only what the page draws (BODY_POPULATE).
+  const bodies = await payload.find({
+    collection: 'lesson-plans',
+    where: { courseVersion: { equals: version.id } },
+    pagination: false,
+    depth: BODY_DEPTH,
+    select: { body: true },
+    populate: BODY_POPULATE,
+    req,
+  })
+  const bodiesById = new Map(bodies.docs.map((plan) => [plan.id, plan.body ?? null]))
   const tree = await loadTaskTree(req)
   const scenarios = await payload.find({
     collection: 'scenarios',
@@ -189,7 +201,7 @@ export async function buildCourseVersionDocument(
         .map((plan) => plansById.get(idOf(plan) ?? ''))
         .filter((plan): plan is LessonPlanRecord => plan !== undefined)
         .map((plan) => ({
-          ...lessonPlan(plan, tree, scenariosById),
+          ...lessonPlan(plan, bodiesById.get(plan.id) ?? null, tree, scenariosById),
           minimum: point(plan.minimum),
         })),
     })),
@@ -274,6 +286,8 @@ function scenario(
 
 function lessonPlan(
   plan: LessonPlanRecord,
+  /** The body filled in for the library: `plan.body` is filled in fully, for `bodyHtml`. */
+  body: LessonPlanRecord['body'],
   tree: TaskTree,
   scenarios: Map<string, Scenario>,
 ): LessonPlan {
@@ -282,6 +296,7 @@ function lessonPlan(
     code: plan.code ?? '',
     title: plan.title ?? '',
     description: plan.description ?? '',
+    body: body as SerializedEditorState | null,
     bodyHtml: plan.body
       ? convertLexicalToHTML({ data: plan.body as SerializedEditorState, disableContainer: true })
       : '',
