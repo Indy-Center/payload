@@ -1,1 +1,4 @@
 * text=auto eol=lf
+
+# Payload's schema snapshots: generated, and only the newest is read (by migrate:create)
+src/migrations/*.json linguist-generated=true -diff
