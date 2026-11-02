@@ -90,8 +90,18 @@ describe('syncing positions from vNAS', () => {
       frequency: 128225000,
       facilityId: 'ZID',
       facilityName: 'Indianapolis ARTCC',
+      // ZID itself sits under nothing.
+      parentFacilityId: null,
+      parentFacilityName: null,
       starred: true,
       retired: false,
+    })
+    // A TRACON's position: its facility sits under ZID.
+    expect(await byCallsign('SDF_D_APP')).toMatchObject({
+      facilityId: 'SDF',
+      facilityName: 'Louisville ATCT/TRACON',
+      parentFacilityId: 'ZID',
+      parentFacilityName: 'Indianapolis ARTCC',
     })
     // A tower two levels down, under its TRACON, belongs to its own facility.
     expect(await byCallsign('LOU_TWR')).toMatchObject({
@@ -100,6 +110,8 @@ describe('syncing positions from vNAS', () => {
       vnasShortName: null,
       facilityId: 'LOU',
       facilityName: 'Bowman ATCT',
+      parentFacilityId: 'SDF',
+      parentFacilityName: 'Louisville ATCT/TRACON',
     })
     // A center position whose sector has no short name gets none.
     expect(await byCallsign('ZID_TMU')).toMatchObject({
@@ -166,6 +178,31 @@ describe('syncing positions from vNAS', () => {
     expect(await byCallsign('PKB_TWR')).toMatchObject({
       vnasId: '01HZZZZZZZZZZZZZZZZZZZZZZZ',
       title: 'PKB LC · Local Control South',
+    })
+  })
+
+  it("updates a position's parent when vNAS moves its facility under another", async () => {
+    vnasReturns(response())
+    await pressSync(cmsAdmin)
+    vi.restoreAllMocks()
+
+    // Bowman moves from under Louisville to under Parkersburg, its name tidied as vNAS's are.
+    const moved = response()
+    const [louisville, parkersburg] = moved.facility.childFacilities
+    const parkersburgChildren: unknown[] = parkersburg.childFacilities
+    parkersburgChildren.push(louisville.childFacilities.splice(0, 1)[0])
+    parkersburg.name = 'Parkersburg  ATCT '
+    vnasReturns(moved)
+
+    const { status, body } = await pressSync(cmsAdmin)
+
+    expect(status).toBe(200)
+    // PKB_TWR's own facility name is tidied to what it was, so only Bowman's tower changes.
+    expect(body).toEqual({ added: 0, changed: 1, retired: 0 })
+    expect(await byCallsign('LOU_TWR')).toMatchObject({
+      facilityId: 'LOU',
+      parentFacilityId: 'PKB',
+      parentFacilityName: 'Parkersburg ATCT',
     })
   })
 

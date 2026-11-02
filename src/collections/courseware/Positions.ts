@@ -150,6 +150,21 @@ export const Positions: CollectionConfig = {
           access: noEdit,
           admin: { ...fromVnas },
         },
+        {
+          // The facility the position's facility sits under in vNAS's tree.
+          name: 'parentFacilityId',
+          label: 'Parent facility id',
+          type: 'text',
+          access: noEdit,
+          admin: { ...fromVnas, description: 'Such as CMH. Empty in ZID itself.' },
+        },
+        {
+          name: 'parentFacilityName',
+          label: 'Parent facility',
+          type: 'text',
+          access: noEdit,
+          admin: { ...fromVnas },
+        },
       ],
     },
     indyShortNameField,

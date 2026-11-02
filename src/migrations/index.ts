@@ -25,6 +25,7 @@ import * as migration_20261029_001816_positions_from_vnas from './20261029_00181
 import * as migration_20261029_033815_scenarios_pick_positions from './20261029_033815_scenarios_pick_positions';
 import * as migration_20261029_040720_temporary_short_names from './20261029_040720_temporary_short_names';
 import * as migration_20261029_042847_positions_required_credentials from './20261029_042847_positions_required_credentials';
+import * as migration_20261102_164652_position_parent_facilities from './20261102_164652_position_parent_facilities';
 
 export const migrations = [
   {
@@ -160,6 +161,11 @@ export const migrations = [
   {
     up: migration_20261029_042847_positions_required_credentials.up,
     down: migration_20261029_042847_positions_required_credentials.down,
-    name: '20261029_042847_positions_required_credentials'
+    name: '20261029_042847_positions_required_credentials',
+  },
+  {
+    up: migration_20261102_164652_position_parent_facilities.up,
+    down: migration_20261102_164652_position_parent_facilities.down,
+    name: '20261102_164652_position_parent_facilities'
   },
 ];

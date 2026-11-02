@@ -21,6 +21,8 @@ const COPIED = [
   'frequency',
   'facilityId',
   'facilityName',
+  'parentFacilityId',
+  'parentFacilityName',
   'starred',
   'vnasShortName',
 ] as const satisfies (keyof VnasPosition & keyof Position)[]
