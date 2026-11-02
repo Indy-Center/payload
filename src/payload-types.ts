@@ -657,7 +657,7 @@ export interface Position {
   vnasShortName?: string | null;
   radioName: string;
   /**
-   * In MHz.
+   * Shown in MHz.
    */
   frequency: number;
   /**

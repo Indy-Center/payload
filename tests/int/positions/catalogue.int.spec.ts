@@ -59,7 +59,7 @@ describe("the catalogue's positions", () => {
       shortName: 'FLM 83',
       radioName: 'Indy Center',
       frequency: 128225000,
-      facility: { id: 'ZID', name: 'Indianapolis ARTCC' },
+      facility: { id: 'ZID', name: 'Indianapolis ARTCC', parent: null },
       starred: true,
       // The test makes no credentials, so none can be named.
       requiredCredentials: [],
@@ -72,7 +72,11 @@ describe("the catalogue's positions", () => {
       shortName: 'PKB LC',
       radioName: 'Parkersburg Tower',
       frequency: 123700000,
-      facility: { id: 'PKB', name: 'Parkersburg ATCT' },
+      facility: {
+        id: 'PKB',
+        name: 'Parkersburg ATCT',
+        parent: { id: 'ZID', name: 'Indianapolis ARTCC' },
+      },
       starred: true,
       requiredCredentials: [],
       retired: true,

@@ -1,6 +1,6 @@
 import type { PayloadRequest } from 'payload'
 import type { Catalogue, CatalogueTask, Credential } from './document'
-import { servedRequiredCredentials } from '@/positions/required-credentials'
+import { toPublicPosition } from '@/public/positions'
 import { idOf } from './ids'
 import { loadTaskTree, type TaskTree } from './task-tree'
 
@@ -60,20 +60,8 @@ export async function buildCatalogue(req: PayloadRequest): Promise<Catalogue> {
       }))
       .sort(compareCredentials),
     positions: positions.docs
-      .map((position) => ({
-        requiredCredentials: servedRequiredCredentials(position).map((anyOf) => ({
-          anyOf: anyOf.flatMap((id) => codeOfId.get(id) ?? []),
-        })),
-        id: position.vnasId,
-        callsign: position.callsign,
-        name: position.name,
-        shortName: position.shortName || null,
-        radioName: position.radioName,
-        frequency: position.frequency,
-        facility: { id: position.facilityId, name: position.facilityName },
-        starred: position.starred ?? false,
-        retired: position.retired ?? false,
-      }))
+      // The public route's mapping, so the two can't drift (payload decision 0005).
+      .map((position) => toPublicPosition(position, codeOfId))
       // By code unit, so the order doesn't hang on the database's collation.
       .sort((a, b) => (a.callsign < b.callsign ? -1 : a.callsign > b.callsign ? 1 : 0)),
     tasks: tree.inOrder.map((task) => catalogueTask(tree, task.id)),
