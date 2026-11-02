@@ -1,5 +1,6 @@
 import type { Endpoint } from 'payload'
 import { credentialsDocument } from './credentials'
+import { positionsDocument } from './positions'
 import { publicRead } from './read'
 
 /**
@@ -8,4 +9,5 @@ import { publicRead } from './read'
  */
 export const publicEndpoints: Endpoint[] = [
   publicRead('credentials', credentialsDocument, { maxAge: 300 }),
+  publicRead('positions', positionsDocument, { maxAge: 300 }),
 ]

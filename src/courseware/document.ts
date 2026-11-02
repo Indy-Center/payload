@@ -1,4 +1,5 @@
 import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
+import type { PublicPosition } from '@/public/positions'
 
 /**
  * What the CMS serves to the library (and, in release 2, training-tools): the contract.
@@ -182,38 +183,11 @@ export type Credential = {
   retired: boolean
 }
 
-/** One of ZID's positions as the CMS copies it from vNAS Data Admin; design-system's `VnasPosition`. */
-export type CataloguePosition = {
-  /** vNAS's id, the same its live controller feed uses. */
-  id: string
-  /** Such as `IND_83_CTR`. */
-  callsign: string
-  /** Such as `Falmouth 83`. */
-  name: string
-  /**
-   * As controllers say it, such as `FLM 83`: vNAS's where it has one, else Indy's temporary one
-   * (`SDF LC`, `CRW N`, or a CMS admin's override); null where there is neither.
-   */
-  shortName: string | null
-  /** Such as `Indy Center`. */
-  radioName: string
-  /** In Hz: 128225000. */
-  frequency: number
-  /** Such as `{ id: 'SDF', name: 'Louisville ATCT/TRACON' }`. */
-  facility: { id: string; name: string }
-  /** One of its facility's main positions. */
-  starred: boolean
-  /**
-   * Credential codes a controller must hold to work it: the CMS admin's override if set, else
-   * worked out from its type. Every row must be met; a row is met by holding any one of its
-   * credentials. A certification is also met by any certification ranked higher (`Credential.rank`;
-   * an A-LC holder meets S-GC and A-GC), but an endorsement counts only when named. No rating is
-   * stored. Apps apply this; the CMS checks nothing against it.
-   */
-  requiredCredentials: { anyOf: string[] }[]
-  /** vNAS no longer lists it, though records may still name it. */
-  retired: boolean
-}
+/**
+ * One of ZID's positions, as the public route serves it (`src/public/positions.ts`): one type,
+ * so the catalogue's copy and the public one can't drift.
+ */
+export type CataloguePosition = PublicPosition
 
 export type CatalogueTask = {
   id: string
