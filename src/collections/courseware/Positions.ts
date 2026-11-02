@@ -122,7 +122,7 @@ export const Positions: CollectionConfig = {
           access: noEdit,
           admin: {
             ...fromVnas,
-            description: 'In MHz.',
+            description: 'Shown in MHz.',
             components: {
               Field: '/components/admin/positions/Frequency#FrequencyField',
               Cell: '/components/admin/positions/Frequency#FrequencyCell',
