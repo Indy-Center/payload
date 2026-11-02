@@ -1,4 +1,5 @@
 import type { PayloadRequest } from 'payload'
+import { compareCodeUnits } from '@/courseware/code-unit-order'
 import type { Position } from '@/payload-types'
 import { servedRequiredCredentials } from '@/positions/required-credentials'
 
@@ -49,8 +50,20 @@ export type PublicPosition = {
 /** A facility in vNAS's tree, such as `{ id: 'SDF', name: 'Louisville ATCT/TRACON' }`. */
 export type PublicFacility = { id: string; name: string }
 
-/** A stored position as served; `codeOfId` gives each credential's code by its id. */
-export function toPublicPosition(
+/**
+ * Stored positions as served, by callsign; `codeOfId` gives each credential's code by its id.
+ * The public route and the catalogue both serve this.
+ */
+export function toPublicPositions(
+  positions: Position[],
+  codeOfId: ReadonlyMap<string, string>,
+): PublicPosition[] {
+  return positions
+    .map((position) => toPublicPosition(position, codeOfId))
+    .sort((a, b) => compareCodeUnits(a.callsign, b.callsign))
+}
+
+function toPublicPosition(
   position: Position,
   codeOfId: ReadonlyMap<string, string>,
 ): PublicPosition {
@@ -90,10 +103,5 @@ export async function positionsDocument(req: PayloadRequest): Promise<PublicPosi
     }),
   ])
   const codeOfId = new Map(credentials.docs.map((credential) => [credential.id, credential.code]))
-  return (
-    positions.docs
-      .map((position) => toPublicPosition(position, codeOfId))
-      // By code unit, as the catalogue sorts, so the order doesn't hang on the database's collation.
-      .sort((a, b) => (a.callsign < b.callsign ? -1 : a.callsign > b.callsign ? 1 : 0))
-  )
+  return toPublicPositions(positions.docs, codeOfId)
 }
