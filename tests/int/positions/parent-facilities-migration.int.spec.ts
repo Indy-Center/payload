@@ -22,17 +22,26 @@ beforeEach(async () => {
 
 /**
  * Takes the two columns away from the saved positions, runs the migration, and returns the message
- * it stopped with, or null. The columns are there again afterwards either way.
+ * it stopped with (or null) and which parent columns it left on the table. The columns are there
+ * again afterwards either way.
  */
-async function migrate(): Promise<string | null> {
+async function migrate(): Promise<{ stoppedWith: string | null; parentColumns: string[] }> {
   const { pool, drizzle } = payload.db as unknown as PostgresAdapter
   await pool.query(`alter table "positions" drop column "parent_facility_id"`)
   await pool.query(`alter table "positions" drop column "parent_facility_name"`)
   try {
-    return await migration.up({ db: drizzle, payload, req: {} as PayloadRequest }).then(
-      () => null,
-      (error: Error) => error.message,
+    const stoppedWith = await migration
+      .up({ db: drizzle, payload, req: {} as PayloadRequest })
+      .then(
+        () => null,
+        (error: Error) => error.message,
+      )
+    const { rows } = await pool.query<{ column_name: string }>(
+      `select column_name from information_schema.columns
+       where table_name = 'positions' and column_name like 'parent_facility_%'
+       order by column_name`,
     )
+    return { stoppedWith, parentColumns: rows.map((row) => row.column_name) }
   } finally {
     await pool.query(
       `alter table "positions" add column if not exists "parent_facility_id" varchar`,
@@ -64,7 +73,7 @@ describe('the migration to positions with their parent facility', () => {
     await position(payload, 'DAY_TWR')
     await position(payload, 'LOU_TWR', { retired: true })
 
-    expect(await migrate()).toBeNull()
+    expect((await migrate()).stoppedWith).toBeNull()
 
     expect(await parents()).toEqual([
       { callsign: 'CMH_APP', parentFacilityId: 'ZID', parentFacilityName: 'Indianapolis ARTCC' },
@@ -83,7 +92,7 @@ describe('the migration to positions with their parent facility', () => {
   })
 
   it('does nothing to an empty list, before the first sync', async () => {
-    expect(await migrate()).toBeNull()
+    expect((await migrate()).stoppedWith).toBeNull()
     expect(await parents()).toEqual([])
   })
 
@@ -92,11 +101,13 @@ describe('the migration to positions with their parent facility', () => {
     await position(payload, 'XYZ_TWR')
     await position(payload, 'ABC_GND')
 
-    expect(await migrate()).toBe(
-      'These positions are in a facility this migration has no parent for: ' +
+    // The columns still being absent shows it stopped before its first write.
+    expect(await migrate()).toEqual({
+      stoppedWith:
+        'These positions are in a facility this migration has no parent for: ' +
         'ABC_GND (ABC), XYZ_TWR (XYZ). Nothing was changed. Add the facility to the migration ' +
         'from vNAS’s tree and migrate again.',
-    )
-    expect((await parents()).map((row) => row.parentFacilityId)).toEqual([null, null, null])
+      parentColumns: [],
+    })
   })
 })
