@@ -1,4 +1,5 @@
 import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
+import type { CredentialKind } from '@/public/credentials'
 import type { PublicPosition } from '@/public/positions'
 
 /**
@@ -172,7 +173,7 @@ export type Credential = {
   id: string
   /** Such as `S-GC` or `T2-CTR`. */
   code: string
-  kind: 'certification' | 'endorsement'
+  kind: CredentialKind
   name: string
   description: string
   /** A certification's place on the ladder, higher above lower; null for an endorsement. */

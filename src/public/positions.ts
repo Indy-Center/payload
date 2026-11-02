@@ -7,7 +7,8 @@ import { servedRequiredCredentials } from '@/positions/required-credentials'
  * `/api/public/v1/positions` and in the library's catalogue (payload decision 0005): one type and
  * one mapping, so the two can't drift. A contract with apps we don't deploy, so it is written out
  * here rather than taken from `payload-types`; `publicRead` in `./read` says what may change.
- * It is what design-system calls `VnasPosition`.
+ * design-system's `VnasPosition` is this shape; `VnasPosition` in `@/positions/vnas` is not, it is
+ * the raw position the sync reads from vNAS.
  */
 export type PublicPosition = {
   /** vNAS's id, the same its live controller feed uses. */
@@ -30,7 +31,7 @@ export type PublicPosition = {
    * 'Indianapolis ARTCC' } }`. `parent` is the facility it sits under in vNAS's tree (a satellite
    * tower's is its TRACON), null in ZID itself.
    */
-  facility: { id: string; name: string; parent: { id: string; name: string } | null }
+  facility: PublicFacility & { parent: PublicFacility | null }
   /** One of its facility's main positions. */
   starred: boolean
   /**
@@ -44,6 +45,9 @@ export type PublicPosition = {
   /** vNAS no longer lists it, though records may still name it. */
   retired: boolean
 }
+
+/** A facility in vNAS's tree, such as `{ id: 'SDF', name: 'Louisville ATCT/TRACON' }`. */
+export type PublicFacility = { id: string; name: string }
 
 /** A stored position as served; `codeOfId` gives each credential's code by its id. */
 export function toPublicPosition(

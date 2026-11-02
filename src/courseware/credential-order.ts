@@ -1,5 +1,7 @@
+import type { PublicCredential } from '@/public/credentials'
+
 /** The fields that put a credential in order. */
-type Orderable = { code: string; kind: 'certification' | 'endorsement'; rank: number | null }
+type Orderable = Pick<PublicCredential, 'code' | 'kind' | 'rank'>
 
 /** Certifications up the ladder, then endorsements by code. */
 export function compareCredentials(a: Orderable, b: Orderable): number {
