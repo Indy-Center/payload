@@ -1,6 +1,7 @@
 import type { PayloadRequest } from 'payload'
-import type { Catalogue, CatalogueTask, Credential } from './document'
-import { servedRequiredCredentials } from '@/positions/required-credentials'
+import type { Catalogue, CatalogueTask } from './document'
+import { toPublicPositions } from '@/public/positions'
+import { compareCredentials } from './credential-order'
 import { idOf } from './ids'
 import { loadTaskTree, type TaskTree } from './task-tree'
 
@@ -59,23 +60,8 @@ export async function buildCatalogue(req: PayloadRequest): Promise<Catalogue> {
         retired: credential.retired ?? false,
       }))
       .sort(compareCredentials),
-    positions: positions.docs
-      .map((position) => ({
-        requiredCredentials: servedRequiredCredentials(position).map((anyOf) => ({
-          anyOf: anyOf.flatMap((id) => codeOfId.get(id) ?? []),
-        })),
-        id: position.vnasId,
-        callsign: position.callsign,
-        name: position.name,
-        shortName: position.shortName || null,
-        radioName: position.radioName,
-        frequency: position.frequency,
-        facility: { id: position.facilityId, name: position.facilityName },
-        starred: position.starred ?? false,
-        retired: position.retired ?? false,
-      }))
-      // By code unit, so the order doesn't hang on the database's collation.
-      .sort((a, b) => (a.callsign < b.callsign ? -1 : a.callsign > b.callsign ? 1 : 0)),
+    // The public route's mapping and order, so the two can't drift (payload decision 0005).
+    positions: toPublicPositions(positions.docs, codeOfId),
     tasks: tree.inOrder.map((task) => catalogueTask(tree, task.id)),
   }
 }
@@ -96,12 +82,6 @@ function catalogueTask(tree: TaskTree, id: string): CatalogueTask {
     mappings,
     citations: task.citations,
   }
-}
-
-/** Certifications up the ladder, then endorsements by code. */
-function compareCredentials(a: Credential, b: Credential): number {
-  if (a.kind !== b.kind) return a.kind === 'certification' ? -1 : 1
-  return (a.rank ?? Infinity) - (b.rank ?? Infinity) || a.code.localeCompare(b.code)
 }
 
 /** Orders "2.1.10" after "2.1.9", and "2.1.3a" after "2.1.3". */

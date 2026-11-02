@@ -15,6 +15,9 @@ export type VnasPosition = {
   frequency: number
   facilityId: string
   facilityName: string
+  /** The facility the position's facility sits under in vNAS's tree; null in ZID itself. */
+  parentFacilityId: string | null
+  parentFacilityName: string | null
   starred: boolean
   /** vNAS's own short name, from the ARTCC's ERAM sectors: "FLM 83". Null where it has none. */
   vnasShortName: string | null
@@ -88,7 +91,7 @@ export function readPositions(body: unknown): VnasPosition[] {
   }
 
   const found: VnasPosition[] = []
-  const walk = (facility: unknown, where: string) => {
+  const walk = (facility: unknown, where: string, parent: { id: string; name: string } | null) => {
     if (!isObject(facility) || !hasText(facility.id) || !hasText(facility.name))
       throw unusable(`a facility under ${where} has no id or name.`)
     if (!Array.isArray(facility.positions) || !Array.isArray(facility.childFacilities))
@@ -127,14 +130,17 @@ export function readPositions(body: unknown): VnasPosition[] {
         frequency: position.frequency as number,
         facilityId: facility.id as string,
         facilityName: tidy(facility.name as string),
+        parentFacilityId: parent?.id ?? null,
+        parentFacilityName: parent?.name ?? null,
         starred: position.starred === true,
         vnasShortName: shortNames.get(sectorNumber(sectorId)) ?? null,
         tcpSectorId: typeof tcpId === 'string' ? (tcps.get(tcpId) ?? null) : null,
       })
     }
-    for (const child of facility.childFacilities) walk(child, String(facility.id))
+    const here = { id: facility.id as string, name: tidy(facility.name as string) }
+    for (const child of facility.childFacilities) walk(child, here.id, here)
   }
-  walk(artcc, 'ZID')
+  walk(artcc, 'ZID', null)
 
   // An empty list would retire every position: never what vNAS means.
   if (found.length === 0) throw unusable('no positions.')

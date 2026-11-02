@@ -122,7 +122,7 @@ export const Positions: CollectionConfig = {
           access: noEdit,
           admin: {
             ...fromVnas,
-            description: 'In MHz.',
+            description: 'Shown in MHz.',
             components: {
               Field: '/components/admin/positions/Frequency#FrequencyField',
               Cell: '/components/admin/positions/Frequency#FrequencyCell',
@@ -147,6 +147,21 @@ export const Positions: CollectionConfig = {
           label: 'Facility',
           type: 'text',
           required: true,
+          access: noEdit,
+          admin: { ...fromVnas },
+        },
+        {
+          // The facility the position's facility sits under in vNAS's tree.
+          name: 'parentFacilityId',
+          label: 'Parent facility id',
+          type: 'text',
+          access: noEdit,
+          admin: { ...fromVnas, description: 'Such as CMH. Empty in ZID itself.' },
+        },
+        {
+          name: 'parentFacilityName',
+          label: 'Parent facility',
+          type: 'text',
           access: noEdit,
           admin: { ...fromVnas },
         },

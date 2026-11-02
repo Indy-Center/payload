@@ -657,7 +657,7 @@ export interface Position {
   vnasShortName?: string | null;
   radioName: string;
   /**
-   * In MHz.
+   * Shown in MHz.
    */
   frequency: number;
   /**
@@ -665,6 +665,11 @@ export interface Position {
    */
   facilityId: string;
   facilityName: string;
+  /**
+   * Such as CMH. Empty in ZID itself.
+   */
+  parentFacilityId?: string | null;
+  parentFacilityName?: string | null;
   /**
    * As controllers say it: the airport and LC, GC or CD for towers, grounds and deliveries, and its STARS sector letter for approach and departure.
    */
@@ -1362,6 +1367,8 @@ export interface PositionsSelect<T extends boolean = true> {
   frequency?: T;
   facilityId?: T;
   facilityName?: T;
+  parentFacilityId?: T;
+  parentFacilityName?: T;
   indyShortName?:
     | T
     | {
