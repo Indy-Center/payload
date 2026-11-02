@@ -1,8 +1,9 @@
 import type { Payload } from 'payload'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { User } from '@/payload-types'
-import { callEndpoint, endpointResponse, resetDatabase, testPayload } from '../courseware/helpers'
+import { callEndpoint, resetDatabase, testPayload } from '../courseware/helpers'
 import stored from '../positions/fixtures/vnas-zid.json'
+import { expectPublicHeaders, readPublic } from './helpers'
 
 /**
  * `GET /api/public/v1/positions` (payload decision 0005), read anonymously as the public reach it:
@@ -48,10 +49,7 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-const readPositions = async () => {
-  const response = await endpointResponse(payload, '/public/v1/positions', { token: null })
-  return { status: response.status, headers: response.headers, body: await response.json() }
-}
+const readPositions = () => readPublic(payload, '/public/v1/positions')
 
 type Served = { callsign: string }
 const byCallsign = (body: Served[], callsign: string) =>
@@ -168,11 +166,7 @@ describe('the public positions', () => {
   it('is public, cached five minutes, and sends no Vary or CORS headers', async () => {
     const { headers } = await readPositions()
 
-    expect(headers.get('content-type')).toBe('application/json')
-    expect(headers.get('cache-control')).toBe('public, max-age=300')
-    expect(headers.get('x-content-type-options')).toBe('nosniff')
-    expect(headers.get('vary')).toBeNull()
-    expect([...headers.keys()].filter((key) => key.startsWith('access-control-'))).toEqual([])
+    expectPublicHeaders(headers, 300)
   })
 
   it("serves the same positions as the catalogue, so the two can't drift", async () => {

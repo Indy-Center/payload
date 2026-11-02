@@ -1,7 +1,7 @@
 import type { Payload } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { publicEndpoints } from '@/public/endpoints'
-import { endpointResponse, resetDatabase, testPayload } from '../courseware/helpers'
+import { resetDatabase, testPayload } from '../courseware/helpers'
+import { expectPublicHeaders, readPublic } from './helpers'
 
 let payload: Payload
 
@@ -13,14 +13,7 @@ beforeEach(async () => {
   await resetDatabase(payload)
 })
 
-// Anonymous, as the public reach it: no signed-in user and no token.
-async function read() {
-  const response = await endpointResponse(payload, '/public/v1/credentials', {
-    token: null,
-    endpoints: publicEndpoints,
-  })
-  return { status: response.status, headers: response.headers, body: await response.json() }
-}
+const read = () => readPublic(payload, '/public/v1/credentials')
 
 const credential = (data: Record<string, unknown>) =>
   payload.create({ collection: 'credentials', data: data as never })
@@ -101,10 +94,6 @@ describe('GET /api/public/v1/credentials', () => {
 
   it('carries the public headers: cached five minutes, nosniff, no Vary or CORS', async () => {
     const { headers } = await read()
-    expect(headers.get('content-type')).toBe('application/json')
-    expect(headers.get('cache-control')).toBe('public, max-age=300')
-    expect(headers.get('x-content-type-options')).toBe('nosniff')
-    expect(headers.get('vary')).toBeNull()
-    expect([...headers.keys()].filter((key) => key.startsWith('access-control-'))).toEqual([])
+    expectPublicHeaders(headers, 300)
   })
 })

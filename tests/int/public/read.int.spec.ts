@@ -1,7 +1,8 @@
 import type { Payload, PayloadRequest } from 'payload'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { publicRead } from '@/public/read'
-import { endpointResponse, testPayload } from '../courseware/helpers'
+import { testPayload } from '../courseware/helpers'
+import { expectPublicHeaders, readPublic } from './helpers'
 
 let payload: Payload
 
@@ -15,14 +16,8 @@ afterEach(() => {
 
 type Widget = { code: string; name: string }
 
-// Anonymous, as the public reach these routes: no signed-in user and no token.
-async function read(endpoint: ReturnType<typeof publicRead>) {
-  const response = await endpointResponse(payload, endpoint.path, {
-    token: null,
-    endpoints: [endpoint],
-  })
-  return { status: response.status, headers: response.headers, body: await response.json() }
-}
+const read = (endpoint: ReturnType<typeof publicRead>) =>
+  readPublic(payload, endpoint.path, [endpoint])
 
 describe('publicRead', () => {
   it('registers a GET at /public/v1/<name>', () => {
@@ -48,11 +43,7 @@ describe('publicRead', () => {
     expect(seen?.headers.get('authorization')).toBeNull()
     expect(status).toBe(200)
     expect(body).toEqual([{ code: 'W1', name: 'First widget' }])
-    expect(headers.get('content-type')).toBe('application/json')
-    expect(headers.get('cache-control')).toBe('public, max-age=120')
-    expect(headers.get('x-content-type-options')).toBe('nosniff')
-    expect(headers.get('vary')).toBeNull()
-    expect([...headers.keys()].filter((key) => key.startsWith('access-control-'))).toEqual([])
+    expectPublicHeaders(headers, 120)
   })
 
   it('answers 500, uncached and without the error text, and logs it, when the build throws', async () => {
