@@ -1,4 +1,4 @@
-import { createLocalReq, getPayload, type Payload } from 'payload'
+import { createLocalReq, getPayload, type Endpoint, type Payload } from 'payload'
 import config from '@/payload.config'
 
 export const TOKEN = 'test-library-token'
@@ -13,6 +13,18 @@ export async function testPayload(): Promise<Payload> {
 
 export { resetDatabase } from '@/dev/reset-database'
 
+type CallOptions = {
+  token?: string | null
+  method?: string
+  /** The JSON body, or an Error for `req.json()` to throw. */
+  body?: unknown
+  /** A multipart body, as a browser's form upload sends it. */
+  formData?: FormData
+  user?: Awaited<ReturnType<Payload['create']>>
+  /** Where to look for the endpoint, when it isn't one of the config's own. */
+  endpoints?: Endpoint[]
+}
+
 /**
  * Calls one of the CMS's own endpoints the way an HTTP request would reach it, and returns the
  * status and JSON body.
@@ -20,22 +32,24 @@ export { resetDatabase } from '@/dev/reset-database'
 export async function callEndpoint(
   payload: Payload,
   path: string,
-  options: {
-    token?: string | null
-    method?: string
-    /** The JSON body, or an Error for `req.json()` to throw. */
-    body?: unknown
-    /** A multipart body, as a browser's form upload sends it. */
-    formData?: FormData
-    user?: Awaited<ReturnType<Payload['create']>>
-  } = {},
+  options: CallOptions = {},
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- tests read the JSON freely
 ): Promise<{ status: number; body: any }> {
+  const response = await endpointResponse(payload, path, options)
+  return { status: response.status, body: await response.json() }
+}
+
+/** As `callEndpoint`, but the whole response, for a test that reads its headers. */
+export async function endpointResponse(
+  payload: Payload,
+  path: string,
+  options: CallOptions = {},
+): Promise<Response> {
   const method = options.method ?? 'get'
   // A query string becomes `req.query`, as Payload parses it.
   const [pathname, search = ''] = path.split('?')
   path = pathname
-  const endpoint = payload.config.endpoints.find(
+  const endpoint = (options.endpoints ?? payload.config.endpoints).find(
     (candidate) => candidate.method === method && matchPath(candidate.path, path) !== null,
   )
   if (!endpoint) throw new Error(`No ${method} endpoint for ${path}`)
@@ -57,8 +71,7 @@ export async function callEndpoint(
   req.routeParams = matchPath(endpoint.path, path) ?? {}
   req.query = Object.fromEntries(new URLSearchParams(search))
 
-  const response = await endpoint.handler(req)
-  return { status: response.status, body: await response.json() }
+  return endpoint.handler(req)
 }
 
 function matchPath(pattern: string, path: string): Record<string, string> | null {

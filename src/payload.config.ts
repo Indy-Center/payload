@@ -27,6 +27,7 @@ import { IMPORT_FRAMEWORKS_PATH } from './courseware/import/form'
 import { partnersEndpoints } from './partners/endpoints'
 import { positionsEndpoints } from './positions/endpoints'
 import { jobs } from './positions/jobs'
+import { publicEndpoints } from './public/endpoints'
 import { trainingEndpoints } from './training/endpoints'
 import { migrations } from './migrations'
 import { storagePlugins } from './storage'
@@ -75,6 +76,7 @@ export default buildConfig({
     ...coursewareEndpoints,
     ...partnersEndpoints,
     ...positionsEndpoints,
+    ...publicEndpoints,
     ...trainingEndpoints,
   ],
   jobs,
