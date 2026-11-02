@@ -7,7 +7,7 @@ import { servedRequiredCredentials } from '@/positions/required-credentials'
  * `/api/public/v1/positions` and in the library's catalogue (payload decision 0005): one type and
  * one mapping, so the two can't drift. A contract with apps we don't deploy, so it is written out
  * here rather than taken from `payload-types`; `publicRead` in `./read` says what may change.
- * design-system's `VnasPosition`.
+ * It is what design-system calls `VnasPosition`.
  */
 export type PublicPosition = {
   /** vNAS's id, the same its live controller feed uses. */
