@@ -1,5 +1,7 @@
-import type { Payload, PayloadRequest } from 'payload'
+import { handleEndpoints, type Payload, type PayloadRequest } from 'payload'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import config from '@/payload.config'
+import { publicEndpoints } from '@/public/endpoints'
 import { publicRead } from '@/public/read'
 import { testPayload } from '../courseware/helpers'
 import { expectPublicHeaders, readPublic } from './helpers'
@@ -69,4 +71,30 @@ describe('publicRead', () => {
       'Public read /api/public/v1/widgets could not be built.',
     )
   })
+
+  // Through Payload's own router, as a real request arrives, rather than calling the handler. The
+  // GET is the control: it shows the router finds these paths, so the 404s are about the method.
+  it('answers a GET to every public read through the router', async () => {
+    for (const { path } of publicEndpoints) {
+      const response = await handleEndpoints({
+        config,
+        request: new Request(`http://localhost:3000/api${path}`),
+      })
+      expect(response.status).toBe(200)
+    }
+  })
+
+  it.each(['POST', 'PUT', 'PATCH', 'DELETE'])(
+    "gives %s to every public read Payload's 404",
+    async (method) => {
+      for (const { path } of publicEndpoints) {
+        const response = await handleEndpoints({
+          config,
+          request: new Request(`http://localhost:3000/api${path}`, { method }),
+        })
+        expect(response.status).toBe(404)
+        expect(await response.json()).toEqual({ message: `Route not found "/api${path}"` })
+      }
+    },
+  )
 })
