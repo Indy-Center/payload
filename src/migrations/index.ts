@@ -27,6 +27,7 @@ import * as migration_20261029_040720_temporary_short_names from './20261029_040
 import * as migration_20261029_042847_positions_required_credentials from './20261029_042847_positions_required_credentials';
 import * as migration_20261102_164652_position_parent_facilities from './20261102_164652_position_parent_facilities';
 import * as migration_20261108_042342_task_knowledge_and_skill_statements from './20261108_042342_task_knowledge_and_skill_statements';
+import * as migration_20261108_050841_lesson_plans_hold_every_task from './20261108_050841_lesson_plans_hold_every_task';
 
 export const migrations = [
   {
@@ -172,6 +173,11 @@ export const migrations = [
   {
     up: migration_20261108_042342_task_knowledge_and_skill_statements.up,
     down: migration_20261108_042342_task_knowledge_and_skill_statements.down,
-    name: '20261108_042342_task_knowledge_and_skill_statements'
+    name: '20261108_042342_task_knowledge_and_skill_statements',
+  },
+  {
+    up: migration_20261108_050841_lesson_plans_hold_every_task.up,
+    down: migration_20261108_050841_lesson_plans_hold_every_task.down,
+    name: '20261108_050841_lesson_plans_hold_every_task'
   },
 ];
