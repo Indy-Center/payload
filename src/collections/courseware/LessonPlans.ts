@@ -183,6 +183,34 @@ export const LessonPlans: CollectionConfig = {
       ],
     },
     {
+      // Wording, not structure: a course author changes them in a published edition (0055).
+      name: 'resources',
+      label: 'Resources',
+      type: 'array',
+      labels: { singular: 'Resource', plural: 'Resources' },
+      admin: {
+        description: 'A chart or a video for this lesson. Students see them unless teacher-only.',
+      },
+      fields: [
+        { name: 'title', type: 'text', required: true },
+        {
+          name: 'url',
+          label: 'Link',
+          type: 'text',
+          required: true,
+          validate: (value: string | null | undefined) =>
+            (typeof value === 'string' && value.startsWith('https://')) ||
+            'A resource’s link must start with https://.',
+        },
+        {
+          name: 'teacherOnly',
+          label: 'Teacher only',
+          type: 'checkbox',
+          defaultValue: false,
+        },
+      ],
+    },
+    {
       name: 'scenarios',
       label: 'Scenarios offered',
       type: 'relationship',

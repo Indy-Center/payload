@@ -50,6 +50,9 @@ export type LessonPlanTask = {
   teacherNotes: string
 }
 
+/** A chart, video or other link a lesson plan offers (decision 0067). */
+export type LessonPlanResource = { id: string; title: string; url: string; teacherOnly: boolean }
+
 /**
  * One of the catalogue's positions as a scenario names it (decision 0060): its vNAS id, to look
  * it up in the catalogue's `positions`, and its callsign, for VATUSA's record. A position vNAS has
@@ -99,6 +102,8 @@ export type LessonPlan = {
   minimum: GradePoint | null
   /** In the lesson plan's order. */
   tasks: LessonPlanTask[]
+  /** In the lesson plan's order. Students see them too unless `teacherOnly` (decision 0067). */
+  resources: LessonPlanResource[]
   scenarios: Scenario[]
 }
 

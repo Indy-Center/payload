@@ -150,6 +150,11 @@ function copyOfPlan(plan: LessonPlan, courseVersion: string) {
       gradesSkill: row.gradesSkill,
       teacherNotes: row.teacherNotes,
     })),
+    resources: (plan.resources ?? []).map((resource) => ({
+      title: resource.title,
+      url: resource.url,
+      teacherOnly: resource.teacherOnly,
+    })),
     scenarios: (plan.scenarios ?? []).map((scenario) => idOf(scenario)!),
   }
 }
