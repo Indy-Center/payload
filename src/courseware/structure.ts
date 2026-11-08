@@ -7,7 +7,7 @@ import { idOf } from './ids'
  * What only the Training Admin and leads may change in a published edition (decisions 0055,
  * 0065). A course author keeps editing their course's wording and teacher notes there, including
  * each lesson plan task's teacher notes; its structure is the staff's: which tasks a lesson plan
- * holds and in what order, whether each is required and what it grades. In a draft a course
+ * holds and in what order, and whether each is required. In a draft a course
  * author changes anything, as before. On the edition's own record a published edition lets a
  * course author change its modules' titles and descriptions only (`refuseAuthorsEditionStructure`).
  * A scenario holds no structure: everything on it is wording.
@@ -21,7 +21,7 @@ const ids = (refs: readonly Ref[] | null | undefined) => (refs ?? []).map(idOf)
 const NEEDS_A_LEAD = 'which needs the Training Admin or a lead.'
 const WORDING_STILL = 'Its wording and teacher notes can still change.'
 const NEW_PLAN = `This edition is published, so adding a lesson plan to it is a structural change, ${NEEDS_A_LEAD}`
-const PLAN_STRUCTURE = `This lesson plan is in a published edition, so changing its tasks, their order, whether each is required or what it grades, its minimum, the scenarios it offers or its edition is a structural change, ${NEEDS_A_LEAD} ${WORDING_STILL}`
+const PLAN_STRUCTURE = `This lesson plan is in a published edition, so changing its tasks, their order, whether each is required, its minimum, the scenarios it offers or its edition is a structural change, ${NEEDS_A_LEAD} ${WORDING_STILL}`
 
 const refuse = (path: string, message: string): never => {
   throw new ValidationError({ errors: [{ path, message }] })
@@ -34,13 +34,7 @@ function lessonPlanStructure(plan: Partial<LessonPlan>): string {
   return JSON.stringify([
     idOf(plan.courseVersion),
     plan.minimum ?? null,
-    (plan.tasks ?? []).map((row) => [
-      row.id,
-      idOf(row.task),
-      row.required !== false,
-      row.gradesKnowledge === true,
-      row.gradesSkill === true,
-    ]),
+    (plan.tasks ?? []).map((row) => [row.id, idOf(row.task), row.required !== false]),
     ids(plan.scenarios),
   ])
 }

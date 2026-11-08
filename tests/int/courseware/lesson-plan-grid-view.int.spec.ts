@@ -74,8 +74,8 @@ const pick = (
   name,
   parentId,
   depth: number.split('.').length - 1,
-  hasKnowledge: statements.includes('K'),
-  hasSkill: statements.includes('S'),
+  knowledgeStatement: statements.includes('K') ? `Know ${name}` : '',
+  skillStatement: statements.includes('S') ? `Do ${name}` : '',
 })
 const picker = [
   pick('radio', '1', 'Radio', null),
@@ -92,11 +92,9 @@ const saved: GridPlanTask[] = [
     number: '2',
     name: 'Ground',
     retired: false,
-    hasKnowledge: true,
-    hasSkill: true,
+    knowledgeStatement: 'Know Ground',
+    skillStatement: 'Do Ground',
     required: true,
-    gradesKnowledge: true,
-    gradesSkill: true,
     teacherNotes: 'Ask about taxiways',
   },
   {
@@ -105,11 +103,9 @@ const saved: GridPlanTask[] = [
     number: '1.1.1',
     name: 'Numbers',
     retired: false,
-    hasKnowledge: false,
-    hasSkill: true,
+    knowledgeStatement: '',
+    skillStatement: 'Do Numbers',
     required: false,
-    gradesKnowledge: false,
-    gradesSkill: true,
     teacherNotes: '',
   },
 ]
@@ -179,16 +175,20 @@ function type(field: HTMLTextAreaElement | HTMLInputElement, value: string) {
   })
 }
 
-/** Each row as "order task required K S", in the order shown. */
+/** Each row as "order task required", in the order shown. */
 const rowsShown = () =>
   [...document.querySelectorAll('tbody tr')].map((row) => {
     const order = row.querySelector('[data-number]')?.textContent
     const task = row.querySelector('[data-task]')?.textContent
-    const [required, knowledge, skill] = [
-      ...row.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'),
-    ].map((each) => each.checked)
-    return `${order} ${task}${required ? ' required' : ''}${knowledge ? ' K' : ''}${skill ? ' S' : ''}`
+    const required = row.querySelector<HTMLInputElement>('input[type="checkbox"]')?.checked
+    return `${order} ${task}${required ? ' required' : ''}`
   })
+
+/** Each row's knowledge and skill statement cells, as shown. */
+const statementsShown = () =>
+  [...document.querySelectorAll('tbody tr')].map((row) =>
+    [...row.querySelectorAll('.task-grid__statement')].map((cell) => cell.textContent),
+  )
 
 /** Whether leaving now would ask: the shared guard's prompt before closing the tab. */
 function asksBeforeUnload() {
@@ -198,13 +198,18 @@ function asksBeforeUnload() {
 }
 
 describe('a lesson plan’s grid', () => {
-  it('shows a row per task with its order, number and name, and its boxes', () => {
+  it('shows a row per task with its order, number, name and statements, and no grade boxes', () => {
     show()
 
-    expect(rowsShown()).toEqual(['1 2 Ground required K S', '2 1.1.1 Numbers S'])
-    // Numbers has no knowledge statement, so its box can't be ticked.
-    expect(box('Grade knowledge on 1.1.1').disabled).toBe(true)
-    expect(box('Grade skill on 1.1.1').disabled).toBe(false)
+    expect(rowsShown()).toEqual(['1 2 Ground required', '2 1.1.1 Numbers'])
+    // Numbers has no knowledge statement.
+    expect(statementsShown()).toEqual([
+      ['Know Ground', 'Do Ground'],
+      ['None', 'Do Numbers'],
+    ])
+    // Required is the only box on a row.
+    expect(document.querySelectorAll('tbody input[type="checkbox"]')).toHaveLength(2)
+    expect(document.body.textContent).not.toContain('Grade')
     expect(saveLabel()).toBe('Save 0 changes')
     expect(asksBeforeUnload()).toBe(false)
   })
@@ -216,19 +221,19 @@ describe('a lesson plan’s grid', () => {
     type(input('Teacher notes on 2'), 'Hold short')
     press('Move 1.1.1 up')
 
-    expect(rowsShown()).toEqual(['1 1.1.1 Numbers required S', '2 2 Ground required K S'])
+    expect(rowsShown()).toEqual(['1 1.1.1 Numbers required', '2 2 Ground required'])
     // Required, the notes, and the two rows the move swapped.
     expect(saveLabel()).toBe('Save 4 changes')
     expect(asksBeforeUnload()).toBe(true)
 
     // A removed row's edits and place no longer count: only its removal does.
     press('Remove 2')
-    expect(rowsShown()).toEqual(['1 1.1.1 Numbers required S', '– 2 Ground required K S'])
+    expect(rowsShown()).toEqual(['1 1.1.1 Numbers required', '– 2 Ground required'])
     expect(saveLabel()).toBe('Save 2 changes')
 
     press('Discard')
 
-    expect(rowsShown()).toEqual(['1 2 Ground required K S', '2 1.1.1 Numbers S'])
+    expect(rowsShown()).toEqual(['1 2 Ground required', '2 1.1.1 Numbers'])
     expect(input('Teacher notes on 2').value).toBe('Ask about taxiways')
     expect(saveLabel()).toBe('Save 0 changes')
     expect(asksBeforeUnload()).toBe(false)
@@ -255,15 +260,15 @@ describe('a lesson plan’s grid', () => {
     press('Add 2 tasks')
 
     expect(rowsShown()).toEqual([
-      '1 2 Ground required K S',
-      '2 1.1.1 Numbers S',
-      '3 1 Radio required K S',
-      '4 1.2 Frequencies required K S',
+      '1 2 Ground required',
+      '2 1.1.1 Numbers',
+      '3 1 Radio required',
+      '4 1.2 Frequencies required',
     ])
     expect(saveLabel()).toBe('Save 2 changes')
   })
 
-  it('starts an added row graded only on the statements its task has', () => {
+  it('brings in an added row’s statements from its task', () => {
     show()
 
     press('Add tasks')
@@ -271,8 +276,8 @@ describe('a lesson plan’s grid', () => {
     click('1.1.1 Numbers') // already added: nothing happens
     press('Add 1 task')
 
-    expect(rowsShown().at(-1)).toBe('3 1.1 Readbacks required K')
-    expect(box('Grade skill on 1.1').disabled).toBe(true)
+    expect(rowsShown().at(-1)).toBe('3 1.1 Readbacks required')
+    expect(statementsShown().at(-1)).toEqual(['Know Readbacks', 'None'])
   })
 
   it('saves every row in its order through one endpoint', async () => {
@@ -290,32 +295,15 @@ describe('a lesson plan’s grid', () => {
       {
         updatedAt: LOADED,
         rows: [
-          {
-            key: 'row-2',
-            id: 'row-2',
-            task: 'numbers',
-            required: false,
-            gradesKnowledge: false,
-            gradesSkill: true,
-            teacherNotes: '',
-          },
+          { key: 'row-2', id: 'row-2', task: 'numbers', required: false, teacherNotes: '' },
           {
             key: 'row-1',
             id: 'row-1',
             task: 'ground',
             required: true,
-            gradesKnowledge: true,
-            gradesSkill: true,
             teacherNotes: 'Ask about taxiways',
           },
-          {
-            key: 'new:1',
-            task: 'frequencies',
-            required: true,
-            gradesKnowledge: true,
-            gradesSkill: true,
-            teacherNotes: 'Two of them',
-          },
+          { key: 'new:1', task: 'frequencies', required: true, teacherNotes: 'Two of them' },
         ],
       },
     ])
@@ -327,7 +315,7 @@ describe('a lesson plan’s grid', () => {
   it('leaves out a removed row, and marks each row a refused save names', async () => {
     answer = () =>
       Response.json(
-        { errors: [{ row: 'row-2', message: 'Task 1.1.1 has no knowledge statement to grade.' }] },
+        { errors: [{ row: 'row-2', message: 'This task is retired.' }] },
         { status: 400 },
       )
     show()
@@ -337,7 +325,7 @@ describe('a lesson plan’s grid', () => {
 
     expect((sent[0] as { rows: { key: string }[] }).rows.map((row) => row.key)).toEqual(['row-2'])
     expect(document.querySelector('tr[data-row="row-2"]')?.textContent).toContain(
-      'Task 1.1.1 has no knowledge statement to grade.',
+      'This task is retired.',
     )
     // Still pending, so leaving still asks.
     expect(saveLabel()).toBe('Save 1 change')
@@ -353,7 +341,7 @@ describe('a lesson plan’s grid', () => {
     await pressAndWait('Save 2 changes')
 
     expect(document.querySelector('[role="alert"]')?.textContent).toBe(STALE_PLAN)
-    expect(rowsShown()).toEqual(['1 2 Ground K S', '2 1.1.1 Numbers S'])
+    expect(rowsShown()).toEqual(['1 2 Ground', '2 1.1.1 Numbers'])
     expect(input('Teacher notes on 2').value).toBe('Ask about hold short')
     expect(saveLabel()).toBe('Save 2 changes')
     expect(asksBeforeUnload()).toBe(true)
@@ -366,9 +354,7 @@ describe('a lesson plan’s grid', () => {
     expect(() => button('Add tasks')).toThrow()
     expect(() => button('Move 2 down')).toThrow()
     expect(() => button('Remove 2')).toThrow()
-    for (const label of ['Required on 2', 'Grade knowledge on 2', 'Grade skill on 2']) {
-      expect(box(label).disabled).toBe(true)
-    }
+    expect(box('Required on 2').disabled).toBe(true)
 
     type(input('Teacher notes on 2'), 'Reworded')
     expect(saveLabel()).toBe('Save 1 change')

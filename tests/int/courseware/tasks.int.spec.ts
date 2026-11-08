@@ -132,7 +132,7 @@ describe('the task tree', () => {
   })
 })
 
-/** A task with both statements, so a lesson plan task can grade it either way. */
+/** A task with both statements. */
 const STATEMENTS = { knowledgeStatement: 'Know it', skillStatement: 'Do it' }
 
 describe('lesson plan tasks', () => {
@@ -220,38 +220,7 @@ describe('lesson plan tasks', () => {
     ).rejects.toThrow('tasks.0.task')
   })
 
-  it('starts a new row graded on each statement its task has, and keeps what a row says', async () => {
-    const version = await draftVersion()
-    const both = await task('Radio', undefined, STATEMENTS)
-    const knowing = await task('Phraseology', undefined, { knowledgeStatement: 'Know it' })
-    const doing = await task('Readbacks', undefined, { skillStatement: 'Do it' })
-
-    const plan = await payload.create({
-      collection: 'lesson-plans',
-      depth: 0,
-      data: {
-        courseVersion: version.id,
-        tasks: [
-          { task: both.id },
-          { task: knowing.id },
-          { task: doing.id },
-          { task: both.id, gradesKnowledge: false, gradesSkill: true },
-          // The box it leaves out starts from its task.
-          { task: both.id, gradesSkill: false },
-        ],
-      },
-    })
-
-    expect(plan.tasks?.map((row) => [row.gradesKnowledge, row.gradesSkill])).toEqual([
-      [true, true],
-      [true, false],
-      [false, true],
-      [false, true],
-      [true, false],
-    ])
-  })
-
-  it('serves its tasks in order with their task numbers, required, grades and teacher notes', async () => {
+  it('serves its tasks in order with their task numbers, required, statements and teacher notes', async () => {
     const version = await draftVersion()
     const radio = await task('Radio', undefined, STATEMENTS)
     const clearances = await task('Clearances', undefined, { skillStatement: 'Issue one' })
@@ -261,7 +230,7 @@ describe('lesson plan tasks', () => {
         courseVersion: version.id,
         tasks: [
           { task: clearances.id, teacherNotes: 'Have them read one back' },
-          { task: radio.id, required: false, gradesSkill: false, gradesKnowledge: true },
+          { task: radio.id, required: false },
         ],
       },
     })
@@ -280,14 +249,15 @@ describe('lesson plan tasks', () => {
         id: expect.any(String),
         task: { id: clearances.id, number: '2', name: 'Clearances' },
         required: true,
-        grades: { knowledge: false, skill: true },
+        // A statement the task lacks is served empty.
+        statements: { knowledge: '', skill: 'Issue one' },
         teacherNotes: 'Have them read one back',
       },
       {
         id: expect.any(String),
         task: { id: radio.id, number: '1', name: 'Radio' },
         required: false,
-        grades: { knowledge: true, skill: false },
+        statements: { knowledge: 'Know it', skill: 'Do it' },
         teacherNotes: '',
       },
     ])

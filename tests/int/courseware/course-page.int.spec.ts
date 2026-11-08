@@ -77,7 +77,7 @@ async function liveCourse() {
       data: { courseVersion: live.id, code, title: `Plan ${code}`, minimum: 2, ...data },
     })
   const first = await plan('X-TWR-1', {
-    tasks: [{ task: radio.id, required: false, gradesSkill: false, teacherNotes: 'Ask' }],
+    tasks: [{ task: radio.id, required: false, teacherNotes: 'Ask' }],
   })
   const second = await plan('X-TWR-2', {
     tasks: [{ task: radio.id }],
@@ -144,13 +144,7 @@ describe('starting a new edition', () => {
     const originals = await plansOf(live.id)
     expect(copies.map((plan) => plan.id)).not.toContain(originals[0].id)
     expect(copies[0].tasks).toMatchObject([
-      {
-        task: radio.id,
-        required: false,
-        gradesKnowledge: true,
-        gradesSkill: false,
-        teacherNotes: 'Ask',
-      },
+      { task: radio.id, required: false, teacherNotes: 'Ask' },
     ])
     expect(copies[1]).toMatchObject({ scenarios: [scenario.id], time: 60, minimum: 2 })
 
