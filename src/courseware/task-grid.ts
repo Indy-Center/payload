@@ -10,11 +10,15 @@ export type GridTask = {
   id: string
   name: string
   description: string
+  knowledgeStatement: string
+  skillStatement: string
   /** Null for a top-level task. */
   parentId: string | null
   retired: boolean
   /** The orderable collection's fractional key (`_order`): siblings sort by it. */
   order: string
+  /** As loaded: a change to the task sends it, and is refused if the task was saved since. */
+  updatedAt: string
 }
 
 /**
@@ -22,9 +26,25 @@ export type GridTask = {
  * of the grid's own until it has an id; a parent may be a saved task's id or a new task's key.
  */
 export type TaskGridBatch = {
-  /** Saved tasks' new name or description, or their retiring or un-retiring. */
-  changes?: { id: string; name?: string; description?: string; retired?: boolean }[]
-  adds?: { key: string; parent: string | null; name: string; description?: string }[]
+  /** Saved tasks' new name, description or statements, or their retiring or un-retiring. */
+  changes?: {
+    id: string
+    /** The task's `updatedAt` as the grid loaded it. */
+    updatedAt?: string
+    name?: string
+    description?: string
+    knowledgeStatement?: string
+    skillStatement?: string
+    retired?: boolean
+  }[]
+  adds?: {
+    key: string
+    parent: string | null
+    name: string
+    description?: string
+    knowledgeStatement?: string
+    skillStatement?: string
+  }[]
   /**
    * For each group of siblings whose order changed or that gained a task: every task in it, saved
    * and new, retired ones too, in its new order. A task stays under its parent; moving between

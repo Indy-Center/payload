@@ -77,6 +77,8 @@ function catalogueTask(tree: TaskTree, id: string): CatalogueTask {
     number: tree.number(id),
     name: task.name,
     description: task.description,
+    knowledgeStatement: task.knowledgeStatement,
+    skillStatement: task.skillStatement,
     parentId: task.parentId,
     retired: task.retired,
     mappings,

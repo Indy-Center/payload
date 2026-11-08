@@ -6,6 +6,7 @@ import { refuseMinimumOffScale } from '@/courseware/minimums'
 import { placeLessonPlan } from '@/courseware/outline'
 import { rowLabelComponent } from '@/courseware/row-label-component'
 import { lessonPlanBodyEditor } from '@/courseware/rich-text'
+import { ROWS_AS_SENT, settleLessonPlanTasks } from '@/courseware/lesson-plan-tasks'
 import { refuseAuthorsLessonPlanStructure } from '@/courseware/structure'
 import { taskPickerComponents } from '@/courseware/task-picker'
 import { expandTaskRows, pickableTask } from '@/courseware/task-rows'
@@ -43,6 +44,18 @@ export const LessonPlans: CollectionConfig = {
     // Out of the nav: lesson plans are reached from their edition on the course's page (0056).
     // The collection's pages still open by link.
     group: false,
+    components: {
+      views: {
+        // The lesson plan's tasks as a grid, with "Add tasks" (src/components/admin).
+        edit: {
+          grid: {
+            path: '/grid',
+            Component: '/components/admin/LessonPlanGridView#LessonPlanGridView',
+            tab: { label: 'Edit as grid', href: '/grid' },
+          },
+        },
+      },
+    },
   },
   access: lessonPlanAccess,
   hooks: {
@@ -76,13 +89,15 @@ export const LessonPlans: CollectionConfig = {
           'minimum' in data ? data.minimum : originalDoc?.minimum,
           version?.gradingScale,
         )
-        data.theoryItems = await expandTaskRows(
+        const rows = await expandTaskRows(
           req,
-          data.theoryItems,
-          originalDoc?.theoryItems,
-          'theoryItems',
-          { teacherNotes: '' },
+          data.tasks,
+          originalDoc?.tasks,
+          'tasks',
+          { teacherNotes: '', required: true },
+          { expand: !context[ROWS_AS_SENT] },
         )
+        data.tasks = await settleLessonPlanTasks(req, rows, 'tasks')
         return data
       },
     ],
@@ -144,11 +159,19 @@ export const LessonPlans: CollectionConfig = {
       },
     },
     {
-      name: 'theoryItems',
-      type: 'array',
-      labels: { singular: 'Theory item', plural: 'Theory items' },
+      name: 'taskLinks',
+      type: 'ui',
       admin: {
-        components: { RowLabel: rowLabelComponent('theoryItem') },
+        components: { Field: '/components/admin/LessonPlanTaskLinks#LessonPlanTaskLinks' },
+        disableListColumn: true,
+      },
+    },
+    {
+      name: 'tasks',
+      type: 'array',
+      labels: { singular: 'Task', plural: 'Tasks' },
+      admin: {
+        components: { RowLabel: rowLabelComponent('lessonPlanTask') },
         description:
           'Adding a task that has tasks beneath it adds a row for each of them when you save.',
       },
@@ -159,12 +182,55 @@ export const LessonPlans: CollectionConfig = {
           relationTo: 'tasks',
           required: true,
           filterOptions: pickableTask,
-          admin: { components: taskPickerComponents() },
+          admin: { components: taskPickerComponents({ ticksGrades: true }) },
+        },
+        {
+          name: 'required',
+          type: 'checkbox',
+          defaultValue: true,
+          admin: { description: 'A student must reach the minimum on it to advance.' },
+        },
+        {
+          // No default: a row that leaves both unset starts graded on each statement its task
+          // has (`settleLessonPlanTasks`), and picking its task ticks them in the form.
+          type: 'row',
+          fields: [
+            { name: 'gradesKnowledge', label: 'Grade knowledge', type: 'checkbox' },
+            { name: 'gradesSkill', label: 'Grade skill', type: 'checkbox' },
+          ],
         },
         {
           name: 'teacherNotes',
           type: 'textarea',
           admin: { description: 'Shown only to teachers: the prompt to ask.' },
+        },
+      ],
+    },
+    {
+      // Wording, not structure: a course author changes them in a published edition (0055).
+      name: 'resources',
+      label: 'Resources',
+      type: 'array',
+      labels: { singular: 'Resource', plural: 'Resources' },
+      admin: {
+        description: 'A chart or a video for this lesson. Students see them unless teacher-only.',
+      },
+      fields: [
+        { name: 'title', type: 'text', required: true },
+        {
+          name: 'url',
+          label: 'Link',
+          type: 'text',
+          required: true,
+          validate: (value: string | null | undefined) =>
+            (typeof value === 'string' && value.startsWith('https://')) ||
+            'A resource’s link must start with https://.',
+        },
+        {
+          name: 'teacherOnly',
+          label: 'Teacher only',
+          type: 'checkbox',
+          defaultValue: false,
         },
       ],
     },

@@ -72,13 +72,19 @@ function linkParents(rows: SheetCompetency[]): SheetCompetency[] {
 function parseUsa(text: string): SheetCompetency[] {
   const rows: SheetCompetency[] = []
   for (const [id, gcap, reference, domain, standard] of parseCsv(text).slice(1)) {
-    if (!id?.trim() || isSectionRow([id, gcap ?? '', reference ?? '', domain ?? ''])) continue
+    if (
+      !id?.trim() ||
+      isSectionRow([id, gcap ?? '', reference ?? '', domain ?? '', standard ?? ''])
+    ) {
+      continue
+    }
     const sourceId = id.trim()
     if (MEETS_ALL_ROWS.has(sourceId)) continue
     const rawReference = blankToNull(reference)
     rows.push({
       sourceId,
-      title: domain?.trim() ?? '',
+      // A row with a Standard but no Domain is titled by its USA id.
+      title: domain?.trim() || sourceId,
       text: blankToNull(standard),
       parentSourceId: usaParentId(sourceId),
       sourceReference: rawReference

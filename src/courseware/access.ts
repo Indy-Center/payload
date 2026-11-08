@@ -62,8 +62,6 @@ export const staffAccess: CollectionConfig['access'] = {
 function authoredAccess(options: {
   coursePath: string
   courseOf: (req: PayloadRequest, data: Record<string, unknown>) => Promise<string | null>
-  /** A further limit on what an author may update, such as drafts only. */
-  authorWhere?: Where
 }): CollectionConfig['access'] {
   return {
     read: signedIn,
@@ -80,7 +78,7 @@ function authoredAccess(options: {
       const movingTo = data ? await options.courseOf(req, data) : null
       if (movingTo !== null && !ids.includes(movingTo)) return false
       const mine: Where = { [options.coursePath]: { in: ids } }
-      return options.authorWhere ? { and: [mine, options.authorWhere] } : mine
+      return mine
     },
     delete: () => false,
   }
@@ -97,11 +95,14 @@ async function courseOfVersion(req: PayloadRequest, versionId: string | null) {
   return idOf(version.course)
 }
 
-/** Authors edit their courses' drafts only; a published version is the staff's. */
+/**
+ * Authors edit their courses' editions. A draft is theirs to change; in a published one only its
+ * modules' titles and descriptions are (0055), which `structure.ts` and the edition's field rules
+ * keep to.
+ */
 export const courseVersionAccess = authoredAccess({
   coursePath: 'course',
   courseOf: async (_req, data) => idOf(data.course as string),
-  authorWhere: { status: { equals: 'draft' } },
 })
 
 export const lessonPlanAccess = authoredAccess({

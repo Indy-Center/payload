@@ -37,7 +37,7 @@ describe('importing the USA and GCAP frameworks and the rubrics', () => {
       editions,
     )
 
-    expect(report.usa.created).toEqual(['1.1', '1.1.1', '1.1.1a', '4.3.3', '5.2'])
+    expect(report.usa.created).toEqual(['1.1', '1.1.1', '1.1.1a', '2.1', '2.2', '4.3.3', '5.2'])
     expect(report.gcap.created).toEqual(['A.2.a.i', 'A.2.a.ii', 'A.3.b.i', 'A.4.d.i'])
 
     const detail = await competency('USA', '1.1.1a')
@@ -69,6 +69,56 @@ describe('importing the USA and GCAP frameworks and the rubrics', () => {
     )
   })
 
+  it('keeps a USA row that has Standard text but no GCAP pairing', async () => {
+    await importFrameworks(localStore(payload), await readSheets(sheetsDir), editions)
+
+    expect(await competency('USA', '2.1')).toMatchObject({
+      title: 'Unpaired Standard',
+      text: 'Does an unpaired thing.',
+      sourceReference: '2-1-1',
+      pairedGcapCode: null,
+    })
+  })
+
+  it('keeps a USA row with only an id and a Standard, titled by its id', async () => {
+    await importFrameworks(localStore(payload), await readSheets(sheetsDir), editions)
+
+    expect(await competency('USA', '2.2')).toMatchObject({
+      title: '2.2',
+      text: 'Only a standard.',
+      pairedGcapCode: null,
+    })
+  })
+
+  it('lets a lead map a task to an unpaired standard, and still refuses a heading', async () => {
+    await importFrameworks(localStore(payload), await readSheets(sheetsDir), editions)
+    const lead = await payload.create({
+      collection: 'users',
+      data: {
+        email: 'lead@example.com',
+        password: 'example-password',
+        cid: '1000009',
+        roles: ['training:lead'],
+      },
+    })
+    const save = async (name: string, sourceId: string) =>
+      payload.create({
+        collection: 'tasks',
+        data: { name, mappings: [{ competency: (await competency('USA', sourceId)).id }] },
+        user: lead,
+        overrideAccess: false,
+      })
+
+    for (const sourceId of ['2.1', '2.2']) {
+      const task = await save(`Task ${sourceId}`, sourceId)
+      expect(task.mappings).toHaveLength(1)
+      expect(task.mappings?.[0].pairedGcapCode).toBeNull()
+    }
+    await expect(save('Heading task', '1.1')).rejects.toThrow(
+      'The following field is invalid: Mappings 1 > Competency',
+    )
+  })
+
   it('leaves out the "meets all established standards" rows', async () => {
     await importFrameworks(localStore(payload), await readSheets(sheetsDir), editions)
     expect(await competency('USA', '4.5')).toBeUndefined()
@@ -94,7 +144,7 @@ describe('importing the USA and GCAP frameworks and the rubrics', () => {
 
     const again = await importFrameworks(localStore(payload), sheets, editions)
 
-    expect(again.usa).toEqual({ created: [], changed: [], unchanged: 5 })
+    expect(again.usa).toEqual({ created: [], changed: [], unchanged: 7 })
     expect(again.gcap).toEqual({ created: [], changed: [], unchanged: 4 })
   })
 

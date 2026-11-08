@@ -7,6 +7,7 @@ import {
   type PayloadRequest,
 } from 'payload'
 import type { User } from '@/payload-types'
+import { isUnchangedSince } from '@/stale-save'
 import { isStaff } from './access'
 import {
   PARENT_RETIRED,
@@ -31,10 +32,13 @@ export async function loadGridTasks(req: PayloadRequest): Promise<GridTask[]> {
     id: task.id,
     name: task.name,
     description: task.description,
+    knowledgeStatement: task.knowledgeStatement,
+    skillStatement: task.skillStatement,
     // A parent that no longer resolves is shown, and saved, as a top-level task.
     parentId: task.parentId && tree.get(task.parentId) ? task.parentId : null,
     retired: task.retired,
     order: task.order,
+    updatedAt: task.updatedAt,
   }))
 }
 
@@ -157,7 +161,26 @@ async function plan(req: PayloadRequest, batch: TaskGridBatch): Promise<Write[]>
 
   for (const change of changes) {
     if (!saved.has(change.id)) refusals.push({ row: change.id, message: STALE })
+    // A task saved since the grid loaded it (0068); its row is locked until the batch ends.
+    else if (
+      change.updatedAt !== undefined &&
+      !(await isUnchangedSince(req, { collection: 'tasks', id: change.id }, change.updatedAt))
+    ) {
+      refusals.push({ row: change.id, message: STALE })
+    }
   }
+  // A reorder rewrites sort keys from the stored order, so every saved sibling in a group must
+  // come from the copy the grid opened: another person's reorder may have moved it since.
+  const checked = new Set(
+    changes.filter((change) => change.updatedAt !== undefined).map((c) => c.id),
+  )
+  const unchecked = new Set<string>()
+  for (const { tasks } of orders) {
+    for (const id of tasks) if (saved.has(id) && !checked.has(id)) unchecked.add(id)
+  }
+  for (const id of unchecked) refusals.push({ row: id, message: STALE })
+  // A stale row is refused as such, before any other rule: the person reloads first.
+  if (refusals.length) throw new TaskGridRefused(refusals)
   for (const add of adds) {
     if (add.parent !== null && !saved.has(add.parent) && !added.has(add.parent)) {
       refusals.push({ row: add.key, message: STALE })
@@ -204,11 +227,14 @@ async function plan(req: PayloadRequest, batch: TaskGridBatch): Promise<Write[]>
   // Saved tasks: only what the grid edits, and any new sort key, in one save each. A task's
   // parent changes on its own page.
   const updates = new Map<string, Record<string, unknown>>()
-  for (const { id, name, description, retired } of changes) {
+  for (const { id, name, description, knowledgeStatement, skillStatement, retired } of changes) {
     const data = Object.fromEntries(
-      Object.entries({ name, description, retired }).filter(([, value]) => value !== undefined),
+      Object.entries({ name, description, knowledgeStatement, skillStatement, retired }).filter(
+        ([, value]) => value !== undefined,
+      ),
     )
-    updates.set(id, { ...updates.get(id), ...data })
+    // A moved task is sent only to be checked; its new key is written below.
+    if (Object.keys(data).length) updates.set(id, { ...updates.get(id), ...data })
   }
   for (const [id, key] of keys) {
     if (saved.has(id)) updates.set(id, { ...updates.get(id), _order: key })
@@ -270,6 +296,8 @@ async function plan(req: PayloadRequest, batch: TaskGridBatch): Promise<Write[]>
           data: {
             name: add.name,
             description: add.description,
+            knowledgeStatement: add.knowledgeStatement,
+            skillStatement: add.skillStatement,
             parent,
             _order: keys.get(add.key),
           },

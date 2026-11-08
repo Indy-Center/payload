@@ -1,43 +1,38 @@
 import type { CollectionConfig } from 'payload'
 import { scenarioAccess, staffOnlyField } from '@/courseware/access'
 import { hideRetiredUnlessAsked } from '@/courseware/retired'
-import { rowLabelComponent } from '@/courseware/row-label-component'
 import { positionPickerComponents, pickedPosition } from '@/courseware/position-picker'
-import { refuseAuthorsScenarioStructure } from '@/courseware/structure'
-import { taskPickerComponents } from '@/courseware/task-picker'
-import { expandTaskRows, pickableTask } from '@/courseware/task-rows'
 
 /**
- * A set of practical tasks posed together at one position. It belongs to one course, and any
- * lesson plan in any version of that course may offer it (decision 0026). Its student and
- * teacher positions are picked from Positions (decision 0060).
+ * A setup a teacher may pick for a lesson plan; it holds no tasks, which are all on the lesson
+ * plan (decision 0065). It belongs to one course, and any lesson plan in any version of that
+ * course may offer it (decision 0026). Its student and teacher positions are picked from
+ * Positions (decision 0060).
  */
 export const Scenarios: CollectionConfig = {
   slug: 'scenarios',
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'course', 'studentPosition', 'mode', 'retired'],
-    group: 'Training',
+    defaultColumns: ['name', 'course', 'studentPosition', 'retired'],
+    // Out of the nav: scenarios are worked on from their course page's Scenarios tab, as editions
+    // and lesson plans are from Content (0056). The collection's pages still open by link, and its
+    // access is unchanged.
+    group: false,
     baseFilter: hideRetiredUnlessAsked,
   },
   access: scenarioAccess,
-  hooks: {
-    beforeChange: [
-      async ({ data, operation, originalDoc, req }) => {
-        await refuseAuthorsScenarioStructure(req, data, operation === 'update' ? originalDoc : null)
-        data.practicalTasks = await expandTaskRows(
-          req,
-          data.practicalTasks,
-          originalDoc?.practicalTasks,
-          'practicalTasks',
-          { teacherNotes: '', required: true },
-        )
-        return data
-      },
-    ],
-  },
   fields: [
-    { name: 'course', type: 'relationship', relationTo: 'courses', required: true, index: true },
+    {
+      name: 'course',
+      type: 'relationship',
+      relationTo: 'courses',
+      required: true,
+      index: true,
+      admin: {
+        // Fixed text once set, as "+ Add scenario" on the course page sets it.
+        components: { Field: '/components/admin/courses/ScenarioCourse#ScenarioCourse' },
+      },
+    },
     {
       name: 'name',
       label: 'ATCT scenario name',
@@ -76,46 +71,27 @@ export const Scenarios: CollectionConfig = {
       ],
     },
     {
-      name: 'mode',
-      label: 'Live or sim',
-      type: 'select',
-      required: true,
-      defaultValue: 'sim',
-      options: [
-        { label: 'Sim', value: 'sim' },
-        { label: 'Live network', value: 'live' },
-      ],
+      name: 'description',
+      label: 'Description',
+      type: 'textarea',
+      admin: {
+        description:
+          "For the teacher: what this scenario sets up, such as the flight plans built for it. Students don't see it.",
+      },
     },
     {
-      name: 'practicalTasks',
-      type: 'array',
-      labels: { singular: 'Practical task', plural: 'Practical tasks' },
+      name: 'atctrainer',
+      label: 'ATCTrainer',
+      type: 'text',
+      admin: { description: "The scenario's link or ID in ATCTrainer" },
+    },
+    {
+      // Read-only: which lesson plans offer this scenario, which is set on each lesson plan.
+      name: 'offeredBy',
+      type: 'ui',
       admin: {
-        components: { RowLabel: rowLabelComponent('practicalTask') },
-        description:
-          'Adding a task that has tasks beneath it adds a row for each of them when you save.',
+        components: { Field: '/components/admin/courses/ScenarioOfferedBy#ScenarioOfferedBy' },
       },
-      fields: [
-        {
-          name: 'task',
-          type: 'relationship',
-          relationTo: 'tasks',
-          required: true,
-          filterOptions: pickableTask,
-          admin: { components: taskPickerComponents() },
-        },
-        {
-          name: 'teacherNotes',
-          type: 'textarea',
-          admin: { description: 'Shown only to teachers: how to pose the challenge.' },
-        },
-        {
-          name: 'required',
-          type: 'checkbox',
-          defaultValue: true,
-          admin: { description: 'The scenario cannot be completed without it.' },
-        },
-      ],
     },
     {
       name: 'retired',

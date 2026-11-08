@@ -4,6 +4,7 @@ import type { ListQuery } from 'payload'
 import { Button, Gutter, SearchFilter, SearchIcon, useListQuery, useStepNav } from '@payloadcms/ui'
 import type { GridTask } from '@/courseware/task-grid'
 import type { TaskTreeList as List } from '@/courseware/task-tree-list'
+import { confirmLeave } from './LeaveGuard'
 import { TaskGrid } from './TaskGrid'
 import { TaskTreeTable, useOpenTasks } from './TaskTreeTable'
 
@@ -72,7 +73,8 @@ export const TaskTreeList = ({
             role="tab"
             aria-selected={!grid}
             className="task-tree-list__tab"
-            onClick={() => grid && chooseTab(false)}
+            // The grid's pending changes go with it, so leaving it asks first.
+            onClick={() => grid && confirmLeave(() => chooseTab(false))}
           >
             Tree
           </button>
@@ -101,9 +103,18 @@ export const TaskTreeList = ({
 const signature = (tasks: GridTask[]) =>
   tasks
     .map((task) =>
-      [task.id, task.parentId, task.order, task.retired, task.name, task.description].join(
-        '\u0000',
-      ),
+      [
+        task.id,
+        task.parentId,
+        task.order,
+        task.retired,
+        task.name,
+        task.description,
+        task.knowledgeStatement,
+        task.skillStatement,
+        // Saved since, though nothing shown changed: the grid's next Save starts from it.
+        task.updatedAt,
+      ].join('\u0000'),
     )
     .join('\u0001')
 

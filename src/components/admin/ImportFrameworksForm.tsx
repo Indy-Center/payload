@@ -9,6 +9,7 @@ import {
   IMPORT_ENDPOINTS,
   type SheetFile,
 } from '@/courseware/import/form'
+import { LeaveGuard } from './LeaveGuard'
 import { useEndpoint } from './useEndpoint'
 
 const baseClass = 'framework-import'
@@ -79,9 +80,14 @@ export function ImportFrameworksForm({ competenciesURL }: { competenciesURL: str
   }
 
   const checked = outcome?.dryRun === true
+  // Files chosen or an edition named, and not yet imported: leaving drops them.
+  const entered =
+    Object.values(files).some(Boolean) || Boolean(editions.usa) || Boolean(editions.gcap)
+  const imported = outcome?.dryRun === false
 
   return (
     <div className={`${baseClass}__body`}>
+      <LeaveGuard unsaved={entered && !imported} />
       <p className={`${baseClass}__intro`}>
         Save each tab of VATUSA’s competency sheet as CSV, choose the files, and name the editions.
         Check shows what an import would create and change; nothing is written until you import. The

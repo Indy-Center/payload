@@ -34,12 +34,24 @@ export type CourseList = { courses: CourseSummary[] }
 /** One point of a grading scale, numbered from 1 in the scale's order (lowest first). */
 export type GradePoint = { position: number; label: string; description: string }
 
-/** A task as a lesson plan or scenario points at it. `number` comes from the tree, e.g. "2.3.1". */
+/** A task as a lesson plan points at it. `number` comes from the tree, e.g. "2.3.1". */
 export type TaskRef = { id: string; number: string; name: string }
 
-export type TheoryItem = { id: string; task: TaskRef; teacherNotes: string }
+/**
+ * A task as one lesson plan teaches it (decision 0065): whether a student must reach the minimum
+ * on it to advance, which of its task's statements the teacher grades (at least one, and only
+ * statements the catalogue task has), and the teacher notes.
+ */
+export type LessonPlanTask = {
+  id: string
+  task: TaskRef
+  required: boolean
+  grades: { knowledge: boolean; skill: boolean }
+  teacherNotes: string
+}
 
-export type PracticalTask = { id: string; task: TaskRef; teacherNotes: string; required: boolean }
+/** A chart, video or other link a lesson plan offers (decision 0067). */
+export type LessonPlanResource = { id: string; title: string; url: string; teacherOnly: boolean }
 
 /**
  * One of the catalogue's positions as a scenario names it (decision 0060): its vNAS id, to look
@@ -60,9 +72,11 @@ export type Scenario = {
   studentPosition: ScenarioPosition
   teacherPosition: ScenarioPosition
   difficulty: 'easy' | 'medium' | 'hard' | null
-  mode: 'live' | 'sim'
+  /** For the teacher; empty when unset. */
+  description: string
+  /** The scenario's link or ID in ATCTrainer; empty when unset. */
+  atctrainer: string
   retired: boolean
-  practicalTasks: PracticalTask[]
 }
 
 export type LessonPlan = {
@@ -86,7 +100,10 @@ export type LessonPlan = {
   time: number | null
   isExam: boolean
   minimum: GradePoint | null
-  theoryItems: TheoryItem[]
+  /** In the lesson plan's order. */
+  tasks: LessonPlanTask[]
+  /** In the lesson plan's order. Students see them too unless `teacherOnly` (decision 0067). */
+  resources: LessonPlanResource[]
   scenarios: Scenario[]
 }
 
@@ -195,6 +212,10 @@ export type CatalogueTask = {
   number: string
   name: string
   description: string
+  /** What a controller must know to perform the task; empty when unset. */
+  knowledgeStatement: string
+  /** What a controller must be able to do to perform the task; empty when unset. */
+  skillStatement: string
   parentId: string | null
   retired: boolean
   /**

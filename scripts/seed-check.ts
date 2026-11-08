@@ -226,13 +226,25 @@ async function seedTasks(payload: Payload, competencies: MadeIn, sources: MadeIn
   const into: MadeIn = {}
   // Two tasks carry mappings and citations (a place and a title).
   const extras: Record<string, object> = {
+    // Knowledge and skill statements: R1a1 and R3 have both, R2a and R2b only a skill, R1b only
+    // knowledge, the rest (parents, and the retired one) none. A lesson plan task grades only
+    // statements its task has, so every task a lesson plan uses has one.
+    R1a1: {
+      knowledgeStatement: 'The symbols and legends on the airport diagram, and what each shows.',
+      skillStatement: 'Find a taxi route on the diagram and describe it in standard phraseology.',
+    },
+    R2a: { skillStatement: 'Issue a complete IFR clearance without prompting.' },
+    R2b: { skillStatement: 'Get a release and hold the departure until it comes.' },
     R1b: {
+      knowledgeStatement: 'How runways and taxiways are named and numbered.',
       mappings: [{ competency: competencies['USA 1.1'].id }],
       citations: [
         { source: sources.handbook.id, place: '3-7-2.a', title: 'Runway and taxiway markings' },
       ],
     },
     R3: {
+      knowledgeStatement: 'When a handoff is due and what the receiving controller needs.',
+      skillStatement: 'Hand off an aircraft and transfer communications in good time.',
       mappings: [
         { competency: competencies['USA 1.2'].id },
         { competency: competencies['GCAP A.1'].id },
@@ -290,7 +302,8 @@ type Ctx = {
 type Courseware = Record<'courses' | 'course-versions' | 'lesson-plans' | 'scenarios', MadeIn>
 
 /**
- * X-GC (two editions, two scenarios) and X-TWR (no editions). The scenarios pick positions: one
+ * X-GC (two editions, four scenarios: one offered by two lesson plans of the draft, one by none,
+ * one retired) and X-TWR (no editions). The scenarios pick positions: one
  * shown by vNAS's short name (IND_83_CTR, "FLM 83 · Falmouth 83"), the others by a generated one
  * (LOU_TWR is "LOU LC"), and PKB_TWR, which `seedPositions` retires afterwards, so a scenario
  * names a retired position.
@@ -321,7 +334,7 @@ async function seedCourses({
     estimatedWeeks: { min: 4, max: 8 },
   })
 
-  // Scenarios first: a lesson plan offers them. Exactly one practical task is required.
+  // Scenarios first: a lesson plan offers them. They hold no tasks.
   const scenarioOne = await make(payload, out.scenarios, 'scenarios', 'ground-push', {
     course,
     name: 'Example ground push',
@@ -329,11 +342,8 @@ async function seedCourses({
     studentPosition: positions.LOU_TWR.id,
     teacherPosition: positions.SDF_D_APP.id,
     difficulty: 'easy',
-    mode: 'sim',
-    practicalTasks: [
-      { task: tasks.R3.id, teacherNotes: 'Pose a handoff to the tower.', required: true },
-      { task: tasks.R1b.id, teacherNotes: 'Ask for a taxi route.', required: false },
-    ],
+    description: 'Made-up setup: three departures from KIND, flight plans already filed.',
+    atctrainer: 'example-ground-push',
   })
   const scenarioTwo = await make(payload, out.scenarios, 'scenarios', 'departure-release', {
     course,
@@ -342,8 +352,7 @@ async function seedCourses({
     studentPosition: positions.IND_83_CTR.id,
     teacherPosition: positions.PKB_TWR.id,
     difficulty: 'medium',
-    mode: 'live',
-    practicalTasks: [{ task: tasks.R2b.id, teacherNotes: 'Hold the push.', required: false }],
+    description: 'Made-up setup: a busy departure push with releases to call.',
   })
 
   // Numbered on save: the first created is edition 1.
@@ -357,7 +366,9 @@ async function seedCourses({
       defaultMinimum: DEFAULT_MINIMUM,
     })
 
-  // Edition 1: two modules, three lesson plans, published.
+  // Edition 1: two modules, three lesson plans, published. Their tasks start graded on each
+  // statement their task has unless a row says otherwise; X-GC-1 and X-GC-3 each have an optional
+  // row, and X-GC-3 one that grades only one of its task's two statements.
   const first = await edition('X-GC edition 1')
   const plan = (key: string, version: string, data: object) =>
     make(payload, out['lesson-plans'], 'lesson-plans', key, {
@@ -368,21 +379,33 @@ async function seedCourses({
   const lessonOne = await plan('X-GC-1', first, {
     code: 'X-GC-1',
     title: 'Finding your way around',
-    theoryItems: [
+    tasks: [
       { task: tasks.R1a1.id, teacherNotes: 'Ask where the hold-short lines are.' },
-      { task: tasks.R1b.id },
+      { task: tasks.R1b.id, required: false },
+    ],
+    resources: [
+      { title: 'Airport diagram', url: 'https://example.com/x-gc/diagram' },
+      { title: 'Answer key', url: 'https://example.com/x-gc/answers', teacherOnly: true },
     ],
   })
   const lessonTwo = await plan('X-GC-2', first, {
     code: 'X-GC-2',
     title: 'Issuing clearances',
     minimum: 3,
-    theoryItems: [{ task: tasks.R2b.id }],
+    tasks: [{ task: tasks.R2b.id, teacherNotes: 'Hold the push.' }],
   })
   const lessonThree = await plan('X-GC-3', first, {
     code: 'X-GC-3',
     title: 'Putting it together',
-    theoryItems: [{ task: tasks.R3.id }],
+    tasks: [
+      {
+        task: tasks.R3.id,
+        gradesKnowledge: false,
+        gradesSkill: true,
+        teacherNotes: 'Pose a handoff to the tower.',
+      },
+      { task: tasks.R1b.id, required: false, teacherNotes: 'Ask for a taxi route.' },
+    ],
     scenarios: [scenarioOne, scenarioTwo],
   })
   await payload.update({
@@ -399,18 +422,62 @@ async function seedCourses({
     overrideAccess: true,
   })
 
-  // Edition 2: a draft that passes the publishing check.
+  // For the course page's Scenarios tab: one no lesson plan offers, and a retired one.
+  await make(payload, out.scenarios, 'scenarios', 'event-rush', {
+    course,
+    name: 'Example event rush',
+    airport: 'KIND',
+    studentPosition: positions.LOU_TWR.id,
+    teacherPosition: positions.SDF_D_APP.id,
+    difficulty: 'hard',
+    description: 'Made-up setup: thirty movements in forty minutes. No lesson plan offers it yet.',
+  })
+  await make(payload, out.scenarios, 'scenarios', 'old-ground', {
+    course,
+    name: 'Example old ground',
+    airport: 'KIND',
+    studentPosition: positions.LOU_TWR.id,
+    teacherPosition: positions.SDF_D_APP.id,
+    difficulty: 'medium',
+    description: 'Made-up setup from before the taxiway rebuild.',
+    retired: true,
+  })
+
+  // Edition 2: a draft that passes the publishing check. X-GC-1 has a required and an optional
+  // task and a teacher-only resource; it and X-GC-2 both offer the ground push; X-GC-9, in no
+  // module, has no tasks yet (the publishing check reads only lesson plans in modules); and
+  // Working traffic is an empty module.
   const second = await edition('X-GC edition 2')
   const draftPlan = await plan('X-GC-1 (edition 2)', second, {
     code: 'X-GC-1',
     title: 'Finding your way around, revised',
-    theoryItems: [{ task: tasks.R1b.id }, { task: tasks.R3.id }],
+    tasks: [{ task: tasks.R1b.id }, { task: tasks.R3.id, required: false }],
+    resources: [
+      { title: 'Airport diagram', url: 'https://example.com/x-gc/diagram' },
+      { title: 'Answer key', url: 'https://example.com/x-gc/answers', teacherOnly: true },
+    ],
     scenarios: [scenarioOne],
+  })
+  const draftTwo = await plan('X-GC-2 (edition 2)', second, {
+    code: 'X-GC-2',
+    title: 'Issuing clearances, revised',
+    tasks: [{ task: tasks.R2b.id }],
+    scenarios: [scenarioOne, scenarioTwo],
+  })
+  await plan('X-GC-9 (edition 2)', second, {
+    code: 'X-GC-9',
+    title: 'Not written yet',
+    tasks: [],
   })
   await payload.update({
     collection: 'course-versions',
     id: second,
-    data: { modules: [{ title: 'Getting started', lessonPlans: [draftPlan] }] },
+    data: {
+      modules: [
+        { title: 'Getting started', lessonPlans: [draftPlan, draftTwo] },
+        { title: 'Working traffic', description: 'In the sim.', lessonPlans: [] },
+      ],
+    },
     depth: 0,
     overrideAccess: true,
   })
@@ -421,6 +488,76 @@ async function seedCourses({
   )
   if (faults.length > 0) throw new Error(`The draft edition would not publish: ${faults.join(' ')}`)
   return out
+}
+
+// ---------------------------------------------------------------------------------------------
+// A lesson plan with many tasks, for its grid and "Add tasks"
+
+/**
+ * Twelve more tasks under R4, numbered after R3: some with both statements, some with one, and
+ * three with none (R4d2, R4g, R4h), which no lesson plan row can grade. R4d has two tasks beneath
+ * it, for the picker's ticking. R4j is retired once X-GC-4 uses it.
+ */
+const GRID_TASKS: { key: string; name: string; parent?: string; k?: string; s?: string }[] = [
+  { key: 'R4', name: 'Ground movement' },
+  { key: 'R4a', name: 'Taxi out', parent: 'R4', k: 'Standard taxi routes.', s: 'Issue a taxi.' },
+  { key: 'R4b', name: 'Taxi in', parent: 'R4', s: 'Taxi an arrival to its gate.' },
+  { key: 'R4c', name: 'Hold short', parent: 'R4', k: 'Where hold-short lines are.' },
+  { key: 'R4d', name: 'Runway crossings', parent: 'R4', k: 'When a crossing needs a clearance.' },
+  { key: 'R4d1', name: 'Crossing an active runway', parent: 'R4d', s: 'Clear a crossing.' },
+  { key: 'R4d2', name: 'Crossing at night', parent: 'R4d' },
+  { key: 'R4e', name: 'Progressive taxi', parent: 'R4', s: 'Give turn-by-turn instructions.' },
+  { key: 'R4f', name: 'Intersection departures', parent: 'R4', k: 'What an intersection gives.' },
+  { key: 'R4g', name: 'Pushback', parent: 'R4' },
+  { key: 'R4h', name: 'Towing', parent: 'R4' },
+  { key: 'R4i', name: 'Vehicles', parent: 'R4', k: 'Vehicle phraseology.', s: 'Work a vehicle.' },
+  { key: 'R4j', name: 'Closing a taxiway', parent: 'R4', k: 'How a closure is announced.' },
+]
+
+async function seedGridTasks(payload: Payload, into: MadeIn): Promise<void> {
+  for (const task of GRID_TASKS) {
+    await make(payload, into, 'tasks', task.key, {
+      name: task.name,
+      parent: task.parent ? into[task.parent].id : undefined,
+      knowledgeStatement: task.k,
+      skillStatement: task.s,
+    })
+  }
+}
+
+/**
+ * X-GC-4, in the draft edition but in none of its modules (it would not publish, holding a retired
+ * task), listed under "Not in a module": eight rows, some optional, some with teacher notes, one
+ * grading one of two statements, and one whose task is retired.
+ */
+async function seedGridLessonPlan(
+  payload: Payload,
+  tasks: MadeIn,
+  courseware: Courseware,
+): Promise<void> {
+  const row = (key: string, extra: object = {}) => ({ task: tasks[key].id, ...extra })
+  await make(payload, courseware['lesson-plans'], 'lesson-plans', 'X-GC-4 (edition 2)', {
+    courseVersion: courseware['course-versions']['X-GC edition 2'].id,
+    code: 'X-GC-4',
+    title: 'Moving on the ground',
+    time: 60,
+    tasks: [
+      row('R4a', { teacherNotes: 'Start from the north ramp.' }),
+      row('R4b'),
+      row('R4c', { required: false }),
+      row('R4d1', { teacherNotes: 'Ask before crossing 5L.' }),
+      row('R4e', { required: false }),
+      row('R4f'),
+      row('R4i', { gradesKnowledge: false, gradesSkill: true }),
+      row('R4j', { teacherNotes: 'Taxiway B closed today.' }),
+    ],
+  })
+  await payload.update({
+    collection: 'tasks',
+    id: tasks.R4j.id,
+    data: { retired: true },
+    overrideAccess: true,
+  })
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -510,6 +647,7 @@ export async function seedCheck(
   records.competencies = competencies
   records.sources = await seedSources(payload)
   records.tasks = await seedTasks(payload, competencies, records.sources)
+  await seedGridTasks(payload, records.tasks)
   records['grading-scales'] = await seedGradingScales(payload)
   records.positions = await seedPositions(payload, records.credentials)
   Object.assign(
@@ -522,6 +660,7 @@ export async function seedCheck(
       positions: records.positions,
     }),
   )
+  await seedGridLessonPlan(payload, records.tasks, records as Courseware)
   await retireDroppedPosition(payload, records.positions)
   return { records, accounts: ACCOUNTS }
 }

@@ -40,6 +40,9 @@ const router: AppRouterInstance = {
   bfcacheId: 'test',
 }
 
+/** When each made-up task was last saved, as the grid loaded it. */
+const LOADED = '2026-11-01T10:00:00.000Z'
+
 function task(
   id: string,
   name: string,
@@ -47,7 +50,17 @@ function task(
   order: string,
   retired = false,
 ): GridTask {
-  return { id, name, description: `About ${name}`, parentId, retired, order }
+  return {
+    id,
+    name,
+    description: `About ${name}`,
+    knowledgeStatement: `Know ${name}`,
+    skillStatement: '',
+    parentId,
+    retired,
+    order,
+    updatedAt: LOADED,
+  }
 }
 
 // A made-up tree three levels deep, in tree order: 1 Radio > 1.1 Readbacks > 1.1.1 Numbers, and
@@ -193,6 +206,40 @@ describe('the Tasks grid', () => {
     ])
   })
 
+  it('shows Knowledge and Skill beside name and description, and sends their edits in the batch', async () => {
+    const fetch = vi.fn(async (..._args: unknown[]) => Response.json({}, { status: 200 }))
+    vi.stubGlobal('fetch', fetch)
+    show()
+
+    expect([...document.querySelectorAll('thead th')].map((each) => each.textContent)).toEqual([
+      'Number',
+      'Name',
+      'Description',
+      'Knowledge',
+      'Skill',
+      '',
+    ])
+    const cell = (label: string) =>
+      document.querySelector<HTMLTextAreaElement>(`textarea[aria-label="${label}"]`)!
+    expect(cell('Knowledge of 2').value).toBe('Know Ground')
+    expect(cell('Skill of 2').value).toBe('')
+
+    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!
+    act(() => {
+      setter.call(cell('Skill of 2'), 'Taxi safely')
+      cell('Skill of 2').dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    expect(cell('Skill of 2').classList).toContain('task-grid__cell--changed')
+    expect(saveLabel()).toBe('Save 1 change')
+
+    await pressAndWait('Save 1 change')
+
+    const [, init] = fetch.mock.calls[0] as [string, RequestInit]
+    expect(JSON.parse(init.body as string).changes).toEqual([
+      { id: 'd', updatedAt: LOADED, skillStatement: 'Taxi safely' },
+    ])
+  })
+
   it('marks an edited cell until it is edited back', () => {
     show()
 
@@ -253,8 +300,23 @@ describe('the Tasks grid', () => {
     const [url, init] = fetch.mock.calls[0] as [string, RequestInit]
     expect(url).toBe('/api/courseware/task-grid')
     expect(JSON.parse(init.body as string)).toEqual({
-      changes: [],
-      adds: [{ key: 'new:1', parent: null, name: '', description: '' }],
+      // Every saved sibling in the reordered group says when it was loaded: the server rewrites
+      // keys from the stored order, so any of them may be the one it rewrites.
+      changes: [
+        { id: 'd', updatedAt: LOADED },
+        { id: 'a', updatedAt: LOADED },
+        { id: 'e', updatedAt: LOADED },
+      ],
+      adds: [
+        {
+          key: 'new:1',
+          parent: null,
+          name: '',
+          description: '',
+          knowledgeStatement: '',
+          skillStatement: '',
+        },
+      ],
       orders: [{ parent: null, tasks: ['d', 'a', 'new:1', 'e'] }],
     })
     const row = nameCell('3').closest('tr')!

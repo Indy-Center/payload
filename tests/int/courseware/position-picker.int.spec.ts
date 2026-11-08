@@ -75,7 +75,6 @@ describe('the scenario position picker', () => {
         airport: 'KXYZ',
         studentPosition: tower.id,
         teacherPosition: falmouth.id,
-        mode: 'sim',
       },
     })
     await payload.update({ collection: 'positions', id: tower.id, data: { retired: true } })
