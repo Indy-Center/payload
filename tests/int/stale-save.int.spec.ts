@@ -9,7 +9,7 @@ import {
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import config from '@/payload.config'
 import type { User } from '@/payload-types'
-import { refuseStaleSave, STALE_SAVE } from '@/stale-save'
+import { refuseStaleSave } from '@/stale-save'
 import { resetDatabase, testPayload } from './courseware/helpers'
 
 /**
@@ -23,6 +23,8 @@ let lead: User
 
 const PASSWORD = 'example-password'
 const REFUSED = 'Made-up refusal: the record changed.'
+const STALE_SAVE =
+  'Someone else saved this since you opened it. Reload the page and make your changes again.'
 
 beforeAll(async () => {
   payload = await testPayload()
