@@ -195,8 +195,8 @@ export const Courses: CollectionConfig = {
     useAsTitle: 'code',
     defaultColumns: ['code', 'title', 'currentVersion', 'draftEdition', 'credentialIssued'],
     group: 'Training',
-    // The course page has four tabs, Details, Content, Scenarios and History (decision 0056,
-    // ticket 09), and no API tab.
+    // The course page has four tabs, Details, Content, Scenarios and History (decision 0056), and
+    // no API tab.
     hideAPIURL: true,
     components: {
       views: {

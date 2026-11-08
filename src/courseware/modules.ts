@@ -6,7 +6,7 @@ import { isMoveDirection, type MoveDirection } from './move-direction'
 import { MODULE_NEEDS_A_TITLE, STALE_OUTLINE } from './outline-messages'
 
 /**
- * An edition's modules, changed from the course page's Content tab (ticket 09's prototype): added,
+ * An edition's modules, changed in place from the course page's Content tab: added,
  * renamed, reordered and deleted one at a time. Modules are rows of the edition's `modules`, so each
  * change is a save of the edition, made as the signed-in person through its own access rules and
  * hooks: in a published edition a course author may change a module's title and description, and

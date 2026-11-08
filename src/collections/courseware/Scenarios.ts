@@ -14,9 +14,9 @@ export const Scenarios: CollectionConfig = {
   admin: {
     useAsTitle: 'name',
     defaultColumns: ['name', 'course', 'studentPosition', 'retired'],
-    // Out of the nav: scenarios are worked on from their course page's Scenarios tab (ticket 09),
-    // as editions and lesson plans are from Content (0056). The collection's pages still open by
-    // link, and its access is unchanged.
+    // Out of the nav: scenarios are worked on from their course page's Scenarios tab, as editions
+    // and lesson plans are from Content (0056). The collection's pages still open by link, and its
+    // access is unchanged.
     group: false,
     baseFilter: hideRetiredUnlessAsked,
   },
