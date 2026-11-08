@@ -35,8 +35,13 @@ type Guard = {
 const guards: Guard[] = []
 /** A leave was accepted, so nothing asks again on the way out. */
 let leaving = false
-/** A held-back back is being undone; its own history move is not a leave. */
-let restoring = false
+/** The address and history state of the page with unsaved changes, to put back after a back. */
+let here: { url: string; state: unknown } | null = null
+
+/** Keeps where the page is, as the changes become unsaved. */
+const remember = () => {
+  here = { url: window.location.href, state: window.history.state }
+}
 
 function asking(needsLinks = false): Guard | undefined {
   if (leaving) return undefined
@@ -65,22 +70,41 @@ function onBeforeUnload(event: BeforeUnloadEvent) {
   event.returnValue = ''
 }
 
+/** The parts of the browser's Navigation API the guard uses; TypeScript's DOM types lack it. */
+type TraverseEvent = Event & {
+  navigationType: 'push' | 'replace' | 'reload' | 'traverse'
+  destination: { key: string }
+}
+type NavigationApi = EventTarget & { traverseTo: (key: string) => unknown }
+const navigationApi = () =>
+  (globalThis as { navigation?: NavigationApi }).navigation as NavigationApi | undefined
+
 /**
- * The browser's back has already moved the address when this runs. Listening in the capture
- * phase on `window` runs it before Next's own listener, which it stops, so the page stays drawn;
- * the address is moved forward again, and back is taken once the person chooses to leave.
+ * The browser's back or forward, where the browser lets a page hold one (the Navigation API, for
+ * a move within the admin after the person has used the page): held before the address moves,
+ * so neither Next nor anything else sees it, and taken once the person chooses to leave.
  */
-function onPopState(event: PopStateEvent) {
-  if (restoring) {
-    restoring = false
-    event.stopImmediatePropagation()
-    return
-  }
+function onNavigate(event: Event) {
+  const traverse = event as TraverseEvent
+  if (traverse.navigationType !== 'traverse' || !event.cancelable) return
   const guard = asking()
   if (!guard) return
+  event.preventDefault()
+  const { key } = traverse.destination
+  guard.ask(() => leave(() => navigationApi()?.traverseTo(key)))
+}
+
+/**
+ * The browser's back where it could not be held before the address moved. Listening in the
+ * capture phase on `window` runs this before Next's own listener, which it stops, so the page
+ * stays drawn; the page's address is put back at once, in the same step (a second history move
+ * could be overtaken by others in flight), and back is taken once the person chooses to leave.
+ */
+function onPopState(event: PopStateEvent) {
+  const guard = asking()
+  if (!guard || !here) return
   event.stopImmediatePropagation()
-  restoring = true
-  window.history.go(1)
+  window.history.pushState(here.state, '', here.url)
   guard.ask(() => leave(() => window.history.back()))
 }
 
@@ -115,10 +139,12 @@ function listen(on: boolean) {
     window.addEventListener('beforeunload', onBeforeUnload)
     window.addEventListener('popstate', onPopState, true)
     document.addEventListener('click', onClick, true)
+    navigationApi()?.addEventListener('navigate', onNavigate)
   } else {
     window.removeEventListener('beforeunload', onBeforeUnload)
     window.removeEventListener('popstate', onPopState, true)
     document.removeEventListener('click', onClick, true)
+    navigationApi()?.removeEventListener('navigate', onNavigate)
   }
 }
 
@@ -132,7 +158,7 @@ function register(guard: Guard) {
     if (guards.length) return
     listen(false)
     leaving = false
-    restoring = false
+    here = null
   }
 }
 
@@ -155,6 +181,7 @@ export function LeaveGuard({ unsaved, links = true }: { unsaved: boolean; links?
   useEffect(() => {
     guard.current.unsaved = unsaved
     guard.current.links = links
+    if (unsaved) remember()
   }, [unsaved, links])
   useEffect(() => {
     guard.current.ask = (go) => {

@@ -53,6 +53,7 @@ afterEach(() => {
   window.removeEventListener('popstate', nextPopState)
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
+  delete (globalThis as { navigation?: unknown }).navigation
   vi.mocked(router.push).mockClear()
   nextPopState.mockClear()
 })
@@ -111,6 +112,42 @@ function back() {
   act(() => {
     window.dispatchEvent(new PopStateEvent('popstate', { state: null }))
   })
+}
+
+/** The Courses list, then a course's page pushed by Next's router, as a link click leaves them. */
+function enteredByLink() {
+  window.history.replaceState({ __NA: true }, '', '/admin/collections/courses')
+  window.history.pushState({ __NA: true }, '', '/admin/collections/courses/course-1')
+}
+
+/** A history move in jsdom, which lands a moment later, as the browser's does. */
+async function historyMove(move: () => void) {
+  await act(async () => {
+    move()
+    await new Promise((resolve) => setTimeout(resolve, 50))
+  })
+}
+
+/**
+ * A stand-in for the browser's Navigation API (`window.navigation`), which jsdom lacks: an event
+ * target for `navigate` events with `traverseTo`. Taken away after each test.
+ */
+function installNavigationApi() {
+  const navigation = Object.assign(new EventTarget(), { traverseTo: vi.fn() })
+  ;(globalThis as { navigation?: unknown }).navigation = navigation
+  return navigation
+}
+
+/** The browser's back or forward to the history entry `key`, as its `navigate` event. */
+function traverse(key: string, { cancelable = true } = {}) {
+  const event = Object.assign(new Event('navigate', { cancelable }), {
+    navigationType: 'traverse',
+    destination: { key },
+  })
+  act(() => {
+    ;(globalThis as { navigation?: EventTarget }).navigation!.dispatchEvent(event)
+  })
+  return event
 }
 
 async function press(button: HTMLButtonElement) {
@@ -173,25 +210,58 @@ describe('the leave guard', () => {
     expect(modalHeading()).toBeNull()
   })
 
-  it("holds the browser's back until the person chooses to leave", async () => {
-    const forward = vi.spyOn(window.history, 'go').mockImplementation(() => {})
-    const goBack = vi.spyOn(window.history, 'back').mockImplementation(() => {})
+  it("holds the browser's back on a page reached by an in-app link, before the address moves", async () => {
+    const navigation = installNavigationApi()
+    // The list, then the course page as Next's router pushes it for a link.
+    enteredByLink()
     show(guard(true))
 
-    back()
-    // Next never drew the page back went to, and the address is moved forward again.
-    expect(nextPopState).not.toHaveBeenCalled()
-    expect(forward).toHaveBeenCalledWith(1)
+    const event = traverse('entry-of-the-list')
+    // Held: the address never moves, so Next never hears of it.
+    expect(event.defaultPrevented).toBe(true)
+    expect(window.location.pathname).toBe('/admin/collections/courses/course-1')
     expect(modalHeading()).toBe('Leave without saving')
-    // Moving forward is a history move of its own, and not a leave.
-    back()
-    expect(nextPopState).not.toHaveBeenCalled()
 
     await press(modalButton('Leave anyway'))
-    expect(goBack).toHaveBeenCalled()
+    expect(navigation.traverseTo).toHaveBeenCalledWith('entry-of-the-list')
+    // On the way out nothing holds the move again.
+    expect(traverse('entry-of-the-list').defaultPrevented).toBe(false)
+  })
+
+  it('stays on the page on Stay on this page after a held back', async () => {
+    const navigation = installNavigationApi()
+    enteredByLink()
+    show(guard(true))
+
+    traverse('entry-of-the-list')
+    await press(modalButton('Stay on this page'))
+
+    expect(navigation.traverseTo).not.toHaveBeenCalled()
+    expect(window.location.pathname).toBe('/admin/collections/courses/course-1')
+    expect(traverse('entry-of-the-list').defaultPrevented).toBe(true)
+  })
+
+  it('lets a back or forward the browser will not let a page hold go to the fallback', () => {
+    installNavigationApi()
+    show(guard(true))
+
+    expect(traverse('another-entry', { cancelable: false }).defaultPrevented).toBe(false)
+  })
+
+  it('without the Navigation API, puts the address back at once and takes back on Leave anyway', async () => {
+    enteredByLink()
+    show(guard(true))
+
+    await historyMove(() => window.history.back())
+    // Next never drew the list, and the address is the course page's again, in the same step.
     expect(nextPopState).not.toHaveBeenCalled()
-    back()
+    expect(window.location.pathname).toBe('/admin/collections/courses/course-1')
+    expect(modalHeading()).toBe('Leave without saving')
+
+    await press(modalButton('Leave anyway'))
+    await historyMove(() => {})
     expect(nextPopState).toHaveBeenCalledTimes(1)
+    expect(window.location.pathname).toBe('/admin/collections/courses')
   })
 
   it('runs a switch inside the screen at once with nothing unsaved, and after asking with', async () => {
