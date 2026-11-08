@@ -1,3 +1,4 @@
+import { FormLeaveGuard as FormLeaveGuard_afa64251f29c9c16acbbe6d5bb31f931 } from '../../../components/admin/LeaveGuard'
 import { CompetencyImportNote as CompetencyImportNote_d7fd06c8daddf06d97b50efa71d3475e } from '../../../components/admin/CompetencyPage'
 import { CompetencyRelations as CompetencyRelations_d7fd06c8daddf06d97b50efa71d3475e } from '../../../components/admin/CompetencyPage'
 import { NoSaveButton as NoSaveButton_177a01f20de7a41d5daf6bf44c99ff1e } from '../../../components/admin/NoSaveButton'
@@ -55,6 +56,7 @@ import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc056
 
 /** @type import('payload').ImportMap */
 export const importMap = {
+  "/components/admin/LeaveGuard#FormLeaveGuard": FormLeaveGuard_afa64251f29c9c16acbbe6d5bb31f931,
   "/components/admin/CompetencyPage#CompetencyImportNote": CompetencyImportNote_d7fd06c8daddf06d97b50efa71d3475e,
   "/components/admin/CompetencyPage#CompetencyRelations": CompetencyRelations_d7fd06c8daddf06d97b50efa71d3475e,
   "/components/admin/NoSaveButton#NoSaveButton": NoSaveButton_177a01f20de7a41d5daf6bf44c99ff1e,
