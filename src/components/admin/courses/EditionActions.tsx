@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Modal, toast, useModal } from '@payloadcms/ui'
+import { confirmLeave } from '../LeaveGuard'
 import { useEndpoint, type Call } from '../useEndpoint'
 
 type Props = {
@@ -34,8 +35,11 @@ export function EditionActions({
 
   const go = (to: 'draft' | 'live' | null, message: string) => {
     toast.success(message)
-    router.push(to ? `${contentURL}?edition=${to}` : contentURL)
-    router.refresh()
+    // The edition changed under the page; an open module form's unsaved changes ask first.
+    confirmLeave(() => {
+      router.push(to ? `${contentURL}?edition=${to}` : contentURL)
+      router.refresh()
+    })
   }
 
   const start = async () => {

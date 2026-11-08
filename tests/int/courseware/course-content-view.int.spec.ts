@@ -7,6 +7,7 @@ import {
   AppRouterContext,
   type AppRouterInstance,
 } from 'next/dist/shared/lib/app-router-context.shared-runtime'
+import { EditionActions } from '@/components/admin/courses/EditionActions'
 import { EditionOutline } from '@/components/admin/courses/EditionOutline'
 import type { EditionOutline as Outline, OutlinePlan } from '@/components/admin/courses/editions'
 import { AdminShell, modalButton } from './modals'
@@ -96,7 +97,10 @@ const outline: Outline = {
   ownLessonPlans: 3,
 }
 
-function show(props: Partial<React.ComponentProps<typeof EditionOutline>> = {}) {
+function show(
+  props: Partial<React.ComponentProps<typeof EditionOutline>> = {},
+  beside: React.ReactNode = null,
+) {
   const container = document.body.appendChild(document.createElement('div'))
   root = createRoot(container)
   act(() =>
@@ -107,6 +111,7 @@ function show(props: Partial<React.ComponentProps<typeof EditionOutline>> = {}) 
         React.createElement(
           AdminShell,
           { config },
+          beside,
           React.createElement(EditionOutline, {
             edition: outline,
             editable: true,
@@ -244,6 +249,72 @@ describe('a module’s form on the Content tab', () => {
     expect(titleField()!.value).toBe('First steps')
     await press(modalButton('Leave anyway'))
     expect(titleField()!.value).toBe('Working traffic')
+  })
+
+  describe('Publish and Discard while a module holds changes', () => {
+    const actions = () =>
+      React.createElement(EditionActions, {
+        courseId: 'c1',
+        contentURL: '/admin/collections/courses/c1/content',
+        edition: { id: 'e1', number: 2, status: 'draft', ownLessonPlans: 3 },
+        liveNumber: 1,
+        hasDraft: true,
+        may: { start: true, publish: true, discard: true },
+      })
+
+    beforeEach(() => {
+      fetch.mockImplementation(async (url: string) =>
+        Response.json(url.includes('publishing-check') ? { faults: [] } : {}),
+      )
+      router.push = vi.fn()
+    })
+
+    const inEditionModal = (label: string) =>
+      [...document.querySelectorAll('.edition-modal button')].find(
+        (each) => each.textContent?.trim() === label,
+      ) as HTMLButtonElement
+
+    it.each([
+      ['Publish edition 2', 'Publish', '/admin/collections/courses/c1/content?edition=live'],
+      ['Discard draft', 'Discard', '/admin/collections/courses/c1/content'],
+    ])(
+      '%s asks before moving the page, and moves it on Leave anyway',
+      async (open, confirm, to) => {
+        show({}, actions())
+        await press(button('Edit Getting started'))
+        type('title', 'First steps')
+
+        await press(button(open))
+        await press(inEditionModal(confirm))
+
+        expect(router.push).not.toHaveBeenCalled()
+        expect(modalHeading()).toBe('Leave without saving')
+        await press(modalButton('Leave anyway'))
+        expect(router.push).toHaveBeenCalledWith(to)
+      },
+    )
+
+    it('stays put on Stay on this page', async () => {
+      show({}, actions())
+      await press(button('Edit Getting started'))
+      type('title', 'First steps')
+
+      await press(button('Discard draft'))
+      await press(inEditionModal('Discard'))
+      await press(modalButton('Stay on this page'))
+
+      expect(router.push).not.toHaveBeenCalled()
+      expect(titleField()!.value).toBe('First steps')
+    })
+
+    it('moves at once when nothing is unsaved', async () => {
+      show({}, actions())
+
+      await press(button('Discard draft'))
+      await press(inEditionModal('Discard'))
+
+      expect(router.push).toHaveBeenCalledWith('/admin/collections/courses/c1/content')
+    })
   })
 
   it('stays on the open module on Stay on this page', async () => {
