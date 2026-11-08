@@ -2,6 +2,7 @@ import { APIError, docAccessOperation, ValidationError, type PayloadRequest } fr
 import type { CourseVersion, LessonPlan } from '@/payload-types'
 import { idOf } from './ids'
 import { isMoveDirection, type MoveDirection } from './move-direction'
+import { mayChangePublishedEdition } from './structure'
 
 /**
  * An edition's outline (decisions 0016, 0023): which of its lesson plans sit in which module, in
@@ -43,6 +44,11 @@ async function loadEdition(req: PayloadRequest, plan: Plan): Promise<CourseVersi
     user: req.user,
     overrideAccess: false,
   })
+}
+
+/** The id of the edition a lesson plan belongs to, read as the signed-in person. */
+export async function editionIdOfPlan(req: PayloadRequest, planId: string): Promise<string> {
+  return idOf((await loadPlan(req, planId)).courseVersion)!
 }
 
 /** Each module's lesson plan ids, as the edition holds them. */
@@ -118,17 +124,33 @@ export async function moveLessonPlan(
 }
 
 /**
- * Whether the signed-in person may change this edition's outline: the edition's own update rule,
- * asked as Payload asks it for the admin. A course author may in a draft of their course, not in a
- * published edition (0055).
+ * Whether the signed-in person may save this edition at all: its own update rule, asked as Payload
+ * asks it for the admin. A course author may in any edition of their course, though in a published
+ * one only to reword its modules (0055).
  */
-export async function mayChangeOutline(req: PayloadRequest, editionId: string): Promise<boolean> {
+export async function maySaveEdition(req: PayloadRequest, editionId: string): Promise<boolean> {
   const permissions = await docAccessOperation({
     collection: req.payload.collections['course-versions'],
     id: editionId,
     req,
   })
   return Boolean(permissions.update)
+}
+
+/**
+ * Whether the signed-in person may change this edition's outline: add, delete and reorder modules,
+ * and add, reorder, move and remove lesson plans. A course author may in a draft of their course,
+ * not in a published edition (0055); the Training Admin and leads may in either.
+ */
+export async function mayChangeOutline(req: PayloadRequest, editionId: string): Promise<boolean> {
+  if (!(await maySaveEdition(req, editionId))) return false
+  const edition = await req.payload.findByID({
+    collection: 'course-versions',
+    id: editionId,
+    depth: 0,
+    req,
+  })
+  return mayChangePublishedEdition(req, edition)
 }
 
 /** Refuses a body that names no module or a module that isn't text. */

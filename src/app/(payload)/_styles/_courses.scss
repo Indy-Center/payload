@@ -307,6 +307,146 @@
   }
 }
 
+// A module's title and description, its form opened in place, and its "Lesson plans" line.
+.edition-outline {
+  &__module-text {
+    flex: 1 1 16rem;
+    min-width: 0;
+
+    p {
+      margin: calc(var(--base) * 0.2) 0 0;
+      color: var(--theme-elevation-700);
+    }
+  }
+
+  &__editing {
+    color: var(--theme-elevation-500);
+  }
+
+  &__module-form {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--base) * 0.5);
+    padding: calc(var(--base) * 0.6);
+    border-radius: var(--style-radius-m);
+    background: var(--theme-elevation-50);
+
+    .field-type {
+      margin: 0;
+    }
+  }
+
+  &__input {
+    display: block;
+    width: 100%;
+    padding: calc(var(--base) * 0.4) calc(var(--base) * 0.5);
+    border: 1px solid var(--theme-elevation-150);
+    border-radius: var(--style-radius-s);
+    background: var(--theme-input-bg);
+    color: var(--theme-text);
+    font: inherit;
+  }
+
+  &__plans-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(var(--base) * 0.4);
+  }
+
+  // A lesson plan with no tasks: "None", and why it matters.
+  &__no-tasks {
+    padding: 0 calc(var(--base) * 0.3);
+    border-radius: var(--style-radius-s);
+    background: var(--theme-error-100);
+    color: var(--theme-error-750);
+  }
+
+  &__publish-needs {
+    display: block;
+    color: var(--theme-error-650);
+    font-size: 0.85em;
+  }
+
+  &__muted {
+    color: var(--theme-elevation-500);
+    font-size: 0.85em;
+  }
+
+  &__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc(var(--base) * 0.2);
+  }
+
+  &__chip {
+    padding: 0 calc(var(--base) * 0.3);
+    border-radius: var(--style-radius-s);
+    background: var(--theme-elevation-100);
+    font-size: 0.85em;
+  }
+}
+
+// The course page's Scenarios tab, and a scenario form's "Offered by".
+.scenario-list {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--base) * 0.8);
+
+  &__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(var(--base) * 0.4);
+  }
+
+  &__edition {
+    margin: 0;
+    color: var(--theme-elevation-500);
+  }
+
+  &__group {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--base) * 0.3);
+  }
+
+  &__heading {
+    margin: 0;
+  }
+
+  &__code {
+    font-family: var(--font-mono);
+  }
+
+  &__count,
+  &__none,
+  &__description {
+    color: var(--theme-elevation-500);
+    font-weight: normal;
+  }
+
+  &__retired td {
+    color: var(--theme-elevation-500);
+  }
+}
+
+.scenario-offered-by {
+  margin-bottom: var(--spacing-field);
+
+  &__plans {
+    margin: 0;
+    padding-inline-start: 1.2em;
+  }
+
+  &__none {
+    margin: 0;
+    color: var(--theme-elevation-500);
+  }
+}
+
 .edition-history {
   overflow-x: auto;
 

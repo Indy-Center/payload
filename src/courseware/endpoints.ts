@@ -20,7 +20,17 @@ import {
   publishEdition,
   startEdition,
 } from './edition-actions'
-import { moduleOf, moveLessonPlan, placeLessonPlan } from './outline'
+import { editionIdOfPlan, moduleOf, moveLessonPlan, placeLessonPlan } from './outline'
+import {
+  addModule,
+  deleteModule,
+  editModule,
+  lessonPlansToOf,
+  loadEdition,
+  moveModule,
+  refuseStaleOutline,
+  wordingOf,
+} from './modules'
 import {
   buildCourseList,
   buildCourseVersionDocument,
@@ -90,6 +100,27 @@ const act = (req: PayloadRequest, status: number, action: (id: string) => Promis
   answer(req, status, () =>
     inTransaction(req, () => action((req.routeParams as { id: string }).id)),
   )
+
+/** The `:module` of a Content route: a module's id within the edition. */
+const moduleParam = (req: PayloadRequest) => (req.routeParams as { module: string }).module
+
+/**
+ * One change to an edition's outline from the Content tab, in the request's transaction: refused
+ * if the edition was saved since the screen loaded it, else made. Answers the edition's new
+ * `updatedAt`, which the screen sends with its next change.
+ */
+async function outlineChange(
+  req: PayloadRequest,
+  editionId: string,
+  body: Record<string, unknown>,
+  change: () => Promise<unknown>,
+): Promise<string> {
+  // Read first as the person, so an edition they can't see is refused as such, not as stale.
+  await loadEdition(req, editionId)
+  await refuseStaleOutline(req, editionId, body.updatedAt)
+  await change()
+  return (await loadEdition(req, editionId)).updatedAt
+}
 
 export const coursewareEndpoints: Endpoint[] = [
   {
@@ -174,15 +205,18 @@ export const coursewareEndpoints: Endpoint[] = [
     handler: (req) => act(req, 200, async (id) => ({ discarded: await discardDraft(req, id) })),
   },
   // The course page's Content: a lesson plan moved up or down in its module, or put last in a
-  // module or taken out of the outline. Each is a save of the edition, through its own rules.
+  // module or taken out of the outline. Each is a save of the edition, through its own rules, and
+  // is refused if the edition changed since the screen loaded it (`updatedAt`).
   {
     path: '/courseware/lesson-plans/:id/move',
     method: 'post',
     handler: (req) =>
       act(req, 200, async (id) => {
-        const { direction } = await jsonBody(req)
-        await moveLessonPlan(req, id, direction as MoveDirection)
-        return { moved: id }
+        const body = await jsonBody(req)
+        const updatedAt = await outlineChange(req, await editionIdOfPlan(req, id), body, () =>
+          moveLessonPlan(req, id, body.direction as MoveDirection),
+        )
+        return { moved: id, updatedAt }
       }),
   },
   {
@@ -190,9 +224,62 @@ export const coursewareEndpoints: Endpoint[] = [
     method: 'post',
     handler: (req) =>
       act(req, 200, async (id) => {
-        const moduleId = moduleOf(await jsonBody(req))
-        await placeLessonPlan(req, id, moduleId)
-        return { placed: id, module: moduleId }
+        const body = await jsonBody(req)
+        const moduleId = moduleOf(body)
+        const updatedAt = await outlineChange(req, await editionIdOfPlan(req, id), body, () =>
+          placeLessonPlan(req, id, moduleId),
+        )
+        return { placed: id, module: moduleId, updatedAt }
+      }),
+  },
+  // The course page's Content: an edition's modules added, reworded, moved and deleted, each from
+  // the `updatedAt` the screen loaded, as the lesson plan moves above.
+  {
+    path: '/courseware/course-versions/:id/modules',
+    method: 'post',
+    handler: (req) =>
+      act(req, 201, async (id) => {
+        const body = await jsonBody(req)
+        const wording = wordingOf(body)
+        return { updatedAt: await outlineChange(req, id, body, () => addModule(req, id, wording)) }
+      }),
+  },
+  {
+    path: '/courseware/course-versions/:id/modules/:module',
+    method: 'post',
+    handler: (req) =>
+      act(req, 200, async (id) => {
+        const body = await jsonBody(req)
+        const wording = wordingOf(body)
+        const updatedAt = await outlineChange(req, id, body, () =>
+          editModule(req, id, moduleParam(req), wording),
+        )
+        return { updatedAt }
+      }),
+  },
+  {
+    path: '/courseware/course-versions/:id/modules/:module/move',
+    method: 'post',
+    handler: (req) =>
+      act(req, 200, async (id) => {
+        const body = await jsonBody(req)
+        const updatedAt = await outlineChange(req, id, body, () =>
+          moveModule(req, id, moduleParam(req), body.direction as MoveDirection),
+        )
+        return { updatedAt }
+      }),
+  },
+  {
+    path: '/courseware/course-versions/:id/modules/:module/delete',
+    method: 'post',
+    handler: (req) =>
+      act(req, 200, async (id) => {
+        const body = await jsonBody(req)
+        const to = lessonPlansToOf(body)
+        const updatedAt = await outlineChange(req, id, body, () =>
+          deleteModule(req, id, moduleParam(req), to),
+        )
+        return { updatedAt }
       }),
   },
   {
