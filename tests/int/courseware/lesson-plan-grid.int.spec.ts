@@ -120,6 +120,70 @@ async function rowsNow(id = plan.id) {
   )
 }
 
+const STALE_PLAN =
+  'Someone else saved this lesson plan since the grid was opened. Reload it and make your changes again.'
+
+describe('saving a lesson plan’s grid from the copy it opened', () => {
+  const saveFrom = (updatedAt: string, rows: LessonPlanGridRow[]) =>
+    callEndpoint(payload, `/courseware/lesson-plans/${plan.id}/tasks`, {
+      method: 'post',
+      token: null,
+      body: { updatedAt, rows },
+      user: lead,
+    })
+
+  it('is refused whole, writing nothing, once the lesson plan has been saved since', async () => {
+    const [ground, numbers] = asSent(plan.tasks)
+    await payload.update({ collection: 'lesson-plans', id: plan.id, data: { title: 'Radio work' } })
+
+    const { status, body } = await saveFrom(plan.updatedAt, [
+      { ...numbers, teacherNotes: 'Count' },
+      ground,
+    ])
+
+    expect(status).toBe(409)
+    expect(body.errors).toEqual([{ message: STALE_PLAN }])
+    expect(await rowsNow()).toEqual(['Ground required K S (Ask about taxiways)', 'Numbers S'])
+  })
+
+  it('answers the new updatedAt, from which a second Save lands', async () => {
+    const [ground, numbers] = asSent(plan.tasks)
+
+    const first = await saveFrom(plan.updatedAt, [ground, { ...numbers, teacherNotes: 'Count' }])
+    expect(first.status).toBe(200)
+    const second = await saveFrom(first.body.saved.updatedAt, [
+      ground,
+      { ...numbers, teacherNotes: 'Count twice' },
+    ])
+
+    expect(second.status).toBe(200)
+    expect(await rowsNow()).toEqual([
+      'Ground required K S (Ask about taxiways)',
+      'Numbers S (Count twice)',
+    ])
+  })
+
+  it('is refused as stale before any other rule', async () => {
+    const [ground] = asSent(plan.tasks)
+    await payload.update({ collection: 'lesson-plans', id: plan.id, data: { title: 'Radio work' } })
+
+    // A retired task's row would be refused too.
+    const { body } = await saveFrom(plan.updatedAt, [
+      ground,
+      {
+        key: 'new:1',
+        task: t.weather.id,
+        required: true,
+        gradesKnowledge: false,
+        gradesSkill: true,
+        teacherNotes: '',
+      },
+    ])
+
+    expect(body.errors).toEqual([{ message: STALE_PLAN }])
+  })
+})
+
 describe('saving a lesson plan’s grid', () => {
   it('saves every row in its new order: edits, removals and added rows together', async () => {
     const [ground] = asSent(plan.tasks)

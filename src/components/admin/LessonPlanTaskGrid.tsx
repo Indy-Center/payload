@@ -32,6 +32,7 @@ const noRefusals: Refusals = { rows: {}, batch: [] }
  */
 export function LessonPlanTaskGrid({
   planId,
+  updatedAt,
   rows: saved,
   picker,
   mayEdit,
@@ -40,6 +41,12 @@ export function LessonPlanTaskGrid({
   pickerOpen: pickerOpenAtFirst = false,
 }: {
   planId: string
+  /**
+   * The lesson plan's `updatedAt` as the rows were read. Save sends it, and is refused if someone
+   * else has saved the lesson plan since (0068); the refusal shows above the rows, which keep
+   * their pending changes.
+   */
+  updatedAt: string
   rows: GridPlanTask[]
   picker: PickerTask[]
   mayEdit: boolean
@@ -71,7 +78,11 @@ export function LessonPlanTaskGrid({
     setBusy(true)
     // Once saved, the grid stays busy until the rows read again start it afresh (its key
     // changes), so a second press can't send the same batch again.
-    const outcome = await call(`/courseware/lesson-plans/${planId}/tasks`, 'post', gridBatch(state))
+    const outcome = await call(
+      `/courseware/lesson-plans/${planId}/tasks`,
+      'post',
+      gridBatch(state, updatedAt),
+    )
     if (outcome.ok) {
       setDone(true)
       setRefusals(noRefusals)

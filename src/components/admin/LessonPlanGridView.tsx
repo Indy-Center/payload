@@ -29,8 +29,9 @@ export async function LessonPlanGridView({
         view="Edit as grid"
       />
       <LessonPlanTaskGrid
-        key={signature(grid.rows)}
+        key={`${grid.updatedAt} ${signature(grid.rows)}`}
         planId={id}
+        updatedAt={grid.updatedAt}
         rows={grid.rows}
         picker={grid.picker}
         mayEdit={grid.mayEdit}
@@ -42,5 +43,8 @@ export async function LessonPlanGridView({
   )
 }
 
-/** Changes whenever what was saved does, so a saved grid starts afresh from the rows read again. */
+/**
+ * Changes whenever what was saved does, so a saved grid starts afresh from the rows read again,
+ * with the lesson plan's new `updatedAt` for its next Save.
+ */
 const signature = (rows: GridPlanTask[]) => JSON.stringify(rows)

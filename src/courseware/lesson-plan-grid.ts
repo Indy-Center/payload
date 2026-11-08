@@ -43,8 +43,15 @@ export type LessonPlanGridRow = {
   teacherNotes: string
 }
 
-/** Every row of the lesson plan in its new order, saved together or not at all. */
-export type LessonPlanGridBatch = { rows: LessonPlanGridRow[] }
+/**
+ * Every row of the lesson plan in its new order, saved together or not at all, from the lesson
+ * plan's `updatedAt` as the grid loaded it (or as its last Save answered).
+ */
+export type LessonPlanGridBatch = { updatedAt?: string; rows: LessonPlanGridRow[] }
+
+/** A Save from a grid opened before the lesson plan's last save (decision 0068). */
+export const STALE_LESSON_PLAN =
+  'Someone else saved this lesson plan since the grid was opened. Reload it and make your changes again.'
 
 /** Every picker task beneath `id`, in tree order. */
 function beneath(tasks: readonly PickerTask[], id: string): PickerTask[] {
