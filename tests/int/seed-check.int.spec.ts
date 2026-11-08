@@ -33,11 +33,11 @@ describe('the browser-check seed', () => {
     expect(await count('frameworks')).toBe(2)
     expect(await count('competencies')).toBe(6)
     expect(await count('sources')).toBe(2)
-    expect(await count('tasks')).toBe(9)
+    expect(await count('tasks')).toBe(22)
     expect(await count('grading-scales')).toBe(1)
     expect(await count('courses')).toBe(2)
     expect(await count('course-versions')).toBe(2)
-    expect(await count('lesson-plans')).toBe(4)
+    expect(await count('lesson-plans')).toBe(5)
     expect(await count('scenarios')).toBe(2)
     expect(await count('positions')).toBe(7)
 
@@ -109,6 +109,17 @@ describe('the browser-check seed', () => {
       { task: records.tasks.R3.id, required: true, gradesKnowledge: false, gradesSkill: true },
       { task: records.tasks.R1b.id, required: false, gradesKnowledge: true, gradesSkill: false },
     ])
+
+    // A lesson plan for the grid: eight rows, the last on a task retired since.
+    const ground = await payload.findByID({
+      collection: 'lesson-plans',
+      id: records['lesson-plans']['X-GC-4 (edition 2)'].id,
+      depth: 1,
+      user,
+      overrideAccess: false,
+    })
+    expect(ground.tasks).toHaveLength(8)
+    expect(ground.tasks?.at(-1)?.task).toMatchObject({ name: 'Closing a taxiway', retired: true })
   })
 
   it('refuses a database that has rows, unless asked to reset it', async () => {
@@ -116,7 +127,7 @@ describe('the browser-check seed', () => {
     await expect(seedCheck(payload)).rejects.toThrow(/already has rows.*--reset/)
 
     const again = await seedCheck(payload, { reset: true })
-    expect(Object.keys(again.records.tasks)).toHaveLength(9)
-    expect((await payload.count({ collection: 'tasks' })).totalDocs).toBe(9)
+    expect(Object.keys(again.records.tasks)).toHaveLength(22)
+    expect((await payload.count({ collection: 'tasks' })).totalDocs).toBe(22)
   })
 })

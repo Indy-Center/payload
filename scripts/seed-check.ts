@@ -446,6 +446,76 @@ async function seedCourses({
 }
 
 // ---------------------------------------------------------------------------------------------
+// A lesson plan with many tasks, for its grid and "Add tasks"
+
+/**
+ * Twelve more tasks under R4, numbered after R3: some with both statements, some with one, and
+ * three with none (R4d2, R4g, R4h), which no lesson plan row can grade. R4d has two tasks beneath
+ * it, for the picker's ticking. R4j is retired once X-GC-4 uses it.
+ */
+const GRID_TASKS: { key: string; name: string; parent?: string; k?: string; s?: string }[] = [
+  { key: 'R4', name: 'Ground movement' },
+  { key: 'R4a', name: 'Taxi out', parent: 'R4', k: 'Standard taxi routes.', s: 'Issue a taxi.' },
+  { key: 'R4b', name: 'Taxi in', parent: 'R4', s: 'Taxi an arrival to its gate.' },
+  { key: 'R4c', name: 'Hold short', parent: 'R4', k: 'Where hold-short lines are.' },
+  { key: 'R4d', name: 'Runway crossings', parent: 'R4', k: 'When a crossing needs a clearance.' },
+  { key: 'R4d1', name: 'Crossing an active runway', parent: 'R4d', s: 'Clear a crossing.' },
+  { key: 'R4d2', name: 'Crossing at night', parent: 'R4d' },
+  { key: 'R4e', name: 'Progressive taxi', parent: 'R4', s: 'Give turn-by-turn instructions.' },
+  { key: 'R4f', name: 'Intersection departures', parent: 'R4', k: 'What an intersection gives.' },
+  { key: 'R4g', name: 'Pushback', parent: 'R4' },
+  { key: 'R4h', name: 'Towing', parent: 'R4' },
+  { key: 'R4i', name: 'Vehicles', parent: 'R4', k: 'Vehicle phraseology.', s: 'Work a vehicle.' },
+  { key: 'R4j', name: 'Closing a taxiway', parent: 'R4', k: 'How a closure is announced.' },
+]
+
+async function seedGridTasks(payload: Payload, into: MadeIn): Promise<void> {
+  for (const task of GRID_TASKS) {
+    await make(payload, into, 'tasks', task.key, {
+      name: task.name,
+      parent: task.parent ? into[task.parent].id : undefined,
+      knowledgeStatement: task.k,
+      skillStatement: task.s,
+    })
+  }
+}
+
+/**
+ * X-GC-4, in the draft edition but in none of its modules (it would not publish, holding a retired
+ * task), listed under "Not in a module": eight rows, some optional, some with teacher notes, one
+ * grading one of two statements, and one whose task is retired.
+ */
+async function seedGridLessonPlan(
+  payload: Payload,
+  tasks: MadeIn,
+  courseware: Courseware,
+): Promise<void> {
+  const row = (key: string, extra: object = {}) => ({ task: tasks[key].id, ...extra })
+  await make(payload, courseware['lesson-plans'], 'lesson-plans', 'X-GC-4 (edition 2)', {
+    courseVersion: courseware['course-versions']['X-GC edition 2'].id,
+    code: 'X-GC-4',
+    title: 'Moving on the ground',
+    time: 60,
+    tasks: [
+      row('R4a', { teacherNotes: 'Start from the north ramp.' }),
+      row('R4b'),
+      row('R4c', { required: false }),
+      row('R4d1', { teacherNotes: 'Ask before crossing 5L.' }),
+      row('R4e', { required: false }),
+      row('R4f'),
+      row('R4i', { gradesKnowledge: false, gradesSkill: true }),
+      row('R4j', { teacherNotes: 'Taxiway B closed today.' }),
+    ],
+  })
+  await payload.update({
+    collection: 'tasks',
+    id: tasks.R4j.id,
+    data: { retired: true },
+    overrideAccess: true,
+  })
+}
+
+// ---------------------------------------------------------------------------------------------
 // Positions
 
 /** A CMS admin's short name, in place of the generated `SDF D`. */
@@ -532,6 +602,7 @@ export async function seedCheck(
   records.competencies = competencies
   records.sources = await seedSources(payload)
   records.tasks = await seedTasks(payload, competencies, records.sources)
+  await seedGridTasks(payload, records.tasks)
   records['grading-scales'] = await seedGradingScales(payload)
   records.positions = await seedPositions(payload, records.credentials)
   Object.assign(
@@ -544,6 +615,7 @@ export async function seedCheck(
       positions: records.positions,
     }),
   )
+  await seedGridLessonPlan(payload, records.tasks, records as Courseware)
   await retireDroppedPosition(payload, records.positions)
   return { records, accounts: ACCOUNTS }
 }
