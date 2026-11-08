@@ -335,6 +335,16 @@ describe('a published edition, as a course author', () => {
     expect(button('Edit Getting started').disabled).toBe(false)
     expect(document.querySelector<HTMLSelectElement>('select')!.disabled).toBe(true)
   })
+
+  it('greys out “Edit grading and completion” with them, which a draft leaves open', () => {
+    show({ rearrange: false, reword: true })
+    expect(button('Edit grading and completion').disabled).toBe(true)
+    act(() => root?.unmount())
+    document.body.innerHTML = ''
+
+    show()
+    expect(button('Edit grading and completion').disabled).toBe(false)
+  })
 })
 
 describe('deleting a module', () => {

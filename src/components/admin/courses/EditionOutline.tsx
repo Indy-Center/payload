@@ -112,7 +112,15 @@ export function EditionOutline({
         </div>
         {editable && (
           <div className="edition-outline__wide">
-            <Button buttonStyle="secondary" margin={false} size="small" onClick={openDrawer}>
+            {/* The edition's own fields are the staff's in a published edition: greyed out with
+                the structural controls for whoever may only reword its modules. */}
+            <Button
+              buttonStyle="secondary"
+              margin={false}
+              size="small"
+              disabled={!rearrange}
+              onClick={openDrawer}
+            >
               Edit grading and completion
             </Button>
             <EditionDrawer onSave={refresh} />
