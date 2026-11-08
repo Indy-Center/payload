@@ -44,6 +44,18 @@ export const LessonPlans: CollectionConfig = {
     // Out of the nav: lesson plans are reached from their edition on the course's page (0056).
     // The collection's pages still open by link.
     group: false,
+    components: {
+      views: {
+        // The lesson plan's tasks as a grid, with "Add tasks" (src/components/admin).
+        edit: {
+          grid: {
+            path: '/grid',
+            Component: '/components/admin/LessonPlanGridView#LessonPlanGridView',
+            tab: { label: 'Edit as grid', href: '/grid' },
+          },
+        },
+      },
+    },
   },
   access: lessonPlanAccess,
   hooks: {
@@ -144,6 +156,14 @@ export const LessonPlans: CollectionConfig = {
       admin: {
         description:
           'The point on the version’s scale, counted from 1. Starts from the version’s default.',
+      },
+    },
+    {
+      name: 'taskLinks',
+      type: 'ui',
+      admin: {
+        components: { Field: '/components/admin/LessonPlanTaskLinks#LessonPlanTaskLinks' },
+        disableListColumn: true,
       },
     },
     {

@@ -238,6 +238,8 @@ describe('saving a lesson plan’s grid', () => {
     const { status, body } = await save(rows, stranger)
     expect(status).toBe(403)
     expect(body.errors).toEqual([{ message: 'You are not allowed to perform this action.' }])
+    const missing = '00000000-0000-7000-8000-000000000000'
+    expect((await save(rows, lead, missing)).status).toBe(404)
   })
 
   describe('in a published edition', () => {
