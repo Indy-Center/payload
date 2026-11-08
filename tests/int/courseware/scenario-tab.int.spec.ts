@@ -197,4 +197,14 @@ describe('a scenario’s “Offered by”', () => {
       plans: [],
     })
   })
+
+  it('is read as the person signed in, so no one signed out gets it', async () => {
+    const { id } = await course()
+    const twice = await scenario(id, 'Twice offered')
+    await edition(id, 1, 'draft', { twice: twice.id })
+
+    await expect(
+      loadOfferedBy(await createLocalReq({}, payload), { id: twice.id, course: id }),
+    ).rejects.toThrow('You are not allowed to perform this action.')
+  })
 })

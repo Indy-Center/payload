@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Modal, toast, useModal } from '@payloadcms/ui'
+import { confirmLeave } from '../LeaveGuard'
 import { useEndpoint, type Call } from '../useEndpoint'
 
 type Props = {
@@ -34,11 +35,16 @@ export function EditionActions({
 
   const go = (to: 'draft' | 'live' | null, message: string) => {
     toast.success(message)
+    // Whoever has unsaved changes was asked before the action ran; no second prompt here.
     router.push(to ? `${contentURL}?edition=${to}` : contentURL)
     router.refresh()
   }
 
-  const start = async () => {
+  // The action changes the edition under the page, so an open module form's unsaved changes ask
+  // before it runs (before Publish's and Discard's modals too), not after.
+  const start = () => confirmLeave(startEdition)
+
+  const startEdition = async () => {
     setBusy(true)
     const outcome = await call(`/courseware/courses/${courseId}/editions`)
     setBusy(false)
@@ -135,12 +141,13 @@ function PublishButton({
   const [faults, setFaults] = useState<string[] | null>(null)
   const [busy, setBusy] = useState(false)
 
-  const open = async () => {
+  const check = async () => {
     setFaults(null)
     openModal(slug)
     const outcome = await call(`/courseware/course-versions/${edition.id}/publishing-check`, 'get')
     setFaults(outcome.ok ? (outcome.body as { faults: string[] }).faults : outcome.messages)
   }
+  const open = () => confirmLeave(check)
 
   const publish = async () => {
     setBusy(true)
@@ -231,10 +238,12 @@ function DiscardButton({
         buttonStyle="secondary"
         margin={false}
         size="small"
-        onClick={() => {
-          setRefused([])
-          openModal(slug)
-        }}
+        onClick={() =>
+          confirmLeave(() => {
+            setRefused([])
+            openModal(slug)
+          })
+        }
       >
         Discard draft
       </Button>

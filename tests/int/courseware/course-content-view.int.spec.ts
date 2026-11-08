@@ -7,6 +7,7 @@ import {
   AppRouterContext,
   type AppRouterInstance,
 } from 'next/dist/shared/lib/app-router-context.shared-runtime'
+import { EditionActions } from '@/components/admin/courses/EditionActions'
 import { EditionOutline } from '@/components/admin/courses/EditionOutline'
 import type { EditionOutline as Outline, OutlinePlan } from '@/components/admin/courses/editions'
 import { AdminShell, modalButton } from './modals'
@@ -96,7 +97,10 @@ const outline: Outline = {
   ownLessonPlans: 3,
 }
 
-function show(props: Partial<React.ComponentProps<typeof EditionOutline>> = {}) {
+function show(
+  props: Partial<React.ComponentProps<typeof EditionOutline>> = {},
+  beside: React.ReactNode = null,
+) {
   const container = document.body.appendChild(document.createElement('div'))
   root = createRoot(container)
   act(() =>
@@ -107,6 +111,7 @@ function show(props: Partial<React.ComponentProps<typeof EditionOutline>> = {}) 
         React.createElement(
           AdminShell,
           { config },
+          beside,
           React.createElement(EditionOutline, {
             edition: outline,
             editable: true,
@@ -244,6 +249,104 @@ describe('a module’s form on the Content tab', () => {
     expect(titleField()!.value).toBe('First steps')
     await press(modalButton('Leave anyway'))
     expect(titleField()!.value).toBe('Working traffic')
+  })
+
+  describe('Publish, Discard and Start while a module holds changes', () => {
+    const URL = '/admin/collections/courses/c1/content'
+    const draft = { id: 'e1', number: 2, status: 'draft', ownLessonPlans: 3 } as const
+    const live = { id: 'e0', number: 1, status: 'live', ownLessonPlans: 0 } as const
+    const actions = (edition: typeof draft | typeof live) =>
+      React.createElement(EditionActions, {
+        courseId: 'c1',
+        contentURL: URL,
+        edition,
+        liveNumber: 1,
+        hasDraft: edition.status === 'draft',
+        may: { start: true, publish: true, discard: true },
+      })
+
+    beforeEach(() => {
+      fetch.mockImplementation(async (url: string) =>
+        Response.json(
+          url.includes('publishing-check')
+            ? { faults: [] }
+            : url.endsWith('/editions')
+              ? { edition: { number: 2 } }
+              : {},
+        ),
+      )
+      router.push = vi.fn()
+    })
+
+    const cases = [
+      {
+        name: 'Publish',
+        edition: draft,
+        open: 'Publish edition 2',
+        confirm: 'Publish',
+        to: `${URL}?edition=live`,
+      },
+      { name: 'Discard', edition: draft, open: 'Discard draft', confirm: 'Discard', to: URL },
+      {
+        name: 'Start',
+        edition: live,
+        open: 'Start a new edition',
+        confirm: null,
+        to: `${URL}?edition=draft`,
+      },
+    ]
+
+    /** The courseware endpoints called so far (Payload's own requests are not the screen's). */
+    const requested = () =>
+      fetch.mock.calls.map(([url]) => String(url)).filter((url) => url.includes('/courseware/'))
+
+    async function withChanges(edition: typeof draft | typeof live) {
+      show({}, actions(edition))
+      await press(button('Edit Getting started'))
+      type('title', 'First steps')
+    }
+
+    const inEditionModal = (label: string) =>
+      [...document.querySelectorAll('.edition-modal button')].find(
+        (each) => each.textContent?.trim() === label,
+      ) as HTMLButtonElement
+
+    it.each(cases)('$name sends nothing on Stay on this page', async ({ edition, open }) => {
+      await withChanges(edition)
+
+      await press(button(open))
+      expect(modalHeading()).toBe('Leave without saving')
+      await press(modalButton('Stay on this page'))
+
+      expect(requested()).toEqual([])
+      expect(router.push).not.toHaveBeenCalled()
+      expect(titleField()!.value).toBe('First steps')
+    })
+
+    it.each(cases)(
+      '$name asks first, then runs on Leave anyway with no second prompt',
+      async ({ edition, open, confirm, to }) => {
+        await withChanges(edition)
+
+        await press(button(open))
+        expect(requested()).toEqual([])
+        await press(modalButton('Leave anyway'))
+        if (confirm) await press(inEditionModal(confirm))
+
+        expect(router.push).toHaveBeenCalledTimes(1)
+        expect(router.push).toHaveBeenCalledWith(to)
+        expect(modalHeading()).not.toBe('Leave without saving')
+      },
+    )
+
+    it.each(cases)('$name asks nothing when nothing is unsaved', async (each) => {
+      show({}, actions(each.edition))
+
+      await press(button(each.open))
+      if (each.confirm) await press(inEditionModal(each.confirm))
+
+      expect(router.push).toHaveBeenCalledWith(each.to)
+    })
   })
 
   it('stays on the open module on Stay on this page', async () => {

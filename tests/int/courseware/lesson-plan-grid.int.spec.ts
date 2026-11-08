@@ -337,4 +337,10 @@ describe('what the grid starts from', () => {
     expect(await load(author)).toMatchObject({ mayEdit: true, mayChangeStructure: false })
     expect(await load(lead)).toMatchObject({ mayEdit: true, mayChangeStructure: true })
   })
+
+  it('is read as the person signed in, so no one signed out gets it', async () => {
+    await expect(loadLessonPlanGrid(await createLocalReq({}, payload), plan.id)).rejects.toThrow(
+      'You are not allowed to perform this action.',
+    )
+  })
 })
