@@ -601,6 +601,17 @@ export interface LessonPlan {
       }[]
     | null;
   /**
+   * A chart or a video for this lesson. Students see them unless teacher-only.
+   */
+  resources?:
+    | {
+        title: string;
+        url: string;
+        teacherOnly?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
    * Scenarios of this course the teacher may choose from.
    */
   scenarios?: (string | Scenario)[] | null;
@@ -1332,6 +1343,14 @@ export interface LessonPlansSelect<T extends boolean = true> {
         gradesKnowledge?: T;
         gradesSkill?: T;
         teacherNotes?: T;
+        id?: T;
+      };
+  resources?:
+    | T
+    | {
+        title?: T;
+        url?: T;
+        teacherOnly?: T;
         id?: T;
       };
   scenarios?: T;

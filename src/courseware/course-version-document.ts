@@ -304,6 +304,12 @@ function lessonPlan(
       grades: { knowledge: row.gradesKnowledge ?? false, skill: row.gradesSkill ?? false },
       teacherNotes: row.teacherNotes ?? '',
     })),
+    resources: (plan.resources ?? []).map((resource) => ({
+      id: resource.id ?? '',
+      title: resource.title,
+      url: resource.url,
+      teacherOnly: resource.teacherOnly ?? false,
+    })),
     scenarios: (plan.scenarios ?? [])
       .map((offered) => scenarios.get(idOf(offered) ?? ''))
       .filter((offered): offered is Scenario => offered !== undefined),
