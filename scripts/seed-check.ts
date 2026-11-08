@@ -382,6 +382,10 @@ async function seedCourses({
       { task: tasks.R1a1.id, teacherNotes: 'Ask where the hold-short lines are.' },
       { task: tasks.R1b.id, required: false },
     ],
+    resources: [
+      { title: 'Airport diagram', url: 'https://example.com/x-gc/diagram' },
+      { title: 'Answer key', url: 'https://example.com/x-gc/answers', teacherOnly: true },
+    ],
   })
   const lessonTwo = await plan('X-GC-2', first, {
     code: 'X-GC-2',
