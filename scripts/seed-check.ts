@@ -341,7 +341,8 @@ async function seedCourses({
     studentPosition: positions.LOU_TWR.id,
     teacherPosition: positions.SDF_D_APP.id,
     difficulty: 'easy',
-    mode: 'sim',
+    description: 'Made-up setup: three departures from KIND, flight plans already filed.',
+    atctrainer: 'example-ground-push',
   })
   const scenarioTwo = await make(payload, out.scenarios, 'scenarios', 'departure-release', {
     course,
@@ -350,7 +351,7 @@ async function seedCourses({
     studentPosition: positions.IND_83_CTR.id,
     teacherPosition: positions.PKB_TWR.id,
     difficulty: 'medium',
-    mode: 'live',
+    description: 'Made-up setup: a busy departure push with releases to call.',
   })
 
   // Numbered on save: the first created is edition 1.

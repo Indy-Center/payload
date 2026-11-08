@@ -57,7 +57,6 @@ async function liveCourse() {
       name: 'Quiet morning',
       airport: 'KXYZ',
       ...(await scenarioPositions(payload)),
-      mode: 'sim',
     },
   })
   const live = await payload.create({

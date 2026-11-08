@@ -111,7 +111,6 @@ describe('the CMS admin', () => {
         name: 'Quiet',
         airport: 'KXYZ',
         ...(await scenarioPositions(payload)),
-        mode: 'sim',
       },
       ...as(cmsAdmin),
     })

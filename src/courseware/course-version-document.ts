@@ -272,7 +272,8 @@ function scenario(
     studentPosition: positionOf(record.studentPosition),
     teacherPosition: positionOf(record.teacherPosition),
     difficulty: record.difficulty ?? null,
-    mode: record.mode,
+    description: record.description ?? '',
+    atctrainer: record.atctrainer ?? '',
     retired: record.retired ?? false,
   }
 }

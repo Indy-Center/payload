@@ -13,7 +13,7 @@ export const Scenarios: CollectionConfig = {
   slug: 'scenarios',
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'course', 'studentPosition', 'mode', 'retired'],
+    defaultColumns: ['name', 'course', 'studentPosition', 'retired'],
     group: 'Training',
     baseFilter: hideRetiredUnlessAsked,
   },
@@ -58,15 +58,19 @@ export const Scenarios: CollectionConfig = {
       ],
     },
     {
-      name: 'mode',
-      label: 'Live or sim',
-      type: 'select',
-      required: true,
-      defaultValue: 'sim',
-      options: [
-        { label: 'Sim', value: 'sim' },
-        { label: 'Live network', value: 'live' },
-      ],
+      name: 'description',
+      label: 'Description',
+      type: 'textarea',
+      admin: {
+        description:
+          "For the teacher: what this scenario sets up, such as the flight plans built for it. Students don't see it.",
+      },
+    },
+    {
+      name: 'atctrainer',
+      label: 'ATCTrainer',
+      type: 'text',
+      admin: { description: "The scenario's link or ID in ATCTrainer" },
     },
     {
       name: 'retired',

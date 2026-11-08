@@ -43,7 +43,6 @@ function scenario(courseId: string) {
       studentPosition: tower.id,
       teacherPosition: center.id,
       difficulty: 'hard',
-      mode: 'sim',
     },
   })
 }
@@ -115,7 +114,6 @@ describe('a scenario saved by its course’s author', () => {
         airport: 'KXYZ',
         studentPosition: tower.id,
         teacherPosition: center.id,
-        mode: 'sim',
         ...data,
       },
       user: author,
@@ -133,6 +131,21 @@ describe('a scenario saved by its course’s author', () => {
       overrideAccess: false,
     })
   }
+
+  it('lets their course author set a description and an ATCTrainer link', async () => {
+    const saved = await save({
+      description: 'Three departures, flight plans filed.',
+      atctrainer: 'busy-afternoon-1',
+    })
+
+    expect(saved).toMatchObject({
+      description: 'Three departures, flight plans filed.',
+      atctrainer: 'busy-afternoon-1',
+    })
+    expect(saved).not.toHaveProperty('mode')
+    const changed = await change(saved.id, { description: 'Reworded.', atctrainer: 'other' })
+    expect(changed).toMatchObject({ description: 'Reworded.', atctrainer: 'other' })
+  })
 
   it('picks its student position and teacher position from Positions', async () => {
     const saved = await save({ studentPosition: center.id, teacherPosition: tower.id })
@@ -295,7 +308,6 @@ describe('scenarios offered by a lesson plan', () => {
         airport: 'KXYZ',
         studentPosition: tower.id,
         teacherPosition: center.id,
-        mode: 'live',
         ...data,
       },
     })
@@ -313,8 +325,12 @@ describe('scenarios offered by a lesson plan', () => {
     return { offered, scenarios: body.modules[0].lessonPlans[0].scenarios }
   }
 
-  it('are served with their positions and difficulty, and no tasks', async () => {
-    const { offered, scenarios } = await served({ difficulty: 'hard' })
+  it('are served with their positions, difficulty, description and ATCTrainer link, and no tasks or mode', async () => {
+    const { offered, scenarios } = await served({
+      difficulty: 'hard',
+      description: 'Three departures, flight plans filed.',
+      atctrainer: 'busy-afternoon-1',
+    })
 
     expect(scenarios).toEqual([
       {
@@ -325,10 +341,18 @@ describe('scenarios offered by a lesson plan', () => {
         studentPosition: { id: 'vnas-XYZ_TWR', callsign: 'XYZ_TWR' },
         teacherPosition: { id: 'vnas-XYZ_83_CTR', callsign: 'XYZ_83_CTR' },
         difficulty: 'hard',
-        mode: 'live',
+        description: 'Three departures, flight plans filed.',
+        atctrainer: 'busy-afternoon-1',
         retired: false,
       },
     ])
+    expect(scenarios[0]).not.toHaveProperty('mode')
+  })
+
+  it('serve an empty description and ATCTrainer link when unset', async () => {
+    const { scenarios } = await served({})
+
+    expect(scenarios[0]).toMatchObject({ description: '', atctrainer: '' })
   })
 
   it('serve null for a difficulty not given', async () => {

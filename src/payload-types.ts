@@ -625,7 +625,14 @@ export interface Scenario {
   studentPosition: string | Position;
   teacherPosition: string | Position;
   difficulty?: ('easy' | 'medium' | 'hard') | null;
-  mode: 'sim' | 'live';
+  /**
+   * For the teacher: what this scenario sets up, such as the flight plans built for it. Students don't see it.
+   */
+  description?: string | null;
+  /**
+   * The scenario's link or ID in ATCTrainer
+   */
+  atctrainer?: string | null;
   /**
    * Retired scenarios stay where they are offered but are not offered anew.
    */
@@ -1342,7 +1349,8 @@ export interface ScenariosSelect<T extends boolean = true> {
   studentPosition?: T;
   teacherPosition?: T;
   difficulty?: T;
-  mode?: T;
+  description?: T;
+  atctrainer?: T;
   retired?: T;
   updatedAt?: T;
   createdAt?: T;

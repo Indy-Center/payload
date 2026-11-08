@@ -69,7 +69,10 @@ export type Scenario = {
   studentPosition: ScenarioPosition
   teacherPosition: ScenarioPosition
   difficulty: 'easy' | 'medium' | 'hard' | null
-  mode: 'live' | 'sim'
+  /** For the teacher; empty when unset. */
+  description: string
+  /** The scenario's link or ID in ATCTrainer; empty when unset. */
+  atctrainer: string
   retired: boolean
 }
 

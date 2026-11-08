@@ -164,7 +164,6 @@ describe('a course author', () => {
         name: 'Quiet',
         airport: 'KXYZ',
         ...(await scenarioPositions(payload)),
-        mode: 'sim',
       },
       ...as(author),
     })
@@ -210,7 +209,6 @@ describe('a course author', () => {
           name: 'Not mine',
           airport: 'KXYZ',
           ...(await scenarioPositions(payload)),
-          mode: 'sim',
         },
         ...as(author),
       }),
@@ -230,7 +228,6 @@ describe('a course author', () => {
         name: 'Mine',
         airport: 'KXYZ',
         ...(await scenarioPositions(payload)),
-        mode: 'sim',
       },
     })
 
@@ -310,7 +307,6 @@ describe('a course author', () => {
         name: 'Quiet',
         airport: 'KXYZ',
         ...(await scenarioPositions(payload)),
-        mode: 'sim',
       },
     })
 
