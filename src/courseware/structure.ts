@@ -68,25 +68,20 @@ export async function mayChangeLessonPlanStructure(
 }
 
 /**
- * An edition as far as a course author may not change it once it is published: its own fields,
- * and its outline without its wording (each module by id, with its lesson plans in order). An
- * empty text and none are the same, as the admin's form sends one for the other.
+ * An edition's outline as far as a course author may not change it once it is published: its
+ * modules without their wording (each by id, with its lesson plans in order).
  */
 const editionStructure = (edition: Partial<CourseVersion>) =>
-  JSON.stringify([
-    edition.description || null,
-    edition.time ?? null,
-    edition.completionStandard || null,
-    idOf(edition.gradingScale),
-    edition.defaultMinimum ?? null,
+  JSON.stringify(
     (edition.modules ?? []).map((module) => [module.id ?? null, ids(module.lessonPlans)]),
-  ])
+  )
 
 /**
- * In a published edition a course author may reword its modules (title and description, 0055) and
- * change nothing else: the edition's own fields, adding, deleting or reordering modules, or moving
- * lesson plans among them, are refused with the edition's access message, as they were when the
- * whole edition was closed to them. Its status, number and course have rules of their own.
+ * In a published edition a course author may reword the edition (its description and completion
+ * standard) and its modules (title and description, 0055) and change nothing else: adding,
+ * deleting or reordering modules, or moving lesson plans among them, is refused with the edition's
+ * access message. Its time, grading scale and default minimum are refused the same way
+ * (`refuseAuthorsEditionFields`). Its status, number and course have rules of their own.
  */
 export function refuseAuthorsEditionStructure(
   req: PayloadRequest,
@@ -97,9 +92,41 @@ export function refuseAuthorsEditionStructure(
   if (editionStructure(data) !== editionStructure(before)) throw new Forbidden(req.t)
 }
 
+const EDITION_FIELDS = ['time', 'gradingScale', 'defaultMinimum'] as const
+
 /**
- * Whether the signed-in person may change a published edition's fields other than its modules'
- * wording: the Training Admin and leads. In a draft, whoever may save the edition.
+ * Refuses a course author's save of a published edition that sets its time, grading scale or
+ * default minimum to something else, with the edition's access message. Those fields' update
+ * access drops them from a save (so the form greys them out), which would let the change pass
+ * unseen; this runs on the data as sent, before that. A field sent as it is, as the form does for
+ * one it loaded, is not a change.
+ */
+export async function refuseAuthorsEditionFields(
+  req: PayloadRequest,
+  id: unknown,
+  data: Partial<CourseVersion> | undefined,
+): Promise<void> {
+  if (mayChangeStructure(req) || !data || (typeof id !== 'string' && typeof id !== 'number')) return
+  const before = await req.payload.findByID({
+    collection: 'course-versions',
+    id,
+    depth: 0,
+    req,
+    overrideAccess: true,
+  })
+  if (before.status !== 'published') return
+  const value = (edition: Partial<CourseVersion>, field: (typeof EDITION_FIELDS)[number]) =>
+    field === 'gradingScale' ? idOf(edition.gradingScale) : (edition[field] ?? null)
+  const changed = EDITION_FIELDS.some(
+    (field) => field in data && value(data, field) !== value(before, field),
+  )
+  if (changed) throw new Forbidden(req.t)
+}
+
+/**
+ * Whether the signed-in person may change a published edition's fields other than its wording
+ * (description, completion standard, its modules' titles and descriptions): the Training Admin
+ * and leads. In a draft, whoever may save the edition.
  */
 export const mayChangePublishedEdition = (req: PayloadRequest, edition: { status?: unknown }) =>
   edition.status !== 'published' || mayChangeStructure(req)

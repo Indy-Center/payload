@@ -270,7 +270,7 @@ describe('a course author', () => {
     ).rejects.toThrow()
   })
 
-  it('cannot publish, nor edit a published version', async () => {
+  it('cannot publish, nor change a published version’s time', async () => {
     const { ownDraft } = await courses()
 
     await payload.update({
@@ -292,7 +292,7 @@ describe('a course author', () => {
       payload.update({
         collection: 'course-versions',
         id: ownDraft.id,
-        data: { description: 'After publishing' },
+        data: { time: 45 },
         ...as(author),
       }),
     ).rejects.toThrow()

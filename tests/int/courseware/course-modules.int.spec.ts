@@ -1,5 +1,6 @@
-import type { Payload } from 'payload'
+import { handleEndpoints, type FieldAccess, type Payload } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import config from '@/payload.config'
 import type { CourseVersion, User } from '@/payload-types'
 import { callEndpoint, resetDatabase, testPayload } from './helpers'
 
@@ -408,15 +409,60 @@ describe('a course author in a published edition', () => {
     expect(await modules(version.id)).toEqual(before)
   })
 
-  it('is refused a change to the edition’s own fields, and may save them unchanged', async () => {
+  it('may reword the edition’s description and completion standard', async () => {
     const { version } = await edition('published')
 
-    for (const data of [
-      { completionStandard: 'Reworded by the author' },
-      { time: 5 },
-      { defaultMinimum: 3 },
-      { description: 'Reworded' },
-    ]) {
+    await payload.update({
+      collection: 'course-versions',
+      id: version.id,
+      data: { description: 'Reworded' },
+      user: author,
+      overrideAccess: false,
+    })
+    await payload.update({
+      collection: 'course-versions',
+      id: version.id,
+      data: { completionStandard: 'Reworded by the author' },
+      user: author,
+      overrideAccess: false,
+    })
+
+    expect(await stored(version.id)).toMatchObject({
+      description: 'Reworded',
+      completionStandard: 'Reworded by the author',
+      defaultMinimum: 2,
+    })
+  })
+
+  it('saves the drawer’s form with a changed description from the current updatedAt', async () => {
+    const { version } = await edition('published')
+    const { token } = await payload.login({
+      collection: 'users',
+      data: { email: author.email, password: 'example-password' },
+    })
+    const body = new FormData()
+    body.set(
+      '_payload',
+      JSON.stringify({ description: 'Reworded', defaultMinimum: 2, updatedAt: version.updatedAt }),
+    )
+
+    const response = await handleEndpoints({
+      config,
+      request: new Request(`http://localhost:3000/api/course-versions/${version.id}`, {
+        method: 'PATCH',
+        headers: { Authorization: `JWT ${token}` },
+        body,
+      }),
+    })
+
+    expect(response.status).toBe(200)
+    expect((await stored(version.id)).description).toBe('Reworded')
+  })
+
+  it('is refused a change to the edition’s time, grading scale and default minimum', async () => {
+    const { version } = await edition('published')
+
+    for (const data of [{ time: 5 }, { defaultMinimum: 3 }]) {
       await expect(
         payload.update({
           collection: 'course-versions',
@@ -538,5 +584,36 @@ describe('“Edit grading and completion”', () => {
     expect(await stored(version.id)).toMatchObject({
       completionStandard: 'Finish every lesson plan.',
     })
+  })
+})
+
+describe('the edition’s fields’ update access', () => {
+  /** Whether `user` may update each of the edition's own fields on an edition in `status`. */
+  const updatable = (user: User, status: 'draft' | 'published') => {
+    const fields = payload.collections['course-versions'].config.fields
+    return Object.fromEntries(
+      ['description', 'completionStandard', 'time', 'gradingScale', 'defaultMinimum'].map(
+        (name) => {
+          const field = fields.find((f) => 'name' in f && f.name === name)
+          const access = (field as { access?: { update?: FieldAccess } }).access?.update
+          return [name, access ? access({ req: { user }, doc: { status } } as never) : true]
+        },
+      ),
+    )
+  }
+
+  it('leaves a course author only the description and completion standard once published', () => {
+    expect(updatable(author, 'published')).toEqual({
+      description: true,
+      completionStandard: true,
+      time: false,
+      gradingScale: false,
+      defaultMinimum: false,
+    })
+  })
+
+  it('leaves a course author every field in a draft, and a lead every field', () => {
+    expect(Object.values(updatable(author, 'draft'))).toEqual([true, true, true, true, true])
+    expect(Object.values(updatable(lead, 'published'))).toEqual([true, true, true, true, true])
   })
 })
