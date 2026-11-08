@@ -9,6 +9,8 @@ import type { MoveDirection } from './move-direction'
 import type { TaskGridBatch } from './task-grid'
 import { saveTaskGrid, TaskGridRefused } from './task-grid-batch'
 import { moveTask } from './task-move'
+import type { LessonPlanGridBatch } from './lesson-plan-grid'
+import { saveLessonPlanGrid } from './lesson-plan-grid-save'
 import { loadPositionOptions } from './position-picker'
 import { loadTaskNumber, loadTaskOptions } from './task-picker'
 import {
@@ -192,6 +194,16 @@ export const coursewareEndpoints: Endpoint[] = [
         await placeLessonPlan(req, id, moduleId)
         return { placed: id, module: moduleId }
       }),
+  },
+  {
+    // A lesson plan's "Edit as grid" Save: every row in its new order, as one save of the lesson
+    // plan, all or none. A refusal names each refused row.
+    path: '/courseware/lesson-plans/:id/tasks',
+    method: 'post',
+    handler: (req) =>
+      act(req, 200, async (id) => ({
+        saved: await saveLessonPlanGrid(req, id, (await jsonBody(req)) as LessonPlanGridBatch),
+      })),
   },
   // The import page's Check and Import, for the Training Admin. The form is a multipart upload.
   {

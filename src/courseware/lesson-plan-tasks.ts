@@ -12,6 +12,13 @@ export type LessonPlanTaskRow = {
   teacherNotes?: string | null
 }
 
+/**
+ * A save's `context` flag: its rows are exactly the lesson plan's tasks, so a row for a parent
+ * task adds no rows for the tasks beneath it. The lesson plan's grid saves this way, since its
+ * picker has already offered them.
+ */
+export const ROWS_AS_SENT = 'lessonPlanRowsAsSent'
+
 const has = (statement: string) => statement.trim() !== ''
 
 /** Which of its statements a task can be graded on: a row may grade only those (0065, 0066). */

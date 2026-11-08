@@ -21,7 +21,8 @@ export const pickableTask: FilterOptions = ({ siblingData }) => {
  * what is saved is the list of specific tasks, so a task added to the tree later changes nothing,
  * and the author is free to remove or reorder the rows afterwards.
  *
- * Also refuses a retired task in a row that is new or newly pointed at it.
+ * Also refuses a retired task in a row that is new or newly pointed at it. With `expand` false it
+ * only refuses, and the rows stay as they came.
  */
 export async function expandTaskRows<Row extends TaskRow>(
   req: PayloadRequest,
@@ -29,6 +30,7 @@ export async function expandTaskRows<Row extends TaskRow>(
   previous: TaskRow[] | null | undefined,
   path: string,
   blank: Omit<Row, 'id' | 'task'>,
+  { expand = true }: { expand?: boolean } = {},
 ): Promise<Row[] | null | undefined> {
   if (!rows?.length) return rows
 
@@ -43,6 +45,7 @@ export async function expandTaskRows<Row extends TaskRow>(
       : [],
   )
   if (retired.length > 0) throw new ValidationError({ errors: retired })
+  if (!expand) return rows
 
   const present = new Set(rows.map((row) => idOf(row.task)))
   const expanded: Row[] = []

@@ -55,6 +55,17 @@ async function isPublished(req: PayloadRequest, versionId: string | null): Promi
   return version.status === 'published'
 }
 
+/**
+ * Whether the person on `req` may change the structure of a lesson plan in this edition: always in
+ * a draft, and in a published edition only as the Training Admin or a lead.
+ */
+export async function mayChangeLessonPlanStructure(
+  req: PayloadRequest,
+  versionId: string | null,
+): Promise<boolean> {
+  return mayChangeStructure(req) || !(await isPublished(req, versionId))
+}
+
 /** Checks both where the plan is and where the incoming data puts it. */
 export async function refuseAuthorsLessonPlanStructure(
   req: PayloadRequest,

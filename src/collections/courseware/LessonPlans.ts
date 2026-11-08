@@ -6,7 +6,7 @@ import { refuseMinimumOffScale } from '@/courseware/minimums'
 import { placeLessonPlan } from '@/courseware/outline'
 import { rowLabelComponent } from '@/courseware/row-label-component'
 import { lessonPlanBodyEditor } from '@/courseware/rich-text'
-import { settleLessonPlanTasks } from '@/courseware/lesson-plan-tasks'
+import { ROWS_AS_SENT, settleLessonPlanTasks } from '@/courseware/lesson-plan-tasks'
 import { refuseAuthorsLessonPlanStructure } from '@/courseware/structure'
 import { taskPickerComponents } from '@/courseware/task-picker'
 import { expandTaskRows, pickableTask } from '@/courseware/task-rows'
@@ -77,10 +77,14 @@ export const LessonPlans: CollectionConfig = {
           'minimum' in data ? data.minimum : originalDoc?.minimum,
           version?.gradingScale,
         )
-        const rows = await expandTaskRows(req, data.tasks, originalDoc?.tasks, 'tasks', {
-          teacherNotes: '',
-          required: true,
-        })
+        const rows = await expandTaskRows(
+          req,
+          data.tasks,
+          originalDoc?.tasks,
+          'tasks',
+          { teacherNotes: '', required: true },
+          { expand: !context[ROWS_AS_SENT] },
+        )
         data.tasks = await settleLessonPlanTasks(req, rows, 'tasks')
         return data
       },
