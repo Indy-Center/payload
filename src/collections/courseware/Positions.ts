@@ -50,7 +50,8 @@ export const Positions: CollectionConfig = {
     useAsTitle: 'title',
     defaultColumns: ['title', 'callsign', 'radioName', 'frequency', 'facilityName', 'retired'],
     listSearchableFields: ['title', 'callsign', 'name', 'shortName'],
-    group: 'Training',
+    // No group: the nav lists it under Collections, beside Users and Media, as a shared record
+    // rather than training content.
     baseFilter: hideRetiredUnlessAsked,
     description: 'Copied from vNAS Data Admin each day. Fix a position in Data Admin, then sync.',
     components: {
