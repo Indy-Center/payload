@@ -10,14 +10,11 @@ export type RowLabelLookup = {
     { framework: string; edition: string; sourceId: string; title: string }
   >
   sources: Record<string, { name: string; edition: string | null }>
-  /** Every task, retired ones too: a retired task keeps its number. */
-  tasks: Record<string, { number: string; name: string }>
   /** Credential codes by id. */
   credentials: Record<string, string>
 }
 
-export type RowLabelKind =
-  'mapping' | 'citation' | 'point' | 'module' | 'lessonPlanTask' | 'prerequisite'
+export type RowLabelKind = 'mapping' | 'citation' | 'point' | 'module' | 'prerequisite'
 
 /** Payload's own label for an untitled row: "Mapping 01", "Mapping 02", and so on. */
 export const SINGULAR: Record<RowLabelKind, string> = {
@@ -25,7 +22,6 @@ export const SINGULAR: Record<RowLabelKind, string> = {
   citation: 'Citation',
   point: 'Point',
   module: 'Module',
-  lessonPlanTask: 'Task',
   prerequisite: 'Prerequisite',
 }
 
@@ -42,8 +38,6 @@ export type RowData = {
   place?: string | null
   title?: string | null
   label?: string | null
-  task?: Id
-  required?: boolean | null
   anyOf?: Id[] | null
 }
 
@@ -80,12 +74,6 @@ export function rowLabel(
     }
     case 'citation':
       return lookup ? citationLabel(row, lookup) : null
-    case 'lessonPlanTask': {
-      const task = lookup?.tasks[idOf(row.task) ?? '']
-      if (!task) return null
-      const text = `${task.number} ${task.name}`
-      return row.required ? { text, tag: 'Required' } : { text }
-    }
     case 'prerequisite': {
       const codes = (row.anyOf ?? [])
         .map((credential) => lookup?.credentials[idOf(credential) ?? ''])

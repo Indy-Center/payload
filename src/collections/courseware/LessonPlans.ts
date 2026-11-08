@@ -4,11 +4,9 @@ import { COPYING_EDITION } from '@/courseware/edition-actions'
 import { idOf } from '@/courseware/ids'
 import { refuseMinimumOffScale } from '@/courseware/minimums'
 import { placeLessonPlan } from '@/courseware/outline'
-import { rowLabelComponent } from '@/courseware/row-label-component'
 import { lessonPlanBodyEditor } from '@/courseware/rich-text'
 import { ROWS_AS_SENT } from '@/courseware/lesson-plan-tasks'
 import { refuseAuthorsLessonPlanStructure } from '@/courseware/structure'
-import { taskPickerComponents } from '@/courseware/task-picker'
 import { expandTaskRows, pickableTask } from '@/courseware/task-rows'
 
 /**
@@ -172,7 +170,7 @@ export const LessonPlans: CollectionConfig = {
       name: 'tasks',
       type: 'array',
       labels: { singular: 'Task', plural: 'Tasks' },
-      admin: { disabled: true, components: { RowLabel: rowLabelComponent('lessonPlanTask') } },
+      admin: { disabled: true },
       fields: [
         {
           name: 'task',
@@ -180,7 +178,6 @@ export const LessonPlans: CollectionConfig = {
           relationTo: 'tasks',
           required: true,
           filterOptions: pickableTask,
-          admin: { components: taskPickerComponents() },
         },
         {
           name: 'required',

@@ -17,7 +17,6 @@ const lookup: RowLabelLookup = {
     s1: { name: 'Example Order', edition: null },
     s2: { name: 'Example SOP', edition: '2026-03' },
   },
-  tasks: { t1: { number: '2.2.1', name: 'Airport layout' } },
   credentials: { k1: 'S-GC', k2: 'A-GC' },
 }
 
@@ -54,19 +53,6 @@ describe('what a row says', () => {
     expect(rowLabel('module', { title: 'Ground control' }, null)?.text).toBe('Ground control')
   })
 
-  it('names lesson plan tasks by task number and name, tagging the required ones', () => {
-    expect(rowLabel('lessonPlanTask', { task: 't1', required: true }, lookup)).toEqual({
-      text: '2.2.1 Airport layout',
-      tag: 'Required',
-    })
-    expect(rowLabel('lessonPlanTask', { task: 't1', required: false }, lookup)).toEqual({
-      text: '2.2.1 Airport layout',
-    })
-    expect(rowLabel('lessonPlanTask', { task: { id: 't1' } }, lookup)?.text).toBe(
-      '2.2.1 Airport layout',
-    )
-  })
-
   it('names a prerequisite by its credential codes', () => {
     expect(rowLabel('prerequisite', { anyOf: ['k1', 'k2'] }, lookup)?.text).toBe(
       'Holds one of: S-GC, A-GC',
@@ -79,7 +65,6 @@ describe('what a row says', () => {
     expect(rowLabel('citation', { place: '3-7-2' }, lookup)).toBeNull()
     expect(rowLabel('point', { label: '  ' }, null)).toBeNull()
     expect(rowLabel('module', {}, null)).toBeNull()
-    expect(rowLabel('lessonPlanTask', { task: 'gone' }, lookup)).toBeNull()
     expect(rowLabel('prerequisite', { anyOf: [] }, lookup)).toBeNull()
   })
 })
@@ -90,7 +75,6 @@ describe('the label of an empty row', () => {
     citation: ['tasks', 'citations'],
     point: ['grading-scales', 'points'],
     module: ['course-versions', 'modules'],
-    lessonPlanTask: ['lesson-plans', 'tasks'],
     prerequisite: ['courses', 'prerequisites'],
   }
 
@@ -133,7 +117,7 @@ describe('GET /courseware/row-labels', () => {
     )
   })
 
-  it('gives a signed-in user what the labels need, with task numbers from the tree', async () => {
+  it('gives a signed-in user what the labels need', async () => {
     const framework = await payload.create({
       collection: 'frameworks',
       data: { name: 'USA', edition: '2026-10' },
@@ -150,15 +134,6 @@ describe('GET /courseware/row-labels', () => {
       collection: 'credentials',
       data: { code: 'X-GC', kind: 'certification', name: 'Example Ground', rank: 1 },
     })
-    const first = await payload.create({ collection: 'tasks', data: { name: 'Airport layout' } })
-    const second = await payload.create({ collection: 'tasks', data: { name: 'Taxi' } })
-    const child = await payload.create({
-      collection: 'tasks',
-      data: { name: 'Taxi to runway', parent: second.id },
-    })
-    // Retiring a task leaves its place in the tree: it keeps its number.
-    await payload.update({ collection: 'tasks', id: second.id, data: { retired: true } })
-
     const { status, body } = await callEndpoint(payload, '/courseware/row-labels', {
       token: null,
       user: author,
@@ -173,8 +148,6 @@ describe('GET /courseware/row-labels', () => {
     })
     expect(body.sources[source.id]).toEqual({ name: 'Example SOP', edition: '2026-03' })
     expect(body.credentials[credential.id]).toBe('X-GC')
-    expect(body.tasks[first.id]).toEqual({ number: '1', name: 'Airport layout' })
-    expect(body.tasks[second.id]).toEqual({ number: '2', name: 'Taxi' })
-    expect(body.tasks[child.id]).toEqual({ number: '2.1', name: 'Taxi to runway' })
+    expect(body).not.toHaveProperty('tasks')
   })
 })
