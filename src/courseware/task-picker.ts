@@ -95,6 +95,7 @@ export async function loadTaskNumber(req: PayloadRequest, id: string): Promise<s
       parentId: idOf(task.parent),
       retired: false,
       order: task._order ?? '',
+      updatedAt: '',
       competencyIds: [],
       citations: [],
     })),

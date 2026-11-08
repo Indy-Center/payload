@@ -40,6 +40,9 @@ const router: AppRouterInstance = {
   bfcacheId: 'test',
 }
 
+/** When each made-up task was last saved, as the grid loaded it. */
+const LOADED = '2026-11-01T10:00:00.000Z'
+
 function task(
   id: string,
   name: string,
@@ -56,6 +59,7 @@ function task(
     parentId,
     retired,
     order,
+    updatedAt: LOADED,
   }
 }
 
@@ -232,7 +236,7 @@ describe('the Tasks grid', () => {
 
     const [, init] = fetch.mock.calls[0] as [string, RequestInit]
     expect(JSON.parse(init.body as string).changes).toEqual([
-      { id: 'd', skillStatement: 'Taxi safely' },
+      { id: 'd', updatedAt: LOADED, skillStatement: 'Taxi safely' },
     ])
   })
 

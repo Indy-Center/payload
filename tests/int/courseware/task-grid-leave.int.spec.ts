@@ -66,6 +66,7 @@ const tasks: GridTask[] = [
     parentId: null,
     retired: false,
     order: 'a0',
+    updatedAt: '2026-11-01T10:00:00.000Z',
   },
   {
     id: 'b',
@@ -76,6 +77,7 @@ const tasks: GridTask[] = [
     parentId: null,
     retired: false,
     order: 'a1',
+    updatedAt: '2026-11-01T10:00:00.000Z',
   },
 ]
 
