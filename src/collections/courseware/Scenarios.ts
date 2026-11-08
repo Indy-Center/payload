@@ -14,12 +14,25 @@ export const Scenarios: CollectionConfig = {
   admin: {
     useAsTitle: 'name',
     defaultColumns: ['name', 'course', 'studentPosition', 'retired'],
-    group: 'Training',
+    // Out of the nav: scenarios are worked on from their course page's Scenarios tab (ticket 09),
+    // as editions and lesson plans are from Content (0056). The collection's pages still open by
+    // link, and its access is unchanged.
+    group: false,
     baseFilter: hideRetiredUnlessAsked,
   },
   access: scenarioAccess,
   fields: [
-    { name: 'course', type: 'relationship', relationTo: 'courses', required: true, index: true },
+    {
+      name: 'course',
+      type: 'relationship',
+      relationTo: 'courses',
+      required: true,
+      index: true,
+      admin: {
+        // Fixed text once set, as "+ Add scenario" on the course page sets it.
+        components: { Field: '/components/admin/courses/ScenarioCourse#ScenarioCourse' },
+      },
+    },
     {
       name: 'name',
       label: 'ATCT scenario name',
@@ -71,6 +84,14 @@ export const Scenarios: CollectionConfig = {
       label: 'ATCTrainer',
       type: 'text',
       admin: { description: "The scenario's link or ID in ATCTrainer" },
+    },
+    {
+      // Read-only: which lesson plans offer this scenario, which is set on each lesson plan.
+      name: 'offeredBy',
+      type: 'ui',
+      admin: {
+        components: { Field: '/components/admin/courses/ScenarioOfferedBy#ScenarioOfferedBy' },
+      },
     },
     {
       name: 'retired',

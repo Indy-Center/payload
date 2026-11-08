@@ -14,6 +14,7 @@ import { EstimatedLength as EstimatedLength_210f9da2ef2ab2c9e90c8511987394b9 } f
 import { CredentialCell as CredentialCell_6f77df66545adeb6b7e4f2ebec0bfcdc } from '../../../components/admin/courses/CredentialCell'
 import { EditionCell as EditionCell_4739f25f5aa938351f26a42268769d3e } from '../../../components/admin/courses/EditionCell'
 import { CourseContentView as CourseContentView_5e7875f4b67a6148b148358c2ba6917f } from '../../../components/admin/courses/CourseContentView'
+import { CourseScenariosView as CourseScenariosView_cec26e174a61c70cd0136b4f0cb965b8 } from '../../../components/admin/courses/CourseScenariosView'
 import { CourseHistoryView as CourseHistoryView_9a7e571f00fe5a32a5b3133430fa87d8 } from '../../../components/admin/courses/CourseHistoryView'
 import { CoursesListView as CoursesListView_235e0b59d99ef31655e1e9f551cb646d } from '../../../components/admin/courses/CoursesListView'
 import { LessonPlanEdition as LessonPlanEdition_3cf1f7b01a91361711fc56a872fd3ba7 } from '../../../components/admin/courses/LessonPlanEdition'
@@ -41,7 +42,9 @@ import { ChecklistFeatureClient as ChecklistFeatureClient_e70f5e05f09f93e00b997e
 import { BlockquoteFeatureClient as BlockquoteFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { HorizontalRuleFeatureClient as HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { InlineToolbarFeatureClient as InlineToolbarFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
+import { ScenarioCourse as ScenarioCourse_cb99cd16826cac07995095453f2ec3c3 } from '../../../components/admin/courses/ScenarioCourse'
 import { PositionPicker as PositionPicker_bc532691c8bae6f7b7e39eff86f88f13 } from '../../../components/admin/positions/PositionPicker'
+import { ScenarioOfferedBy as ScenarioOfferedBy_a83931f45d1aa647407b3993858daa2d } from '../../../components/admin/courses/ScenarioOfferedBy'
 import { FrequencyCell as FrequencyCell_f3122caea05cacf86ae3a5350c5931cc } from '../../../components/admin/positions/Frequency'
 import { FrequencyField as FrequencyField_f3122caea05cacf86ae3a5350c5931cc } from '../../../components/admin/positions/Frequency'
 import { SyncPositionsButton as SyncPositionsButton_d6aabdefc1aed5d29734081fbdbd74d7 } from '../../../components/admin/positions/SyncPositionsButton'
@@ -72,6 +75,7 @@ export const importMap = {
   "/components/admin/courses/CredentialCell#CredentialCell": CredentialCell_6f77df66545adeb6b7e4f2ebec0bfcdc,
   "/components/admin/courses/EditionCell#EditionCell": EditionCell_4739f25f5aa938351f26a42268769d3e,
   "/components/admin/courses/CourseContentView#CourseContentView": CourseContentView_5e7875f4b67a6148b148358c2ba6917f,
+  "/components/admin/courses/CourseScenariosView#CourseScenariosView": CourseScenariosView_cec26e174a61c70cd0136b4f0cb965b8,
   "/components/admin/courses/CourseHistoryView#CourseHistoryView": CourseHistoryView_9a7e571f00fe5a32a5b3133430fa87d8,
   "/components/admin/courses/CoursesListView#CoursesListView": CoursesListView_235e0b59d99ef31655e1e9f551cb646d,
   "/components/admin/courses/LessonPlanEdition#LessonPlanEdition": LessonPlanEdition_3cf1f7b01a91361711fc56a872fd3ba7,
@@ -99,7 +103,9 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#BlockquoteFeatureClient": BlockquoteFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#HorizontalRuleFeatureClient": HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#InlineToolbarFeatureClient": InlineToolbarFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+  "/components/admin/courses/ScenarioCourse#ScenarioCourse": ScenarioCourse_cb99cd16826cac07995095453f2ec3c3,
   "/components/admin/positions/PositionPicker#PositionPicker": PositionPicker_bc532691c8bae6f7b7e39eff86f88f13,
+  "/components/admin/courses/ScenarioOfferedBy#ScenarioOfferedBy": ScenarioOfferedBy_a83931f45d1aa647407b3993858daa2d,
   "/components/admin/positions/Frequency#FrequencyCell": FrequencyCell_f3122caea05cacf86ae3a5350c5931cc,
   "/components/admin/positions/Frequency#FrequencyField": FrequencyField_f3122caea05cacf86ae3a5350c5931cc,
   "/components/admin/positions/SyncPositionsButton#SyncPositionsButton": SyncPositionsButton_d6aabdefc1aed5d29734081fbdbd74d7,
