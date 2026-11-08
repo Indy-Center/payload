@@ -457,12 +457,46 @@ describe('a course author in a published edition', () => {
 
     expect(response.status).toBe(200)
     expect((await stored(version.id)).description).toBe('Reworded')
+
+    // The same save again, from the updatedAt it opened with: someone saved since.
+    const again = new FormData()
+    again.set(
+      '_payload',
+      JSON.stringify({
+        description: 'Reworded twice',
+        defaultMinimum: 2,
+        updatedAt: version.updatedAt,
+      }),
+    )
+    const refused = await handleEndpoints({
+      config,
+      request: new Request(`http://localhost:3000/api/course-versions/${version.id}`, {
+        method: 'PATCH',
+        headers: { Authorization: `JWT ${token}` },
+        body: again,
+      }),
+    })
+
+    expect(refused.status).toBe(409)
+    expect(await refused.json()).toMatchObject({
+      errors: [
+        {
+          message:
+            'Someone else saved this since you opened it. Reload the page and make your changes again.',
+        },
+      ],
+    })
+    expect((await stored(version.id)).description).toBe('Reworded')
   })
 
   it('is refused a change to the edition’s time, grading scale and default minimum', async () => {
     const { version } = await edition('published')
+    const other = await payload.create({
+      collection: 'grading-scales',
+      data: { name: 'Two point', points: [{ label: 'No' }, { label: 'Yes' }] },
+    })
 
-    for (const data of [{ time: 5 }, { defaultMinimum: 3 }]) {
+    for (const data of [{ time: 5 }, { defaultMinimum: 3 }, { gradingScale: other.id }]) {
       await expect(
         payload.update({
           collection: 'course-versions',

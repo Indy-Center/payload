@@ -114,7 +114,9 @@ describe('importing the USA and GCAP frameworks and the rubrics', () => {
       expect(task.mappings).toHaveLength(1)
       expect(task.mappings?.[0].pairedGcapCode).toBeNull()
     }
-    await expect(save('Heading task', '1.1')).rejects.toThrow()
+    await expect(save('Heading task', '1.1')).rejects.toThrow(
+      'The following field is invalid: Mappings 1 > Competency',
+    )
   })
 
   it('leaves out the "meets all established standards" rows', async () => {
