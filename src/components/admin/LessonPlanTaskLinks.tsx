@@ -12,6 +12,7 @@ export function LessonPlanTaskLinks() {
   const { id, savedDocumentData } = useDocumentInfo()
   const { config } = useConfig()
   const count = Array.isArray(savedDocumentData?.tasks) ? savedDocumentData.tasks.length : 0
+  const grid = id ? gridURL(config.routes.admin, id) : ''
   return (
     <div className="lesson-plan-task-links field-type">
       <span className="field-label">Tasks</span>
@@ -25,20 +26,14 @@ export function LessonPlanTaskLinks() {
           <div className="lesson-plan-task-links__buttons">
             <Button
               el="link"
-              url={`${gridURL(config.routes.admin, id)}?add=true`}
+              url={`${grid}?add=true`}
               buttonStyle="secondary"
               size="small"
               margin={false}
             >
               Add tasks
             </Button>
-            <Button
-              el="link"
-              url={gridURL(config.routes.admin, id)}
-              buttonStyle="secondary"
-              size="small"
-              margin={false}
-            >
+            <Button el="link" url={grid} buttonStyle="secondary" size="small" margin={false}>
               Edit as grid
             </Button>
           </div>

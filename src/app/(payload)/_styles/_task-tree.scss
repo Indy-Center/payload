@@ -397,7 +397,7 @@ span.task-tree__toggle {
 }
 
 // A lesson plan's grid (src/components/admin/LessonPlanTaskGrid.tsx) wears the Tasks grid's look;
-// its task cell is read-only text in line with the boxes beside it.
+// its task cell is read-only text in line with the Required box beside it.
 .lesson-plan-grid .task-grid__task {
   line-height: 2rem;
 }
