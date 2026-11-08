@@ -12,6 +12,7 @@ import {
   type GridRow,
 } from './task-grid-state'
 import { useEndpoint } from './useEndpoint'
+import { LeaveGuard } from './LeaveGuard'
 
 const baseClass = 'task-grid'
 
@@ -39,6 +40,8 @@ export function TaskGrid({
   const [showRetired, setShowRetired] = useState(showRetiredAtFirst)
   const [refusals, setRefusals] = useState<Refusals>(noRefusals)
   const [busy, setBusy] = useState(false)
+  // Saved, and waiting for the tasks read again: nothing is left to lose.
+  const [saved, setSaved] = useState(false)
   const table = useRef<HTMLTableElement>(null)
 
   const rows = gridRows(state, showRetired)
@@ -64,6 +67,7 @@ export function TaskGrid({
     // (its key changes), so a second press can't send the same batch again.
     const outcome = await call('/courseware/task-grid', 'post', gridBatch(state))
     if (outcome.ok) {
+      setSaved(true)
       setRefusals(noRefusals)
       toast.success(`${pending} ${pending === 1 ? 'change' : 'changes'} saved.`)
       // The tree, and every number shown elsewhere, are read again from what was saved.
@@ -89,6 +93,7 @@ export function TaskGrid({
 
   return (
     <div className={baseClass}>
+      <LeaveGuard unsaved={pending > 0 && !saved} />
       <div className={`${baseClass}__controls`}>
         <label className="task-tree-list__retired">
           <input
