@@ -46,7 +46,10 @@ async function edition(status: 'draft' | 'published' = 'draft') {
     collection: 'grading-scales',
     data: { name: 'Three point', points: [{ label: 'Low' }, { label: 'Mid' }, { label: 'High' }] },
   })
-  const radio = await payload.create({ collection: 'tasks', data: { name: 'Radio' } })
+  const radio = await payload.create({
+    collection: 'tasks',
+    data: { name: 'Radio', knowledgeStatement: 'Know the words' },
+  })
   const version = await payload.create({
     collection: 'course-versions',
     data: {
@@ -66,7 +69,7 @@ async function edition(status: 'draft' | 'published' = 'draft') {
         code,
         title: `Plan ${code}`,
         minimum: 2,
-        theoryItems: [{ task: radio.id }],
+        tasks: [{ task: radio.id }],
       },
     })
   const [one, two, three, spare] = [
@@ -413,7 +416,7 @@ describe('who may change an edition’s outline, as the course page asks', () =>
 })
 
 describe('the outline the Content tab lists', () => {
-  it('lists each module’s plans in order with minutes and theory items, and the plans in no module', async () => {
+  it('lists each module’s plans in order with minutes and tasks, and the plans in no module', async () => {
     const { version, one } = await edition()
     await payload.update({ collection: 'lesson-plans', id: one.id, data: { time: 90 } })
     const req = await createLocalReq({ user: { ...author, collection: 'users' } }, payload)
@@ -424,7 +427,7 @@ describe('the outline the Content tab lists', () => {
       [
         'Theory',
         [
-          { id: one.id, code: 'X-TWR-1', title: 'Plan X-TWR-1', minutes: 90, theoryItems: 1 },
+          { id: one.id, code: 'X-TWR-1', title: 'Plan X-TWR-1', minutes: 90, tasks: 1 },
           expect.objectContaining({ code: 'X-TWR-2', minutes: null }),
         ],
       ],

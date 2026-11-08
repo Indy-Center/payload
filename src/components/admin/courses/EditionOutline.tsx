@@ -181,7 +181,7 @@ export function EditionOutline({ edition, editable, rearrange = false, structura
 
 const nameOf = (plan: OutlinePlan) => plan.code || plan.title || 'this lesson plan'
 
-/** A list of lesson plans: code, title, minutes, theory items, and what may be done to each. */
+/** A list of lesson plans: code, title, minutes, tasks, and what may be done to each. */
 function PlanTable({
   plans,
   label,
@@ -204,7 +204,7 @@ function PlanTable({
           <th>Code</th>
           <th>Title</th>
           <th className="edition-outline__wide-only">Minutes</th>
-          <th className="edition-outline__wide-only">Theory items</th>
+          <th className="edition-outline__wide-only">Tasks</th>
           {editable && <th>{actionsHeading}</th>}
         </tr>
       </thead>
@@ -220,7 +220,7 @@ function PlanTable({
               </>
             )}
             <td className="edition-outline__wide-only">{plan.minutes ?? '—'}</td>
-            <td className="edition-outline__wide-only">{plan.theoryItems}</td>
+            <td className="edition-outline__wide-only">{plan.tasks}</td>
             {editable && (
               <td>
                 <div className="edition-outline__actions">{actions(plan, index)}</div>

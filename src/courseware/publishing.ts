@@ -29,7 +29,7 @@ export function refuseScaleChange(
 
 /**
  * The publishing check (decision 0034): the version names a scale; every lesson plan has a code, a
- * title, a minimum, and at least one theory item or scenario; nothing it uses is retired. Unmapped
+ * title, a minimum, and at least one task (0065); nothing it uses is retired. Unmapped
  * tasks do not block (0020). Refuses with every fault, each naming its record.
  */
 export async function refuseUnpublishable(
@@ -100,20 +100,18 @@ export async function publishingFaults(
     else if (scale && !inScale(plan.minimum, points)) {
       faults.push(`${name}’s minimum grade is not a point on ${scale.name}.`)
     }
-    if (!plan.theoryItems?.length && !plan.scenarios?.length) {
-      faults.push(`${name} has no theory item or scenario.`)
+    // Scenarios don't count: every task is on the lesson plan (0065).
+    if (!plan.tasks?.length) {
+      faults.push(`${plan.code || plan.title ? `Lesson plan ${name}` : name} has no tasks.`)
     }
-    for (const item of plan.theoryItems ?? []) {
-      const retired = retiredTasks.get(idOf(item.task) ?? '')
+    for (const row of plan.tasks ?? []) {
+      const retired = retiredTasks.get(idOf(row.task) ?? '')
       if (retired) faults.push(`${name} uses the retired task ${retired}.`)
     }
     for (const offered of plan.scenarios ?? []) {
       const scenario = scenariosById.get(idOf(offered) ?? '')
-      if (!scenario) continue
-      if (scenario.retired) faults.push(`${name} offers the retired scenario ${scenario.name}.`)
-      for (const row of scenario.practicalTasks ?? []) {
-        const retired = retiredTasks.get(idOf(row.task) ?? '')
-        if (retired) faults.push(`Scenario ${scenario.name} uses the retired task ${retired}.`)
+      if (scenario?.retired) {
+        faults.push(`${name} offers the retired scenario ${scenario.name}.`)
       }
     }
   }

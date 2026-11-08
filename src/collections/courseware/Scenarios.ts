@@ -1,16 +1,13 @@
 import type { CollectionConfig } from 'payload'
 import { scenarioAccess, staffOnlyField } from '@/courseware/access'
 import { hideRetiredUnlessAsked } from '@/courseware/retired'
-import { rowLabelComponent } from '@/courseware/row-label-component'
 import { positionPickerComponents, pickedPosition } from '@/courseware/position-picker'
-import { refuseAuthorsScenarioStructure } from '@/courseware/structure'
-import { taskPickerComponents } from '@/courseware/task-picker'
-import { expandTaskRows, pickableTask } from '@/courseware/task-rows'
 
 /**
- * A set of practical tasks posed together at one position. It belongs to one course, and any
- * lesson plan in any version of that course may offer it (decision 0026). Its student and
- * teacher positions are picked from Positions (decision 0060).
+ * A setup a teacher may pick for a lesson plan; it holds no tasks, which are all on the lesson
+ * plan (decision 0065). It belongs to one course, and any lesson plan in any version of that
+ * course may offer it (decision 0026). Its student and teacher positions are picked from
+ * Positions (decision 0060).
  */
 export const Scenarios: CollectionConfig = {
   slug: 'scenarios',
@@ -21,21 +18,6 @@ export const Scenarios: CollectionConfig = {
     baseFilter: hideRetiredUnlessAsked,
   },
   access: scenarioAccess,
-  hooks: {
-    beforeChange: [
-      async ({ data, operation, originalDoc, req }) => {
-        await refuseAuthorsScenarioStructure(req, data, operation === 'update' ? originalDoc : null)
-        data.practicalTasks = await expandTaskRows(
-          req,
-          data.practicalTasks,
-          originalDoc?.practicalTasks,
-          'practicalTasks',
-          { teacherNotes: '', required: true },
-        )
-        return data
-      },
-    ],
-  },
   fields: [
     { name: 'course', type: 'relationship', relationTo: 'courses', required: true, index: true },
     {
@@ -84,37 +66,6 @@ export const Scenarios: CollectionConfig = {
       options: [
         { label: 'Sim', value: 'sim' },
         { label: 'Live network', value: 'live' },
-      ],
-    },
-    {
-      name: 'practicalTasks',
-      type: 'array',
-      labels: { singular: 'Practical task', plural: 'Practical tasks' },
-      admin: {
-        components: { RowLabel: rowLabelComponent('practicalTask') },
-        description:
-          'Adding a task that has tasks beneath it adds a row for each of them when you save.',
-      },
-      fields: [
-        {
-          name: 'task',
-          type: 'relationship',
-          relationTo: 'tasks',
-          required: true,
-          filterOptions: pickableTask,
-          admin: { components: taskPickerComponents() },
-        },
-        {
-          name: 'teacherNotes',
-          type: 'textarea',
-          admin: { description: 'Shown only to teachers: how to pose the challenge.' },
-        },
-        {
-          name: 'required',
-          type: 'checkbox',
-          defaultValue: true,
-          admin: { description: 'The scenario cannot be completed without it.' },
-        },
       ],
     },
     {
