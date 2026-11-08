@@ -46,7 +46,10 @@ async function liveCourse() {
     collection: 'grading-scales',
     data: { name: 'Three point', points: POINTS },
   })
-  const radio = await payload.create({ collection: 'tasks', data: { name: 'Radio' } })
+  const radio = await payload.create({
+    collection: 'tasks',
+    data: { name: 'Radio', knowledgeStatement: 'Know the words', skillStatement: 'Say them' },
+  })
   const scenario = await payload.create({
     collection: 'scenarios',
     data: {
@@ -54,7 +57,6 @@ async function liveCourse() {
       name: 'Quiet morning',
       airport: 'KXYZ',
       ...(await scenarioPositions(payload)),
-      mode: 'sim',
     },
   })
   const live = await payload.create({
@@ -74,8 +76,14 @@ async function liveCourse() {
       depth: 0,
       data: { courseVersion: live.id, code, title: `Plan ${code}`, minimum: 2, ...data },
     })
-  const first = await plan('X-TWR-1', { theoryItems: [{ task: radio.id, teacherNotes: 'Ask' }] })
-  const second = await plan('X-TWR-2', { scenarios: [scenario.id], time: 60 })
+  const first = await plan('X-TWR-1', {
+    tasks: [{ task: radio.id, required: false, gradesSkill: false, teacherNotes: 'Ask' }],
+  })
+  const second = await plan('X-TWR-2', {
+    tasks: [{ task: radio.id }],
+    scenarios: [scenario.id],
+    time: 60,
+  })
   const spare = await plan('X-TWR-9')
   await payload.update({
     collection: 'course-versions',
@@ -135,7 +143,15 @@ describe('starting a new edition', () => {
     expect(copies.map((plan) => plan.code)).toEqual(['X-TWR-1', 'X-TWR-2', 'X-TWR-9'])
     const originals = await plansOf(live.id)
     expect(copies.map((plan) => plan.id)).not.toContain(originals[0].id)
-    expect(copies[0].theoryItems).toMatchObject([{ task: radio.id, teacherNotes: 'Ask' }])
+    expect(copies[0].tasks).toMatchObject([
+      {
+        task: radio.id,
+        required: false,
+        gradesKnowledge: true,
+        gradesSkill: false,
+        teacherNotes: 'Ask',
+      },
+    ])
     expect(copies[1]).toMatchObject({ scenarios: [scenario.id], time: 60, minimum: 2 })
 
     // The modules hold the copies, in the same places.
@@ -178,20 +194,26 @@ describe('starting a new edition, further', () => {
 
   it('copies rows as they are: a retired task stays, a parent task is not expanded again', async () => {
     const { course, live, first, radio } = await liveCourse()
-    const parent = await payload.create({ collection: 'tasks', data: { name: 'Phraseology' } })
+    const parent = await payload.create({
+      collection: 'tasks',
+      data: { name: 'Phraseology', skillStatement: 'Use it' },
+    })
     // The live plan holds the parent alone: its child came later, or its row was removed.
     await payload.update({
       collection: 'lesson-plans',
       id: first.id,
-      data: { theoryItems: [{ task: radio.id }, { task: parent.id }] },
+      data: { tasks: [{ task: radio.id }, { task: parent.id }] },
     })
-    await payload.create({ collection: 'tasks', data: { name: 'Readbacks', parent: parent.id } })
+    await payload.create({
+      collection: 'tasks',
+      data: { name: 'Readbacks', parent: parent.id, skillStatement: 'Read back' },
+    })
     await payload.update({ collection: 'tasks', id: radio.id, data: { retired: true } })
 
     const { body } = await start(course.id, lead)
 
     const [copy] = await plansOf(body.edition.id)
-    expect(copy.theoryItems!.map((item) => item.task)).toEqual([radio.id, parent.id])
+    expect(copy.tasks!.map((row) => row.task)).toEqual([radio.id, parent.id])
     expect((await plansOf(live.id))[0].id).toBe(first.id)
   })
 
@@ -220,12 +242,12 @@ describe('starting a new edition, further', () => {
     await payload.update({
       collection: 'lesson-plans',
       id: copy.id,
-      data: { minimum: 3, theoryItems: [] },
+      data: { minimum: 3, tasks: [] },
       ...as,
     })
     const added = await payload.create({
       collection: 'lesson-plans',
-      data: { courseVersion: body.edition.id, code: 'X-TWR-3', theoryItems: [{ task: radio.id }] },
+      data: { courseVersion: body.edition.id, code: 'X-TWR-3', tasks: [{ task: radio.id }] },
       ...as,
     })
     const edited = await payload.update({

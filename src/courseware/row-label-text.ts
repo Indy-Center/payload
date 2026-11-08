@@ -17,7 +17,7 @@ export type RowLabelLookup = {
 }
 
 export type RowLabelKind =
-  'mapping' | 'citation' | 'point' | 'module' | 'theoryItem' | 'practicalTask' | 'prerequisite'
+  'mapping' | 'citation' | 'point' | 'module' | 'lessonPlanTask' | 'prerequisite'
 
 /** Payload's own label for an untitled row: "Mapping 01", "Mapping 02", and so on. */
 export const SINGULAR: Record<RowLabelKind, string> = {
@@ -25,8 +25,7 @@ export const SINGULAR: Record<RowLabelKind, string> = {
   citation: 'Citation',
   point: 'Point',
   module: 'Module',
-  theoryItem: 'Theory item',
-  practicalTask: 'Practical task',
+  lessonPlanTask: 'Task',
   prerequisite: 'Prerequisite',
 }
 
@@ -81,12 +80,11 @@ export function rowLabel(
     }
     case 'citation':
       return lookup ? citationLabel(row, lookup) : null
-    case 'theoryItem':
-    case 'practicalTask': {
+    case 'lessonPlanTask': {
       const task = lookup?.tasks[idOf(row.task) ?? '']
       if (!task) return null
       const text = `${task.number} ${task.name}`
-      return kind === 'practicalTask' && row.required ? { text, tag: 'Required' } : { text }
+      return row.required ? { text, tag: 'Required' } : { text }
     }
     case 'prerequisite': {
       const codes = (row.anyOf ?? [])

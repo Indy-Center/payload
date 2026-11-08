@@ -99,7 +99,28 @@ describe('the task picker', () => {
       id: runway.id,
       number: '2.2.1',
       label: '2.2.1 Taxi to runway',
+      statements: { knowledge: false, skill: false },
     })
+  })
+
+  it('says which statements each task has, for a lesson plan task’s grade boxes', async () => {
+    await task('Radio', undefined, { knowledgeStatement: 'Know the words', skillStatement: ' ' })
+    await task('Clearances', undefined, { skillStatement: 'Issue one' })
+
+    const { body } = await callEndpoint(payload, '/courseware/task-options', {
+      token: null,
+      user: author,
+    })
+
+    expect(
+      body.options.map((option: { label: string; statements: unknown }) => [
+        option.label,
+        option.statements,
+      ]),
+    ).toEqual([
+      ['1 Radio', { knowledge: true, skill: false }],
+      ['2 Clearances', { knowledge: false, skill: true }],
+    ])
   })
 
   it('leaves a task and everything beneath it out of its own Parent picker', async () => {

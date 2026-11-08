@@ -76,6 +76,19 @@ export const Tasks: CollectionConfig = {
     { name: 'name', type: 'text', required: true },
     { name: 'description', type: 'textarea' },
     {
+      // Written once, here, and read the same in every course (decision 0066).
+      name: 'knowledgeStatement',
+      type: 'textarea',
+      label: 'Knowledge',
+      admin: { description: 'What a controller must know to perform this task' },
+    },
+    {
+      name: 'skillStatement',
+      type: 'textarea',
+      label: 'Skill',
+      admin: { description: 'What a controller must be able to do to perform this task' },
+    },
+    {
       name: 'parent',
       type: 'relationship',
       relationTo: 'tasks',

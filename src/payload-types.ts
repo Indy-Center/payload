@@ -370,6 +370,14 @@ export interface Task {
   _order?: string | null;
   name: string;
   description?: string | null;
+  /**
+   * What a controller must know to perform this task
+   */
+  knowledgeStatement?: string | null;
+  /**
+   * What a controller must be able to do to perform this task
+   */
+  skillStatement?: string | null;
   parent?: (string | null) | Task;
   children?: {
     docs?: (string | Task)[];
@@ -576,13 +584,30 @@ export interface LessonPlan {
   /**
    * Adding a task that has tasks beneath it adds a row for each of them when you save.
    */
-  theoryItems?:
+  tasks?:
     | {
         task: string | Task;
+        /**
+         * A student must reach the minimum on it to advance.
+         */
+        required?: boolean | null;
+        gradesKnowledge?: boolean | null;
+        gradesSkill?: boolean | null;
         /**
          * Shown only to teachers: the prompt to ask.
          */
         teacherNotes?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * A chart or a video for this lesson. Students see them unless teacher-only.
+   */
+  resources?:
+    | {
+        title: string;
+        url: string;
+        teacherOnly?: boolean | null;
         id?: string | null;
       }[]
     | null;
@@ -611,24 +636,14 @@ export interface Scenario {
   studentPosition: string | Position;
   teacherPosition: string | Position;
   difficulty?: ('easy' | 'medium' | 'hard') | null;
-  mode: 'sim' | 'live';
   /**
-   * Adding a task that has tasks beneath it adds a row for each of them when you save.
+   * For the teacher: what this scenario sets up, such as the flight plans built for it. Students don't see it.
    */
-  practicalTasks?:
-    | {
-        task: string | Task;
-        /**
-         * Shown only to teachers: how to pose the challenge.
-         */
-        teacherNotes?: string | null;
-        /**
-         * The scenario cannot be completed without it.
-         */
-        required?: boolean | null;
-        id?: string | null;
-      }[]
-    | null;
+  description?: string | null;
+  /**
+   * The scenario's link or ID in ATCTrainer
+   */
+  atctrainer?: string | null;
   /**
    * Retired scenarios stay where they are offered but are not offered anew.
    */
@@ -1206,6 +1221,8 @@ export interface TasksSelect<T extends boolean = true> {
   _order?: T;
   name?: T;
   description?: T;
+  knowledgeStatement?: T;
+  skillStatement?: T;
   parent?: T;
   children?: T;
   mappings?:
@@ -1318,11 +1335,22 @@ export interface LessonPlansSelect<T extends boolean = true> {
   time?: T;
   isExam?: T;
   minimum?: T;
-  theoryItems?:
+  tasks?:
     | T
     | {
         task?: T;
+        required?: T;
+        gradesKnowledge?: T;
+        gradesSkill?: T;
         teacherNotes?: T;
+        id?: T;
+      };
+  resources?:
+    | T
+    | {
+        title?: T;
+        url?: T;
+        teacherOnly?: T;
         id?: T;
       };
   scenarios?: T;
@@ -1340,15 +1368,8 @@ export interface ScenariosSelect<T extends boolean = true> {
   studentPosition?: T;
   teacherPosition?: T;
   difficulty?: T;
-  mode?: T;
-  practicalTasks?:
-    | T
-    | {
-        task?: T;
-        teacherNotes?: T;
-        required?: T;
-        id?: T;
-      };
+  description?: T;
+  atctrainer?: T;
   retired?: T;
   updatedAt?: T;
   createdAt?: T;

@@ -38,7 +38,10 @@ async function courses() {
     collection: 'course-versions',
     data: { course: other.id, number: 1, status: 'draft' },
   })
-  const task = await payload.create({ collection: 'tasks', data: { name: 'Radio' } })
+  const task = await payload.create({
+    collection: 'tasks',
+    data: { name: 'Radio', knowledgeStatement: 'Know the words' },
+  })
   return { own, other, ownDraft, otherDraft, task }
 }
 
@@ -83,6 +86,52 @@ describe('the task list', () => {
   })
 })
 
+describe('a task’s knowledge and skill statements', () => {
+  it('are set and cleared by the Training Admin and leads', async () => {
+    for (const user of [admin, lead]) {
+      const task = await payload.create({
+        collection: 'tasks',
+        data: { name: 'Radio' },
+        ...as(user),
+      })
+      const set = await payload.update({
+        collection: 'tasks',
+        id: task.id,
+        data: { knowledgeStatement: 'Phraseology', skillStatement: 'Speak it' },
+        ...as(user),
+      })
+      expect(set).toMatchObject({ knowledgeStatement: 'Phraseology', skillStatement: 'Speak it' })
+
+      const cleared = await payload.update({
+        collection: 'tasks',
+        id: task.id,
+        data: { knowledgeStatement: null, skillStatement: '' },
+        ...as(user),
+      })
+      expect(cleared.knowledgeStatement ?? '').toBe('')
+      expect(cleared.skillStatement ?? '').toBe('')
+    }
+  })
+
+  it('can be read but not changed by a course author', async () => {
+    const task = await payload.create({
+      collection: 'tasks',
+      data: { name: 'Radio', knowledgeStatement: 'Phraseology', skillStatement: 'Speak it' },
+    })
+
+    const read = await payload.findByID({ collection: 'tasks', id: task.id, ...as(author) })
+    expect(read).toMatchObject({ knowledgeStatement: 'Phraseology', skillStatement: 'Speak it' })
+
+    for (const data of [{ knowledgeStatement: 'Changed' }, { skillStatement: 'Changed' }]) {
+      await expect(
+        payload.update({ collection: 'tasks', id: task.id, data, ...as(author) }),
+      ).rejects.toThrow('You are not allowed to perform this action.')
+    }
+    const after = await payload.findByID({ collection: 'tasks', id: task.id })
+    expect(after).toMatchObject({ knowledgeStatement: 'Phraseology', skillStatement: 'Speak it' })
+  })
+})
+
 describe('a course author', () => {
   it('edits their own course’s drafts, lesson plans and scenarios', async () => {
     const { own, ownDraft, task } = await courses()
@@ -98,7 +147,7 @@ describe('a course author', () => {
       data: {
         courseVersion: ownDraft.id,
         title: 'Radio',
-        theoryItems: [{ task: task.id, teacherNotes: 'Ask about readbacks' }],
+        tasks: [{ task: task.id, teacherNotes: 'Ask about readbacks' }],
       },
       ...as(author),
     })
@@ -115,7 +164,6 @@ describe('a course author', () => {
         name: 'Quiet',
         airport: 'KXYZ',
         ...(await scenarioPositions(payload)),
-        mode: 'sim',
       },
       ...as(author),
     })
@@ -161,7 +209,6 @@ describe('a course author', () => {
           name: 'Not mine',
           airport: 'KXYZ',
           ...(await scenarioPositions(payload)),
-          mode: 'sim',
         },
         ...as(author),
       }),
@@ -181,7 +228,6 @@ describe('a course author', () => {
         name: 'Mine',
         airport: 'KXYZ',
         ...(await scenarioPositions(payload)),
-        mode: 'sim',
       },
     })
 
@@ -261,7 +307,6 @@ describe('a course author', () => {
         name: 'Quiet',
         airport: 'KXYZ',
         ...(await scenarioPositions(payload)),
-        mode: 'sim',
       },
     })
 
@@ -303,11 +348,14 @@ describe('the Training Admin and leads', () => {
       collection: 'lesson-plans',
       data: { courseVersion: ownDraft.id, code: 'X-TWR-1', title: 'Radio', minimum: 2 },
     })
-    const task = await payload.create({ collection: 'tasks', data: { name: 'Readbacks' } })
+    const task = await payload.create({
+      collection: 'tasks',
+      data: { name: 'Readbacks', skillStatement: 'Read one back' },
+    })
     await payload.update({
       collection: 'lesson-plans',
       id: plan.id,
-      data: { theoryItems: [{ task: task.id }] },
+      data: { tasks: [{ task: task.id }] },
     })
 
     const published = await payload.update({

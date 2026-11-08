@@ -140,7 +140,7 @@ export async function buildCourseVersionDocument(
     scenarios.docs.flatMap((record) => [record.studentPosition, record.teacherPosition]),
   )
   const scenariosById = new Map(
-    scenarios.docs.map((record) => [record.id, scenario(record, tree, positionOf)]),
+    scenarios.docs.map((record) => [record.id, scenario(record, positionOf)]),
   )
   const scaleId = idOf(version.gradingScale)
   const scale = scaleId
@@ -263,7 +263,6 @@ async function loadScenarioPositions(
 
 function scenario(
   record: ScenarioRecord,
-  tree: TaskTree,
   positionOf: (position: string | { id: string }) => ScenarioPosition,
 ): Scenario {
   return {
@@ -273,14 +272,9 @@ function scenario(
     studentPosition: positionOf(record.studentPosition),
     teacherPosition: positionOf(record.teacherPosition),
     difficulty: record.difficulty ?? null,
-    mode: record.mode,
+    description: record.description ?? '',
+    atctrainer: record.atctrainer ?? '',
     retired: record.retired ?? false,
-    practicalTasks: (record.practicalTasks ?? []).map((row) => ({
-      id: row.id ?? '',
-      task: taskRef(tree, row.task),
-      teacherNotes: row.teacherNotes ?? '',
-      required: row.required ?? true,
-    })),
   }
 }
 
@@ -303,10 +297,18 @@ function lessonPlan(
     time: plan.time ?? null,
     isExam: plan.isExam ?? false,
     minimum: null,
-    theoryItems: (plan.theoryItems ?? []).map((item) => ({
-      id: item.id ?? '',
-      task: taskRef(tree, item.task),
-      teacherNotes: item.teacherNotes ?? '',
+    tasks: (plan.tasks ?? []).map((row) => ({
+      id: row.id ?? '',
+      task: taskRef(tree, row.task),
+      required: row.required ?? true,
+      grades: { knowledge: row.gradesKnowledge ?? false, skill: row.gradesSkill ?? false },
+      teacherNotes: row.teacherNotes ?? '',
+    })),
+    resources: (plan.resources ?? []).map((resource) => ({
+      id: resource.id ?? '',
+      title: resource.title,
+      url: resource.url,
+      teacherOnly: resource.teacherOnly ?? false,
     })),
     scenarios: (plan.scenarios ?? [])
       .map((offered) => scenarios.get(idOf(offered) ?? ''))

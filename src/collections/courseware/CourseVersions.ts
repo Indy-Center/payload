@@ -6,6 +6,7 @@ import { idOf } from '@/courseware/ids'
 import { refuseMinimumOffScale } from '@/courseware/minimums'
 import { refuseScaleChange, refuseUnpublishable } from '@/courseware/publishing'
 import { rowLabelComponent } from '@/courseware/row-label-component'
+import { refuseAuthorsEditionStructure } from '@/courseware/structure'
 
 export const CourseVersions: CollectionConfig = {
   slug: 'course-versions',
@@ -26,6 +27,7 @@ export const CourseVersions: CollectionConfig = {
     beforeChange: [
       async ({ data, operation, originalDoc, req }) => {
         const before = operation === 'update' ? (originalDoc as CourseVersion) : null
+        refuseAuthorsEditionStructure(req, data, before)
         await numberEdition(req, data, before)
         refuseScaleChange(data, originalDoc)
         await refuseMinimumOffScale(
@@ -140,9 +142,12 @@ export const CourseVersions: CollectionConfig = {
       },
     },
     {
+      // Edited on the course page's Content tab, one module at a time (`modules.ts`), and not in
+      // the edition's form: a save of the form ("Edit grading and completion") sends no modules,
+      // so it leaves them as they are.
       name: 'modules',
       type: 'array',
-      admin: { components: { RowLabel: rowLabelComponent('module') } },
+      admin: { disabled: true, components: { RowLabel: rowLabelComponent('module') } },
       fields: [
         { name: 'title', type: 'text', required: true },
         { name: 'description', type: 'textarea' },

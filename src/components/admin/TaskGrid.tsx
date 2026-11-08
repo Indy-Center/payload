@@ -12,6 +12,7 @@ import {
   type GridRow,
 } from './task-grid-state'
 import { useEndpoint } from './useEndpoint'
+import { LeaveGuard } from './LeaveGuard'
 
 const baseClass = 'task-grid'
 
@@ -39,6 +40,8 @@ export function TaskGrid({
   const [showRetired, setShowRetired] = useState(showRetiredAtFirst)
   const [refusals, setRefusals] = useState<Refusals>(noRefusals)
   const [busy, setBusy] = useState(false)
+  // Saved, and waiting for the tasks read again: nothing is left to lose.
+  const [saved, setSaved] = useState(false)
   const table = useRef<HTMLTableElement>(null)
 
   const rows = gridRows(state, showRetired)
@@ -64,6 +67,7 @@ export function TaskGrid({
     // (its key changes), so a second press can't send the same batch again.
     const outcome = await call('/courseware/task-grid', 'post', gridBatch(state))
     if (outcome.ok) {
+      setSaved(true)
       setRefusals(noRefusals)
       toast.success(`${pending} ${pending === 1 ? 'change' : 'changes'} saved.`)
       // The tree, and every number shown elsewhere, are read again from what was saved.
@@ -89,6 +93,7 @@ export function TaskGrid({
 
   return (
     <div className={baseClass}>
+      <LeaveGuard unsaved={pending > 0 && !saved} />
       <div className={`${baseClass}__controls`}>
         <label className="task-tree-list__retired">
           <input
@@ -125,6 +130,8 @@ export function TaskGrid({
               <th className={`${baseClass}__number`}>Number</th>
               <th>Name</th>
               <th>Description</th>
+              <th>Knowledge</th>
+              <th>Skill</th>
               <th aria-label="Actions" />
             </tr>
           </thead>
@@ -172,7 +179,7 @@ function Placeholder({
         <span className={`${baseClass}__arrows`} aria-hidden="true" />
         <span data-number>{row.number}</span>
       </td>
-      <td colSpan={3} style={indent(row.depth, cellPadding)}>
+      <td colSpan={5} style={indent(row.depth, cellPadding)}>
         <button
           type="button"
           className={`${baseClass}__new`}
@@ -277,6 +284,26 @@ function TaskRow({
           }
         />
       </td>
+      {(
+        [
+          ['knowledgeStatement', 'Knowledge'],
+          ['skillStatement', 'Skill'],
+        ] as const
+      ).map(([field, label]) => (
+        <td key={field} className={`${baseClass}__description`}>
+          <textarea
+            name={field}
+            rows={1}
+            aria-label={`${label} of ${row.number}`}
+            className={cell(row.changed[field])}
+            value={row[field]}
+            disabled={retired || locked}
+            onChange={(event) =>
+              dispatch({ type: 'edit', id: row.id, field, value: event.target.value })
+            }
+          />
+        </td>
+      ))}
       <td className={`${baseClass}__actions`}>
         {locked ? null : <RowActions row={row} dispatch={dispatch} />}
       </td>

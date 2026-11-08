@@ -32,6 +32,7 @@ import { trainingEndpoints } from './training/endpoints'
 import { migrations } from './migrations'
 import { storagePlugins } from './storage'
 import { branding } from './branding'
+import { leaveGuard } from './leave-guard'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -98,5 +99,5 @@ export default buildConfig({
     prodMigrations: migrations,
   }),
   sharp,
-  plugins: [...storagePlugins, branding],
+  plugins: [...storagePlugins, branding, leaveGuard],
 })

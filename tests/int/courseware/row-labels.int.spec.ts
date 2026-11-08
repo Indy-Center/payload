@@ -54,16 +54,15 @@ describe('what a row says', () => {
     expect(rowLabel('module', { title: 'Ground control' }, null)?.text).toBe('Ground control')
   })
 
-  it('names theory items and practical tasks by task number and name', () => {
-    expect(rowLabel('theoryItem', { task: 't1' }, lookup)?.text).toBe('2.2.1 Airport layout')
-    expect(rowLabel('practicalTask', { task: 't1', required: true }, lookup)).toEqual({
+  it('names lesson plan tasks by task number and name, tagging the required ones', () => {
+    expect(rowLabel('lessonPlanTask', { task: 't1', required: true }, lookup)).toEqual({
       text: '2.2.1 Airport layout',
       tag: 'Required',
     })
-    expect(rowLabel('practicalTask', { task: 't1', required: false }, lookup)).toEqual({
+    expect(rowLabel('lessonPlanTask', { task: 't1', required: false }, lookup)).toEqual({
       text: '2.2.1 Airport layout',
     })
-    expect(rowLabel('theoryItem', { task: { id: 't1' } }, lookup)?.text).toBe(
+    expect(rowLabel('lessonPlanTask', { task: { id: 't1' } }, lookup)?.text).toBe(
       '2.2.1 Airport layout',
     )
   })
@@ -80,7 +79,7 @@ describe('what a row says', () => {
     expect(rowLabel('citation', { place: '3-7-2' }, lookup)).toBeNull()
     expect(rowLabel('point', { label: '  ' }, null)).toBeNull()
     expect(rowLabel('module', {}, null)).toBeNull()
-    expect(rowLabel('theoryItem', { task: 'gone' }, lookup)).toBeNull()
+    expect(rowLabel('lessonPlanTask', { task: 'gone' }, lookup)).toBeNull()
     expect(rowLabel('prerequisite', { anyOf: [] }, lookup)).toBeNull()
   })
 })
@@ -91,8 +90,7 @@ describe('the label of an empty row', () => {
     citation: ['tasks', 'citations'],
     point: ['grading-scales', 'points'],
     module: ['course-versions', 'modules'],
-    theoryItem: ['lesson-plans', 'theoryItems'],
-    practicalTask: ['scenarios', 'practicalTasks'],
+    lessonPlanTask: ['lesson-plans', 'tasks'],
     prerequisite: ['courses', 'prerequisites'],
   }
 

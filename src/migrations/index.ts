@@ -26,6 +26,10 @@ import * as migration_20261029_033815_scenarios_pick_positions from './20261029_
 import * as migration_20261029_040720_temporary_short_names from './20261029_040720_temporary_short_names';
 import * as migration_20261029_042847_positions_required_credentials from './20261029_042847_positions_required_credentials';
 import * as migration_20261102_164652_position_parent_facilities from './20261102_164652_position_parent_facilities';
+import * as migration_20261108_042342_task_knowledge_and_skill_statements from './20261108_042342_task_knowledge_and_skill_statements';
+import * as migration_20261108_050841_lesson_plans_hold_every_task from './20261108_050841_lesson_plans_hold_every_task';
+import * as migration_20261108_054800_scenario_description_and_atctrainer from './20261108_054800_scenario_description_and_atctrainer';
+import * as migration_20261108_061041_lesson_plan_resources from './20261108_061041_lesson_plan_resources';
 
 export const migrations = [
   {
@@ -166,6 +170,26 @@ export const migrations = [
   {
     up: migration_20261102_164652_position_parent_facilities.up,
     down: migration_20261102_164652_position_parent_facilities.down,
-    name: '20261102_164652_position_parent_facilities'
+    name: '20261102_164652_position_parent_facilities',
+  },
+  {
+    up: migration_20261108_042342_task_knowledge_and_skill_statements.up,
+    down: migration_20261108_042342_task_knowledge_and_skill_statements.down,
+    name: '20261108_042342_task_knowledge_and_skill_statements',
+  },
+  {
+    up: migration_20261108_050841_lesson_plans_hold_every_task.up,
+    down: migration_20261108_050841_lesson_plans_hold_every_task.down,
+    name: '20261108_050841_lesson_plans_hold_every_task',
+  },
+  {
+    up: migration_20261108_054800_scenario_description_and_atctrainer.up,
+    down: migration_20261108_054800_scenario_description_and_atctrainer.down,
+    name: '20261108_054800_scenario_description_and_atctrainer',
+  },
+  {
+    up: migration_20261108_061041_lesson_plan_resources.up,
+    down: migration_20261108_061041_lesson_plan_resources.down,
+    name: '20261108_061041_lesson_plan_resources'
   },
 ];

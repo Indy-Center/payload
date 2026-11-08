@@ -57,6 +57,8 @@ export async function loadEditions(req: PayloadRequest, course: Course): Promise
 /** An edition's outline as the Content and History tabs show it. */
 export type EditionOutline = {
   id: string
+  /** When the edition was last saved: every outline change sends it, and is refused if stale. */
+  updatedAt: string
   title: string
   number: number
   gradingScale: string | null
@@ -80,16 +82,30 @@ export type OutlinePlan = {
   code: string | null
   title: string | null
   minutes: number | null
-  theoryItems: number
+  /** Every row of its tasks, and how many of them are required. */
+  tasks: { all: number; required: number }
+  /** The names of the scenarios it offers, in its order, retired ones included. */
+  scenarios: string[]
+  /** All of its resources, teacher-only ones included. */
+  resources: number
 }
 
-const outlinePlan = (plan: LessonPlan): OutlinePlan => ({
-  id: plan.id,
-  code: plan.code ?? null,
-  title: plan.title ?? null,
-  minutes: plan.time ?? null,
-  theoryItems: plan.theoryItems?.length ?? 0,
-})
+const outlinePlan =
+  (scenarioNames: Map<string, string>) =>
+  (plan: LessonPlan): OutlinePlan => ({
+    id: plan.id,
+    code: plan.code ?? null,
+    title: plan.title ?? null,
+    minutes: plan.time ?? null,
+    tasks: {
+      all: plan.tasks?.length ?? 0,
+      required: (plan.tasks ?? []).filter((row) => row.required !== false).length,
+    },
+    scenarios: (plan.scenarios ?? [])
+      .map((scenario) => scenarioNames.get(idOf(scenario)!))
+      .filter((name): name is string => name !== undefined),
+    resources: plan.resources?.length ?? 0,
+  })
 
 export async function loadOutline(req: PayloadRequest, id: string): Promise<EditionOutline> {
   const as = { req, user: req.user, overrideAccess: false } as const
@@ -102,12 +118,22 @@ export async function loadOutline(req: PayloadRequest, id: string): Promise<Edit
     pagination: false,
     ...as,
   })
+  const { docs: scenarios } = await req.payload.find({
+    collection: 'scenarios',
+    where: { course: { equals: idOf(edition.course) } },
+    depth: 0,
+    pagination: false,
+    select: { name: true },
+    ...as,
+  })
+  const names = new Map(scenarios.map((scenario) => [scenario.id, scenario.name]))
   const placed = new Set(
     (edition.modules ?? []).flatMap((module) => (module.lessonPlans ?? []).map(idOf)),
   )
   const scale = edition.gradingScale as GradingScale | string | null | undefined
   return {
     id: edition.id,
+    updatedAt: edition.updatedAt,
     title: edition.title ?? `Edition ${edition.number}`,
     number: edition.number,
     gradingScale: typeof scale === 'object' && scale ? scale.name : null,
@@ -119,9 +145,9 @@ export async function loadOutline(req: PayloadRequest, id: string): Promise<Edit
       description: module.description ?? null,
       lessonPlans: (module.lessonPlans ?? [])
         .filter((plan): plan is LessonPlan => typeof plan === 'object')
-        .map(outlinePlan),
+        .map(outlinePlan(names)),
     })),
-    unplaced: own.filter((plan) => !placed.has(plan.id)).map(outlinePlan),
+    unplaced: own.filter((plan) => !placed.has(plan.id)).map(outlinePlan(names)),
     ownLessonPlans: own.length,
   }
 }

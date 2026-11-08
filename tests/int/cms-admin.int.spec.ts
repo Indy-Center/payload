@@ -111,7 +111,6 @@ describe('the CMS admin', () => {
         name: 'Quiet',
         airport: 'KXYZ',
         ...(await scenarioPositions(payload)),
-        mode: 'sim',
       },
       ...as(cmsAdmin),
     })
@@ -139,7 +138,10 @@ describe('the CMS admin', () => {
       collection: 'grading-scales',
       data: { name: 'Two point', points: [{ label: 'No' }, { label: 'Yes' }] },
     })
-    const task = await payload.create({ collection: 'tasks', data: { name: 'Readbacks' } })
+    const task = await payload.create({
+      collection: 'tasks',
+      data: { name: 'Readbacks', knowledgeStatement: 'Why a readback matters' },
+    })
     const plan = await payload.create({
       collection: 'lesson-plans',
       data: {
@@ -147,7 +149,7 @@ describe('the CMS admin', () => {
         code: 'X-TWR-1',
         title: 'Radio',
         minimum: 2,
-        theoryItems: [{ task: task.id }],
+        tasks: [{ task: task.id }],
       },
     })
 
