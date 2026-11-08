@@ -13,13 +13,23 @@ import {
  */
 
 /** A task added in the grid and not yet saved, named by a key of the grid's own. */
-export type NewTask = { key: string; parentId: string | null; name: string; description: string }
+export type NewTask = {
+  key: string
+  parentId: string | null
+  name: string
+  description: string
+  knowledgeStatement: string
+  skillStatement: string
+}
+
+/** The text cells a saved task's row edits in place. */
+export type GridField = 'name' | 'description' | 'knowledgeStatement' | 'skillStatement'
 
 export type GridState = {
   saved: readonly GridTask[]
   added: NewTask[]
   /** Saved tasks' edited cells; a cell edited back to its saved text is dropped. */
-  edits: Record<string, { name?: string; description?: string }>
+  edits: Record<string, Partial<Record<GridField, string>>>
   /** Saved tasks to retire (true) or un-retire (false). */
   retire: Record<string, boolean>
   /** Each parent's children, saved and new, in their order. The top level is under ''. */
@@ -33,7 +43,7 @@ export type GridState = {
 }
 
 export type GridAction =
-  | { type: 'edit'; id: string; field: 'name' | 'description'; value: string }
+  | { type: 'edit'; id: string; field: GridField; value: string }
   | { type: 'swap'; id: string; with: string }
   | { type: 'add'; parent: string | null; after?: string }
   | { type: 'remove'; key: string }
@@ -95,7 +105,17 @@ export function gridReducer(state: GridState, action: GridAction): GridState {
       else siblings.push(key)
       return {
         ...state,
-        added: [...state.added, { key, parentId: action.parent, name: '', description: '' }],
+        added: [
+          ...state.added,
+          {
+            key,
+            parentId: action.parent,
+            name: '',
+            description: '',
+            knowledgeStatement: '',
+            skillStatement: '',
+          },
+        ],
         order: { ...state.order, [at(action.parent)]: siblings },
         next: state.next + 1,
         focus: key,
@@ -168,12 +188,14 @@ export type GridRow =
       depth: number
       name: string
       description: string
+      knowledgeStatement: string
+      skillStatement: string
       isNew: boolean
       /** Saved as retired. */
       retired: boolean
       /** Pending: true to retire it, false to un-retire it. */
       retire?: boolean
-      changed: { name: boolean; description: boolean; place: boolean }
+      changed: Record<GridField, boolean> & { place: boolean }
       /** The visible siblings either side, for ↑ and ↓. */
       up: string | null
       down: string | null
@@ -228,12 +250,17 @@ export function gridRows(state: GridState, showRetired: boolean): GridRow[] {
         depth,
         name: fresh?.name ?? edits.name ?? task?.name ?? '',
         description: fresh?.description ?? edits.description ?? task?.description ?? '',
+        knowledgeStatement:
+          fresh?.knowledgeStatement ?? edits.knowledgeStatement ?? task?.knowledgeStatement ?? '',
+        skillStatement: fresh?.skillStatement ?? edits.skillStatement ?? task?.skillStatement ?? '',
         isNew: Boolean(fresh),
         retired: Boolean(task?.retired),
         retire: state.retire[id],
         changed: {
           name: edits.name !== undefined,
           description: edits.description !== undefined,
+          knowledgeStatement: edits.knowledgeStatement !== undefined,
+          skillStatement: edits.skillStatement !== undefined,
           place: movedIds.has(id),
         },
         up: shown[place - 1] ?? null,
@@ -278,6 +305,12 @@ export function gridBatch(state: GridState): TaskGridBatch {
       ...(state.edits[id]?.description !== undefined
         ? { description: state.edits[id].description }
         : {}),
+      ...(state.edits[id]?.knowledgeStatement !== undefined
+        ? { knowledgeStatement: state.edits[id].knowledgeStatement }
+        : {}),
+      ...(state.edits[id]?.skillStatement !== undefined
+        ? { skillStatement: state.edits[id].skillStatement }
+        : {}),
       ...(id in state.retire ? { retired: state.retire[id] } : {}),
     })),
     adds: state.added.map((task) => ({
@@ -285,6 +318,8 @@ export function gridBatch(state: GridState): TaskGridBatch {
       parent: task.parentId,
       name: task.name.trim(),
       description: task.description,
+      knowledgeStatement: task.knowledgeStatement,
+      skillStatement: task.skillStatement,
     })),
     orders: changedGroups(state).map((parent) => ({
       parent: parent || null,

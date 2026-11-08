@@ -195,6 +195,10 @@ export type CatalogueTask = {
   number: string
   name: string
   description: string
+  /** What a controller must know to perform the task; empty when unset. */
+  knowledgeStatement: string
+  /** What a controller must be able to do to perform the task; empty when unset. */
+  skillStatement: string
   parentId: string | null
   retired: boolean
   /**

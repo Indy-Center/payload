@@ -101,9 +101,16 @@ export const TaskTreeList = ({
 const signature = (tasks: GridTask[]) =>
   tasks
     .map((task) =>
-      [task.id, task.parentId, task.order, task.retired, task.name, task.description].join(
-        '\u0000',
-      ),
+      [
+        task.id,
+        task.parentId,
+        task.order,
+        task.retired,
+        task.name,
+        task.description,
+        task.knowledgeStatement,
+        task.skillStatement,
+      ].join('\u0000'),
     )
     .join('\u0001')
 

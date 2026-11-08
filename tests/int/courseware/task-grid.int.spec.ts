@@ -109,6 +109,45 @@ describe('saving the Tasks grid', () => {
     ])
   })
 
+  it('saves the Knowledge and Skill statements of edited and new tasks in the batch', async () => {
+    const t = await seedTree()
+
+    const { status } = await save({
+      changes: [
+        { id: t.radio.id, knowledgeStatement: 'Phraseology', skillStatement: 'Speak it' },
+        { id: t.ground.id, skillStatement: 'Taxi safely' },
+      ],
+      adds: [
+        {
+          key: 'new:1',
+          parent: t.readbacks.id,
+          name: 'Numbers',
+          knowledgeStatement: 'Digit pronunciation',
+          skillStatement: 'Read numbers back',
+        },
+      ],
+      orders: [{ parent: t.readbacks.id, tasks: ['new:1'] }],
+    })
+
+    expect(status).toBe(200)
+    const statements = async () => {
+      const { docs } = await payload.find({ collection: 'tasks', pagination: false })
+      return Object.fromEntries(
+        docs.map((doc) => [doc.name, [doc.knowledgeStatement ?? '', doc.skillStatement ?? '']]),
+      )
+    }
+    expect(await statements()).toMatchObject({
+      Radio: ['Phraseology', 'Speak it'],
+      Ground: ['', 'Taxi safely'],
+      Numbers: ['Digit pronunciation', 'Read numbers back'],
+      Readbacks: ['', ''],
+    })
+
+    // Emptying a cell clears the statement.
+    await save({ changes: [{ id: t.radio.id, knowledgeStatement: '' }] })
+    expect((await statements()).Radio).toEqual(['', 'Speak it'])
+  })
+
   it('writes nothing when one row is refused, and names each refused row and why', async () => {
     const t = await seedTree()
     const before = await tree()

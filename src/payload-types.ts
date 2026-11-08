@@ -370,6 +370,14 @@ export interface Task {
   _order?: string | null;
   name: string;
   description?: string | null;
+  /**
+   * What a controller must know to perform this task
+   */
+  knowledgeStatement?: string | null;
+  /**
+   * What a controller must be able to do to perform this task
+   */
+  skillStatement?: string | null;
   parent?: (string | null) | Task;
   children?: {
     docs?: (string | Task)[];
@@ -1206,6 +1214,8 @@ export interface TasksSelect<T extends boolean = true> {
   _order?: T;
   name?: T;
   description?: T;
+  knowledgeStatement?: T;
+  skillStatement?: T;
   parent?: T;
   children?: T;
   mappings?:

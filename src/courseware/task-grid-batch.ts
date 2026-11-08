@@ -31,6 +31,8 @@ export async function loadGridTasks(req: PayloadRequest): Promise<GridTask[]> {
     id: task.id,
     name: task.name,
     description: task.description,
+    knowledgeStatement: task.knowledgeStatement,
+    skillStatement: task.skillStatement,
     // A parent that no longer resolves is shown, and saved, as a top-level task.
     parentId: task.parentId && tree.get(task.parentId) ? task.parentId : null,
     retired: task.retired,
@@ -204,9 +206,11 @@ async function plan(req: PayloadRequest, batch: TaskGridBatch): Promise<Write[]>
   // Saved tasks: only what the grid edits, and any new sort key, in one save each. A task's
   // parent changes on its own page.
   const updates = new Map<string, Record<string, unknown>>()
-  for (const { id, name, description, retired } of changes) {
+  for (const { id, name, description, knowledgeStatement, skillStatement, retired } of changes) {
     const data = Object.fromEntries(
-      Object.entries({ name, description, retired }).filter(([, value]) => value !== undefined),
+      Object.entries({ name, description, knowledgeStatement, skillStatement, retired }).filter(
+        ([, value]) => value !== undefined,
+      ),
     )
     updates.set(id, { ...updates.get(id), ...data })
   }
@@ -270,6 +274,8 @@ async function plan(req: PayloadRequest, batch: TaskGridBatch): Promise<Write[]>
           data: {
             name: add.name,
             description: add.description,
+            knowledgeStatement: add.knowledgeStatement,
+            skillStatement: add.skillStatement,
             parent,
             _order: keys.get(add.key),
           },
