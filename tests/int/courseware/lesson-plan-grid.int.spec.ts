@@ -340,7 +340,7 @@ describe('what the grid starts from', () => {
 
   it('is read as the person signed in, so no one signed out gets it', async () => {
     await expect(loadLessonPlanGrid(await createLocalReq({}, payload), plan.id)).rejects.toThrow(
-      'You are not allowed',
+      'You are not allowed to perform this action.',
     )
   })
 })

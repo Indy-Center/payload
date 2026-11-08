@@ -205,6 +205,6 @@ describe('a scenario’s “Offered by”', () => {
 
     await expect(
       loadOfferedBy(await createLocalReq({}, payload), { id: twice.id, course: id }),
-    ).rejects.toThrow('You are not allowed')
+    ).rejects.toThrow('You are not allowed to perform this action.')
   })
 })
