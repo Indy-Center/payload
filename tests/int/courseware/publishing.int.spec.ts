@@ -349,7 +349,6 @@ describe('publishing', () => {
         name: 'Quiet',
         airport: 'KXYZ',
         ...(await scenarioPositions(payload)),
-        mode: 'sim',
       },
     })
     await payload.update({
@@ -446,7 +445,6 @@ describe('a published edition', () => {
         name: 'Quiet',
         airport: 'KXYZ',
         ...(await scenarioPositions(payload)),
-        mode: 'sim',
       },
     })
     const plan = await payload.update({
@@ -673,7 +671,6 @@ describe('a published edition', () => {
         name: 'Busy',
         airport: 'KXYZ',
         ...(await scenarioPositions(payload)),
-        mode: 'sim',
       },
     })
 

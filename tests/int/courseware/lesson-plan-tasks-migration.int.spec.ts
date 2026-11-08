@@ -110,7 +110,6 @@ async function setting() {
       name: 'Quiet',
       airport: 'KXYZ',
       ...(await scenarioPositions(payload)),
-      mode: 'sim',
     },
   })
   return {
