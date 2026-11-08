@@ -146,7 +146,11 @@ describe('checking and importing', () => {
       dryRun: true,
       editions: { usa: '2027-04', gcap: '2027-04' },
       report: {
-        usa: { created: ['1.1', '1.1.1', '1.1.1a', '4.3.3', '5.2'], changed: [], unchanged: 0 },
+        usa: {
+          created: ['1.1', '1.1.1', '1.1.1a', '2.1', '2.2', '4.3.3', '5.2'],
+          changed: [],
+          unchanged: 0,
+        },
         gcap: { created: ['A.2.a.i', 'A.2.a.ii', 'A.3.b.i', 'A.4.d.i'], changed: [], unchanged: 0 },
       },
     })
@@ -160,17 +164,17 @@ describe('checking and importing', () => {
     const first = await runImport(admin, await upload())
 
     expect(first.status).toBe(200)
-    expect(first.body.report.usa.created).toHaveLength(5)
+    expect(first.body.report.usa.created).toHaveLength(7)
     expect(first.body.report.gcap.created).toHaveLength(4)
     const { docs } = await payload.find({ collection: 'frameworks', sort: 'name' })
     expect(docs.map((doc) => `${doc.name} ${doc.edition}`)).toEqual(['GCAP 2027-04', 'USA 2027-04'])
-    expect(await counts()).toEqual({ frameworks: 2, competencies: 9 })
+    expect(await counts()).toEqual({ frameworks: 2, competencies: 11 })
 
     const again = await runImport(admin, await upload())
 
-    expect(again.body.report.usa).toEqual({ created: [], changed: [], unchanged: 5 })
+    expect(again.body.report.usa).toEqual({ created: [], changed: [], unchanged: 7 })
     expect(again.body.report.gcap).toEqual({ created: [], changed: [], unchanged: 4 })
-    expect(await counts()).toEqual({ frameworks: 2, competencies: 9 })
+    expect(await counts()).toEqual({ frameworks: 2, competencies: 11 })
   })
 
   it('reports on a check what an import would change in an edition already in', async () => {
@@ -180,7 +184,7 @@ describe('checking and importing', () => {
 
     const response = await check(admin, await upload({ replace: { 'usa-framework.csv': edited } }))
 
-    expect(response.body.report.usa).toEqual({ created: [], changed: ['1.1'], unchanged: 4 })
+    expect(response.body.report.usa).toEqual({ created: [], changed: ['1.1'], unchanged: 6 })
     const { docs } = await payload.find({
       collection: 'competencies',
       where: { sourceId: { equals: '1.1' } },
