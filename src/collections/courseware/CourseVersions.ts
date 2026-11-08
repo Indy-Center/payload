@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, FieldAccess } from 'payload'
 import type { CourseVersion } from '@/payload-types'
 import { courseVersionAccess, staffOnlyField } from '@/courseware/access'
 import { numberEdition } from '@/courseware/editions'
@@ -6,7 +6,17 @@ import { idOf } from '@/courseware/ids'
 import { refuseMinimumOffScale } from '@/courseware/minimums'
 import { refuseScaleChange, refuseUnpublishable } from '@/courseware/publishing'
 import { rowLabelComponent } from '@/courseware/row-label-component'
-import { refuseAuthorsEditionStructure } from '@/courseware/structure'
+import {
+  mayChangePublishedEdition,
+  refuseAuthorsEditionFields,
+  refuseAuthorsEditionStructure,
+} from '@/courseware/structure'
+
+/**
+ * Update access for the edition's fields that are not wording: in a published edition only the
+ * Training Admin and leads, so a course author's form greys them out (0055).
+ */
+const structuralField: FieldAccess = ({ req, doc }) => mayChangePublishedEdition(req, doc ?? {})
 
 export const CourseVersions: CollectionConfig = {
   slug: 'course-versions',
@@ -24,6 +34,15 @@ export const CourseVersions: CollectionConfig = {
   // Two editions of one course never share a number (decision 0056).
   indexes: [{ fields: ['course', 'number'], unique: true }],
   hooks: {
+    beforeOperation: [
+      async ({ args, operation, req }) => {
+        if (operation === 'update') {
+          const { id, data } = args as { id?: unknown; data?: Partial<CourseVersion> }
+          await refuseAuthorsEditionFields(req, id, data)
+        }
+        return args
+      },
+    ],
     beforeChange: [
       async ({ data, operation, originalDoc, req }) => {
         const before = operation === 'update' ? (originalDoc as CourseVersion) : null
@@ -123,19 +142,31 @@ export const CourseVersions: CollectionConfig = {
       },
     },
     { name: 'description', type: 'textarea' },
-    { name: 'time', type: 'number', min: 0, admin: { description: 'Minutes.' } },
+    {
+      name: 'time',
+      type: 'number',
+      min: 0,
+      access: { update: structuralField },
+      admin: { description: 'Minutes.' },
+    },
     {
       name: 'completionStandard',
       label: 'Completion standard',
       type: 'textarea',
       admin: { description: 'What a student must do to finish this edition.' },
     },
-    { name: 'gradingScale', type: 'relationship', relationTo: 'grading-scales' },
+    {
+      name: 'gradingScale',
+      type: 'relationship',
+      relationTo: 'grading-scales',
+      access: { update: structuralField },
+    },
     {
       name: 'defaultMinimum',
       label: 'Default minimum grade',
       type: 'number',
       min: 1,
+      access: { update: structuralField },
       admin: {
         description:
           'The point on the scale, counted from 1 (the lowest). New lesson plans start from it.',

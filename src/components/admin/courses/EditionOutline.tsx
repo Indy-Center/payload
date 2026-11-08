@@ -112,13 +112,13 @@ export function EditionOutline({
         </div>
         {editable && (
           <div className="edition-outline__wide">
-            {/* The edition's own fields are the staff's in a published edition: greyed out with
-                the structural controls for whoever may only reword its modules. */}
+            {/* Whoever may save the edition opens its form; in a published edition a course
+                author's form greys out all but the description and completion standard. */}
             <Button
               buttonStyle="secondary"
               margin={false}
               size="small"
-              disabled={!rearrange}
+              disabled={!reword}
               onClick={openDrawer}
             >
               Edit grading and completion

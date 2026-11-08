@@ -439,14 +439,14 @@ describe('a published edition, as a course author', () => {
     expect(document.querySelector<HTMLSelectElement>('select')!.disabled).toBe(true)
   })
 
-  it('greys out “Edit grading and completion” with them, which a draft leaves open', () => {
+  it('leaves “Edit grading and completion” open to whoever may reword the edition', () => {
     show({ rearrange: false, reword: true })
-    expect(button('Edit grading and completion').disabled).toBe(true)
+    expect(button('Edit grading and completion').disabled).toBe(false)
     act(() => root?.unmount())
     document.body.innerHTML = ''
 
-    show()
-    expect(button('Edit grading and completion').disabled).toBe(false)
+    show({ rearrange: false, reword: false })
+    expect(button('Edit grading and completion').disabled).toBe(true)
   })
 })
 
