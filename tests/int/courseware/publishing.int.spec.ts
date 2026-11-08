@@ -360,6 +360,78 @@ describe('publishing', () => {
     expect(await refusal(publish(version.id))).toEqual(['Lesson plan S-GC-3 has no tasks.'])
   })
 
+  describe('a lesson plan row that grades', () => {
+    /** The ready version's one lesson plan, named S-GC-3, its row grading `grades`. */
+    async function gradingRow(grades: { gradesKnowledge: boolean; gradesSkill: boolean }) {
+      const ready = await readyVersion()
+      await payload.update({
+        collection: 'lesson-plans',
+        id: ready.plan.id,
+        data: { code: 'S-GC-3', tasks: [{ task: ready.radio.id, ...grades }] },
+      })
+      return ready
+    }
+
+    it('a knowledge statement its task no longer has is refused', async () => {
+      const { version, radio } = await gradingRow({ gradesKnowledge: true, gradesSkill: true })
+      await payload.update({ collection: 'tasks', id: radio.id, data: { knowledgeStatement: '' } })
+
+      expect(await refusal(publish(version.id))).toEqual([
+        'S-GC-3 grades a knowledge statement task 1 doesn’t have.',
+      ])
+    })
+
+    it('a skill statement its task no longer has is refused', async () => {
+      const { version, radio } = await gradingRow({ gradesKnowledge: true, gradesSkill: true })
+      await payload.update({ collection: 'tasks', id: radio.id, data: { skillStatement: '' } })
+
+      expect(await refusal(publish(version.id))).toEqual([
+        'S-GC-3 grades a skill statement task 1 doesn’t have.',
+      ])
+    })
+
+    it('nothing is refused, as rows migrated from theory items are', async () => {
+      const { version, plan, radio } = await gradingRow({
+        gradesKnowledge: true,
+        gradesSkill: true,
+      })
+      const saved = await payload.findByID({ collection: 'lesson-plans', id: plan.id, depth: 0 })
+      // Below the hook, as the migration leaves it.
+      await payload.db.updateOne({
+        collection: 'lesson-plans',
+        id: plan.id,
+        data: {
+          tasks: [
+            { id: saved.tasks![0].id, task: radio.id, gradesKnowledge: false, gradesSkill: false },
+          ],
+        },
+      })
+
+      expect(await refusal(publish(version.id))).toEqual(['S-GC-3 grades nothing on task 1.'])
+    })
+
+    it('a retired task gets both faults when both apply', async () => {
+      const { version, radio } = await gradingRow({ gradesKnowledge: true, gradesSkill: false })
+      await payload.update({
+        collection: 'tasks',
+        id: radio.id,
+        data: { knowledgeStatement: '', retired: true },
+      })
+
+      expect(await refusal(publish(version.id))).toEqual([
+        'S-GC-3 uses the retired task Radio.',
+        'S-GC-3 grades a knowledge statement task 1 doesn’t have.',
+      ])
+    })
+
+    it('a statement its task has publishes', async () => {
+      const { version, radio } = await gradingRow({ gradesKnowledge: true, gradesSkill: false })
+      await payload.update({ collection: 'tasks', id: radio.id, data: { skillStatement: '' } })
+
+      await expect(publish(version.id)).resolves.toMatchObject({ status: 'published' })
+    })
+  })
+
   it('does not block on unmapped tasks', async () => {
     const { version } = await readyVersion()
     await expect(publish(version.id)).resolves.toMatchObject({ status: 'published' })

@@ -2,6 +2,8 @@ import { ValidationError, type PayloadRequest } from 'payload'
 import type { CourseVersion, Scenario } from '@/payload-types'
 import { idOf } from './ids'
 import { inScale } from './minimums'
+import { gradableStatements } from './lesson-plan-tasks'
+import { loadTaskTree } from './task-tree'
 
 const refuse = (path: string, messages: string[]): never => {
   throw new ValidationError({ errors: messages.map((message) => ({ path, message })) })
@@ -29,7 +31,8 @@ export function refuseScaleChange(
 
 /**
  * The publishing check (decision 0034): the version names a scale; every lesson plan has a code, a
- * title, a minimum, and at least one task (0065); nothing it uses is retired. Unmapped
+ * title, a minimum, and at least one task (0065), each grading a statement its task has; nothing
+ * it uses is retired. Unmapped
  * tasks do not block (0020). Refuses with every fault, each naming its record.
  */
 export async function refuseUnpublishable(
@@ -61,7 +64,7 @@ export async function publishingFaults(
   )
   if (placed.length === 0) faults.push('The version has no lesson plans in its modules.')
 
-  const [plans, tasks] = await Promise.all([
+  const [plans, tree] = await Promise.all([
     req.payload.find({
       collection: 'lesson-plans',
       where: { id: { in: placed.map((entry) => entry.id) } },
@@ -69,16 +72,8 @@ export async function publishingFaults(
       depth: 0,
       req,
     }),
-    req.payload.find({
-      collection: 'tasks',
-      where: { retired: { equals: true } },
-      pagination: false,
-      depth: 0,
-      select: { name: true },
-      req,
-    }),
+    loadTaskTree(req),
   ])
-  const retiredTasks = new Map(tasks.docs.map((task) => [task.id, task.name]))
   const scenarioIds = plans.docs.flatMap((plan) => (plan.scenarios ?? []).map(idOf))
   const scenarios = await req.payload.find({
     collection: 'scenarios',
@@ -105,8 +100,21 @@ export async function publishingFaults(
       faults.push(`${plan.code || plan.title ? `Lesson plan ${name}` : name} has no tasks.`)
     }
     for (const row of plan.tasks ?? []) {
-      const retired = retiredTasks.get(idOf(row.task) ?? '')
-      if (retired) faults.push(`${name} uses the retired task ${retired}.`)
+      const task = tree.get(idOf(row.task) ?? '')
+      if (!task) continue
+      if (task.retired) faults.push(`${name} uses the retired task ${task.name}.`)
+      // A lead can clear a statement after a row graded it, and migrated rows grade neither (0065).
+      const number = tree.number(task.id)
+      const statements = gradableStatements(task)
+      if (row.gradesKnowledge && !statements.knowledge) {
+        faults.push(`${name} grades a knowledge statement task ${number} doesn’t have.`)
+      }
+      if (row.gradesSkill && !statements.skill) {
+        faults.push(`${name} grades a skill statement task ${number} doesn’t have.`)
+      }
+      if (!row.gradesKnowledge && !row.gradesSkill) {
+        faults.push(`${name} grades nothing on task ${number}.`)
+      }
     }
     for (const offered of plan.scenarios ?? []) {
       const scenario = scenariosById.get(idOf(offered) ?? '')
