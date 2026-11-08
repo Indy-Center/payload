@@ -7,6 +7,7 @@ import {
   type PayloadRequest,
 } from 'payload'
 import type { User } from '@/payload-types'
+import { isUnchangedSince } from '@/stale-save'
 import { isStaff } from './access'
 import {
   PARENT_RETIRED,
@@ -37,6 +38,7 @@ export async function loadGridTasks(req: PayloadRequest): Promise<GridTask[]> {
     parentId: task.parentId && tree.get(task.parentId) ? task.parentId : null,
     retired: task.retired,
     order: task.order,
+    updatedAt: task.updatedAt,
   }))
 }
 
@@ -159,7 +161,16 @@ async function plan(req: PayloadRequest, batch: TaskGridBatch): Promise<Write[]>
 
   for (const change of changes) {
     if (!saved.has(change.id)) refusals.push({ row: change.id, message: STALE })
+    // A task saved since the grid loaded it (0068); its row is locked until the batch ends.
+    else if (
+      change.updatedAt !== undefined &&
+      !(await isUnchangedSince(req, { collection: 'tasks', id: change.id }, change.updatedAt))
+    ) {
+      refusals.push({ row: change.id, message: STALE })
+    }
   }
+  // A stale row is refused as such, before any other rule: the person reloads first.
+  if (refusals.length) throw new TaskGridRefused(refusals)
   for (const add of adds) {
     if (add.parent !== null && !saved.has(add.parent) && !added.has(add.parent)) {
       refusals.push({ row: add.key, message: STALE })

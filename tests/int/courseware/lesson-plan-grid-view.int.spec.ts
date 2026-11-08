@@ -116,6 +116,10 @@ const saved: GridPlanTask[] = [
 
 const WithConfig = ConfigProvider as React.FC<{ config: ClientConfig; children?: React.ReactNode }>
 const LOCKED = 'Structural changes to a published edition are made by a lead.'
+/** The lesson plan's `updatedAt` as the grid loaded it. */
+const LOADED = '2026-11-01T10:00:00.000Z'
+const STALE_PLAN =
+  'Someone else saved this lesson plan since the grid was opened. Reload it and make your changes again.'
 
 function show(props: Partial<React.ComponentProps<typeof LessonPlanTaskGrid>> = {}) {
   const container = document.body.appendChild(document.createElement('div'))
@@ -130,6 +134,7 @@ function show(props: Partial<React.ComponentProps<typeof LessonPlanTaskGrid>> = 
           { config },
           React.createElement(LessonPlanTaskGrid, {
             planId: 'plan-1',
+            updatedAt: LOADED,
             rows: saved,
             picker,
             mayEdit: true,
@@ -283,6 +288,7 @@ describe('a lesson plan’s grid', () => {
 
     expect(sent).toEqual([
       {
+        updatedAt: LOADED,
         rows: [
           {
             key: 'row-2',
@@ -335,6 +341,21 @@ describe('a lesson plan’s grid', () => {
     )
     // Still pending, so leaving still asks.
     expect(saveLabel()).toBe('Save 1 change')
+    expect(asksBeforeUnload()).toBe(true)
+  })
+
+  it('shows a stale Save’s refusal and keeps every pending change on screen', async () => {
+    answer = () => Response.json({ errors: [{ message: STALE_PLAN }] }, { status: 409 })
+    show()
+
+    click('Required on 2')
+    type(input('Teacher notes on 2'), 'Ask about hold short')
+    await pressAndWait('Save 2 changes')
+
+    expect(document.querySelector('[role="alert"]')?.textContent).toBe(STALE_PLAN)
+    expect(rowsShown()).toEqual(['1 2 Ground K S', '2 1.1.1 Numbers S'])
+    expect(input('Teacher notes on 2').value).toBe('Ask about hold short')
+    expect(saveLabel()).toBe('Save 2 changes')
     expect(asksBeforeUnload()).toBe(true)
   })
 

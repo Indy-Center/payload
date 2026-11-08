@@ -33,6 +33,7 @@ import { migrations } from './migrations'
 import { storagePlugins } from './storage'
 import { branding } from './branding'
 import { leaveGuard } from './leave-guard'
+import { staleSaves } from './stale-save'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -99,5 +100,5 @@ export default buildConfig({
     prodMigrations: migrations,
   }),
   sharp,
-  plugins: [...storagePlugins, branding, leaveGuard],
+  plugins: [...storagePlugins, branding, leaveGuard, staleSaves],
 })

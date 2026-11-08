@@ -17,6 +17,8 @@ export type GridTask = {
   retired: boolean
   /** The orderable collection's fractional key (`_order`): siblings sort by it. */
   order: string
+  /** As loaded: a change to the task sends it, and is refused if the task was saved since. */
+  updatedAt: string
 }
 
 /**
@@ -27,6 +29,8 @@ export type TaskGridBatch = {
   /** Saved tasks' new name, description or statements, or their retiring or un-retiring. */
   changes?: {
     id: string
+    /** The task's `updatedAt` as the grid loaded it. */
+    updatedAt?: string
     name?: string
     description?: string
     knowledgeStatement?: string

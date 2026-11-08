@@ -1,6 +1,6 @@
-import { sql } from '@payloadcms/db-postgres'
-import { APIError, ValidationError, type PayloadRequest } from 'payload'
+import { ValidationError, type PayloadRequest } from 'payload'
 import type { CourseVersion } from '@/payload-types'
+import { refuseStaleSave } from '@/stale-save'
 import { idOf } from './ids'
 import { isMoveDirection, type MoveDirection } from './move-direction'
 import { MODULE_NEEDS_A_TITLE, STALE_OUTLINE } from './outline-messages'
@@ -25,27 +25,20 @@ export type ModuleWording = { title: string; description: string | null }
 
 /**
  * Refuses the change unless the edition is still as the screen saw it, its `updatedAt` unchanged,
- * and locks the edition's row for the rest of the request's transaction, so no other save lands
- * between this check and the change. Of two changes sent together from one `updatedAt`, the second
- * waits for the first, then finds the edition changed and is refused. Must run in a transaction.
+ * through the CMS's one stale-save check (`refuseStaleSave`), with the outline's own message. A
+ * change that sends no `updatedAt` is refused too. Must run in a transaction.
  */
 export async function refuseStaleOutline(
   req: PayloadRequest,
   editionId: string,
   updatedAt: unknown,
 ): Promise<void> {
-  const seen = typeof updatedAt === 'string' ? new Date(updatedAt) : null
-  if (!seen || Number.isNaN(seen.getTime())) throw new APIError(STALE_OUTLINE, 409)
-  const transaction = req.transactionID ? await req.transactionID : null
-  if (!transaction) throw new Error('The stale-outline check needs a transaction.')
-  const adapter = req.payload.db as unknown as {
-    sessions: Record<string, { db: { execute: (query: unknown) => Promise<{ rowCount: number }> } }>
-  }
-  // A no-op update: it takes the row's lock, and touches it only if it is still the one seen.
-  const { rowCount } = await adapter.sessions[transaction].db.execute(
-    sql`UPDATE "course_versions" SET "updated_at" = "updated_at" WHERE "id" = ${editionId} AND "updated_at" = ${seen.toISOString()}::timestamptz`,
+  await refuseStaleSave(
+    req,
+    { collection: 'course-versions', id: editionId },
+    updatedAt,
+    STALE_OUTLINE,
   )
-  if (rowCount !== 1) throw new APIError(STALE_OUTLINE, 409)
 }
 
 /** The edition as the signed-in person may read it. */

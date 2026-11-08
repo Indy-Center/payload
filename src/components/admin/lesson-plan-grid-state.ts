@@ -124,9 +124,10 @@ export function pendingCount(state: GridState): number {
   }, moved)
 }
 
-/** The batch Save sends: every row kept, in its order. */
-export function gridBatch(state: GridState): LessonPlanGridBatch {
+/** The batch Save sends: every row kept, in its order, from the lesson plan as of `updatedAt`. */
+export function gridBatch(state: GridState, updatedAt: string): LessonPlanGridBatch {
   return {
+    updatedAt,
     rows: state.rows
       .filter((row) => !row.removed)
       .map((row) => ({

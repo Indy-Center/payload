@@ -1,6 +1,12 @@
 import { docAccessOperation, ValidationError, type PayloadRequest } from 'payload'
 import { idOf } from './ids'
-import type { GridPlanTask, LessonPlanGridBatch, PickerTask } from './lesson-plan-grid'
+import { refuseStaleSave } from '@/stale-save'
+import {
+  STALE_LESSON_PLAN,
+  type GridPlanTask,
+  type LessonPlanGridBatch,
+  type PickerTask,
+} from './lesson-plan-grid'
 import { gradableStatements, ROWS_AS_SENT } from './lesson-plan-tasks'
 import { mayChangeLessonPlanStructure } from './structure'
 import { TaskGridRefused } from './task-grid-batch'
@@ -14,6 +20,8 @@ import { loadTaskTree } from './task-tree'
  */
 
 export type LessonPlanGrid = {
+  /** The lesson plan's `updatedAt` as read: Save sends it, and is refused if it has changed. */
+  updatedAt: string
   rows: GridPlanTask[]
   /** The live tasks, in tree order, for "Add tasks". */
   picker: PickerTask[]
@@ -75,6 +83,7 @@ export async function loadLessonPlanGrid(req: PayloadRequest, id: string): Promi
     req,
   })
   return {
+    updatedAt: plan.updatedAt,
     rows,
     picker,
     mayEdit: Boolean(permissions.update),
@@ -90,12 +99,32 @@ const ROW_PATH = /^tasks\.(\d+)\./
  * parent task added here gets no rows for the tasks beneath it, which the picker already offered.
  * A refusal names each refused row by its key; one about the whole list (a course author's
  * structural change in a published edition) names none.
+ *
+ * A batch sent with the `updatedAt` the grid loaded is refused whole, before any other rule, if
+ * the lesson plan has been saved since (0068); one that lands answers the new `updatedAt`, which
+ * the grid sends with its next Save. Must run in a transaction.
  */
 export async function saveLessonPlanGrid(
   req: PayloadRequest,
   id: string,
   batch: LessonPlanGridBatch,
-): Promise<{ rows: number }> {
+): Promise<{ rows: number; updatedAt: string }> {
+  if (batch?.updatedAt !== undefined) {
+    // Read first as the person, so a lesson plan they can't see is refused as such, not as stale.
+    await req.payload.findByID({
+      collection: 'lesson-plans',
+      id,
+      depth: 0,
+      req,
+      overrideAccess: false,
+    })
+    await refuseStaleSave(
+      req,
+      { collection: 'lesson-plans', id },
+      batch.updatedAt,
+      STALE_LESSON_PLAN,
+    )
+  }
   const sent = Array.isArray(batch?.rows) ? batch.rows : []
   const tasks = sent.map((row) => ({
     ...(row.id ? { id: row.id } : {}),
@@ -105,8 +134,9 @@ export async function saveLessonPlanGrid(
     gradesSkill: row.gradesSkill === true,
     teacherNotes: row.teacherNotes ?? '',
   }))
+  let saved: { updatedAt: string }
   try {
-    await req.payload.update({
+    saved = await req.payload.update({
       collection: 'lesson-plans',
       id,
       data: { tasks },
@@ -128,5 +158,5 @@ export async function saveLessonPlanGrid(
     // The Local API sets `context` on the shared request, so the flag would outlive this save.
     delete req.context[ROWS_AS_SENT]
   }
-  return { rows: tasks.length }
+  return { rows: tasks.length, updatedAt: saved.updatedAt }
 }

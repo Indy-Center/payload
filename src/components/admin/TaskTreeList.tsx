@@ -112,6 +112,8 @@ const signature = (tasks: GridTask[]) =>
         task.description,
         task.knowledgeStatement,
         task.skillStatement,
+        // Saved since, though nothing shown changed: the grid's next Save starts from it.
+        task.updatedAt,
       ].join('\u0000'),
     )
     .join('\u0001')

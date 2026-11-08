@@ -204,6 +204,58 @@ describe('saving the Tasks grid', () => {
     expect(await tree()).toEqual(before)
   })
 
+  describe('from the copy of each task it opened', () => {
+    const STALE =
+      'The task list changed since the grid was opened. Reload it and make the changes again.'
+
+    it('refuses a change to a task saved since, on its row, and writes nothing', async () => {
+      const t = await seedTree()
+      // Someone else renamed Radio after the grid was opened.
+      await payload.update({ collection: 'tasks', id: t.radio.id, data: { name: 'Radio calls' } })
+      const before = await tree()
+
+      const { status, body } = await save({
+        changes: [
+          { id: t.radio.id, updatedAt: t.radio.updatedAt, name: 'Radio work' },
+          { id: t.ground.id, updatedAt: t.ground.updatedAt, name: 'Ground work' },
+        ],
+        adds: [{ key: 'new:1', parent: t.taxi.id, name: 'Taxi to hold' }],
+      })
+
+      expect(status).toBe(400)
+      expect(body.errors).toEqual([{ row: t.radio.id, message: STALE }])
+      expect(await tree()).toEqual(before)
+    })
+
+    it('saves a change to a task no one has saved since', async () => {
+      const t = await seedTree()
+      await payload.update({ collection: 'tasks', id: t.radio.id, data: { name: 'Radio calls' } })
+
+      const { status } = await save({
+        changes: [{ id: t.ground.id, updatedAt: t.ground.updatedAt, name: 'Ground work' }],
+      })
+
+      expect(status).toBe(200)
+      expect((await tree()).slice(0, 3)).toEqual([
+        '1 Radio calls (Talking on frequency)',
+        '  1.1 Readbacks',
+        '2 Ground work',
+      ])
+    })
+
+    it('refuses a stale row before any other rule on it', async () => {
+      const t = await seedTree()
+      await payload.update({ collection: 'tasks', id: t.radio.id, data: { name: 'Radio calls' } })
+
+      // An empty name would be refused too.
+      const { body } = await save({
+        changes: [{ id: t.radio.id, updatedAt: t.radio.updatedAt, name: '' }],
+      })
+
+      expect(body.errors).toEqual([{ row: t.radio.id, message: STALE }])
+    })
+  })
+
   it('refuses a course author, who does not keep the task list (0022)', async () => {
     const t = await seedTree()
     const before = await tree()

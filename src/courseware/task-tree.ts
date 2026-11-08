@@ -11,6 +11,8 @@ export type TreeTask = {
   retired: boolean
   /** The orderable collection's fractional key: siblings sort by it. */
   order: string
+  /** When the task was last saved. */
+  updatedAt: string
   /** Competencies mapped on this task itself, not inherited. */
   competencyIds: string[]
   citations: { sourceId: string; place: string; title: string | null }[]
@@ -102,6 +104,7 @@ export async function loadTaskTree(
       parent: true,
       retired: true,
       _order: true,
+      updatedAt: true,
       mappings: { competency: true },
       citations: true,
     },
@@ -117,6 +120,7 @@ export async function loadTaskTree(
       parentId: idOf(task.parent),
       retired: task.retired ?? false,
       order: task._order ?? '',
+      updatedAt: task.updatedAt,
       competencyIds: (task.mappings ?? []).map((row) => idOf(row.competency)!),
       citations: (task.citations ?? []).map((row) => ({
         sourceId: idOf(row.source)!,
