@@ -3,7 +3,8 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { loadEditions, loadOutline } from '@/components/admin/courses/editions'
 import { mayChangeOutline } from '@/courseware/outline'
 import type { CourseVersion, LessonPlan, User } from '@/payload-types'
-import { callEndpoint, resetDatabase, testPayload } from './helpers'
+import { idOf } from '@/courseware/ids'
+import { callEndpoint, resetDatabase, scenarioPositions, testPayload } from './helpers'
 
 /**
  * Lesson plans edited from their module on the course page (ticket 21, decisions 0023 and 0055):
@@ -106,20 +107,26 @@ async function outline(versionId: string) {
 
 const asUser = (user: User) => ({ user, overrideAccess: false, depth: 0 }) as const
 
-function place(planId: string, module: string | null, user: User) {
+/** The plan's edition's `updatedAt` now, as a freshly loaded Content tab sends it. */
+async function loadedAt(planId: string): Promise<string> {
+  const plan = await payload.findByID({ collection: 'lesson-plans', id: planId, depth: 1 })
+  return (plan.courseVersion as CourseVersion).updatedAt
+}
+
+async function place(planId: string, module: string | null, user: User) {
   return callEndpoint(payload, `/courseware/lesson-plans/${planId}/module`, {
     method: 'post',
     token: null,
-    body: { module },
+    body: { module, updatedAt: await loadedAt(planId) },
     user,
   })
 }
 
-function move(planId: string, direction: string, user: User) {
+async function move(planId: string, direction: string, user: User) {
   return callEndpoint(payload, `/courseware/lesson-plans/${planId}/move`, {
     method: 'post',
     token: null,
-    body: { direction },
+    body: { direction, updatedAt: await loadedAt(planId) },
     user,
   })
 }
@@ -417,18 +424,67 @@ describe('who may change an edition’s outline, as the course page asks', () =>
 
 describe('the outline the Content tab lists', () => {
   it('lists each module’s plans in order with minutes and tasks, and the plans in no module', async () => {
-    const { version, one } = await edition()
-    await payload.update({ collection: 'lesson-plans', id: one.id, data: { time: 90 } })
+    const { course, version, one, two } = await edition()
+    const offered = async (name: string, retired: boolean) =>
+      (
+        await payload.create({
+          collection: 'scenarios',
+          depth: 0,
+          data: {
+            course: course.id,
+            name,
+            airport: 'KXYZ',
+            ...(await scenarioPositions(payload)),
+            retired,
+          },
+        })
+      ).id
+    const rows = one.tasks ?? []
+    await payload.update({
+      collection: 'lesson-plans',
+      id: one.id,
+      data: {
+        time: 90,
+        tasks: [
+          ...rows,
+          { task: idOf(rows[0].task)!, required: false },
+          { task: idOf(rows[0].task)! },
+        ],
+        resources: [
+          { title: 'Chart', url: 'https://example.com/chart' },
+          { title: 'Key', url: 'https://example.com/key', teacherOnly: true },
+        ],
+        scenarios: [await offered('Push', false), await offered('Old push', true)],
+      },
+    })
+    await payload.update({ collection: 'lesson-plans', id: two.id, data: { tasks: [] } })
     const req = await createLocalReq({ user: { ...author, collection: 'users' } }, payload)
 
     const outlined = await loadOutline(req, version.id)
 
+    expect(outlined.updatedAt).toBe(
+      (await payload.findByID({ collection: 'course-versions', id: version.id })).updatedAt,
+    )
     expect(outlined.modules.map((module) => [module.title, module.lessonPlans])).toEqual([
       [
         'Theory',
         [
-          { id: one.id, code: 'X-TWR-1', title: 'Plan X-TWR-1', minutes: 90, tasks: 1 },
-          expect.objectContaining({ code: 'X-TWR-2', minutes: null }),
+          {
+            id: one.id,
+            code: 'X-TWR-1',
+            title: 'Plan X-TWR-1',
+            minutes: 90,
+            tasks: { all: 3, required: 2 },
+            scenarios: ['Push', 'Old push'],
+            resources: 2,
+          },
+          expect.objectContaining({
+            code: 'X-TWR-2',
+            minutes: null,
+            tasks: { all: 0, required: 0 },
+            scenarios: [],
+            resources: 0,
+          }),
         ],
       ],
       ['Sim', [expect.objectContaining({ code: 'X-TWR-3' })]],

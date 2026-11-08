@@ -1,5 +1,5 @@
-import { ValidationError, type PayloadRequest } from 'payload'
-import type { LessonPlan, User } from '@/payload-types'
+import { Forbidden, ValidationError, type PayloadRequest } from 'payload'
+import type { CourseVersion, LessonPlan, User } from '@/payload-types'
 import { isStaff } from './access'
 import { idOf } from './ids'
 
@@ -8,8 +8,9 @@ import { idOf } from './ids'
  * 0065). A course author keeps editing their course's wording and teacher notes there, including
  * each lesson plan task's teacher notes; its structure is the staff's: which tasks a lesson plan
  * holds and in what order, whether each is required and what it grades. In a draft a course
- * author changes anything, as before. The edition's own record is drafts-only for a course author
- * already (`courseVersionAccess`). A scenario holds no structure: everything on it is wording.
+ * author changes anything, as before. On the edition's own record a published edition lets a
+ * course author change its modules' titles and descriptions only (`refuseAuthorsEditionStructure`).
+ * A scenario holds no structure: everything on it is wording.
  *
  * A save made without a user, such as a script on the Local API, is not limited.
  */
@@ -54,6 +55,43 @@ async function isPublished(req: PayloadRequest, versionId: string | null): Promi
   })
   return version.status === 'published'
 }
+
+/**
+ * An edition as far as a course author may not change it once it is published: its own fields,
+ * and its outline without its wording (each module by id, with its lesson plans in order). An
+ * empty text and none are the same, as the admin's form sends one for the other.
+ */
+const editionStructure = (edition: Partial<CourseVersion>) =>
+  JSON.stringify([
+    edition.description || null,
+    edition.time ?? null,
+    edition.completionStandard || null,
+    idOf(edition.gradingScale),
+    edition.defaultMinimum ?? null,
+    (edition.modules ?? []).map((module) => [module.id ?? null, ids(module.lessonPlans)]),
+  ])
+
+/**
+ * In a published edition a course author may reword its modules (title and description, 0055) and
+ * change nothing else: the edition's own fields, adding, deleting or reordering modules, or moving
+ * lesson plans among them, are refused with the edition's access message, as they were when the
+ * whole edition was closed to them. Its status, number and course have rules of their own.
+ */
+export function refuseAuthorsEditionStructure(
+  req: PayloadRequest,
+  data: Partial<CourseVersion>,
+  before: CourseVersion | null,
+): void {
+  if (mayChangeStructure(req) || before?.status !== 'published') return
+  if (editionStructure(data) !== editionStructure(before)) throw new Forbidden(req.t)
+}
+
+/**
+ * Whether the signed-in person may change a published edition's fields other than its modules'
+ * wording: the Training Admin and leads. In a draft, whoever may save the edition.
+ */
+export const mayChangePublishedEdition = (req: PayloadRequest, edition: { status?: unknown }) =>
+  edition.status !== 'published' || mayChangeStructure(req)
 
 /** Checks both where the plan is and where the incoming data puts it. */
 export async function refuseAuthorsLessonPlanStructure(

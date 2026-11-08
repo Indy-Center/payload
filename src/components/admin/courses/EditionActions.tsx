@@ -88,7 +88,7 @@ export function EditionActions({
 type Edition = NonNullable<Props['edition']>
 
 /** A modal laid out as Payload's own confirmation modal, with the buttons the caller gives. */
-function AskFirst({
+export function AskFirst({
   slug,
   heading,
   children,
