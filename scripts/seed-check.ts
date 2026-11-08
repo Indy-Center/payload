@@ -226,19 +226,25 @@ async function seedTasks(payload: Payload, competencies: MadeIn, sources: MadeIn
   const into: MadeIn = {}
   // Two tasks carry mappings and citations (a place and a title).
   const extras: Record<string, object> = {
-    // Knowledge and skill statements: one task with both, one with only a skill, the rest none.
+    // Knowledge and skill statements: R1a1 and R3 have both, R2a and R2b only a skill, R1b only
+    // knowledge, the rest (parents, and the retired one) none. A lesson plan task grades only
+    // statements its task has, so every task a lesson plan uses has one.
     R1a1: {
       knowledgeStatement: 'The symbols and legends on the airport diagram, and what each shows.',
       skillStatement: 'Find a taxi route on the diagram and describe it in standard phraseology.',
     },
     R2a: { skillStatement: 'Issue a complete IFR clearance without prompting.' },
+    R2b: { skillStatement: 'Get a release and hold the departure until it comes.' },
     R1b: {
+      knowledgeStatement: 'How runways and taxiways are named and numbered.',
       mappings: [{ competency: competencies['USA 1.1'].id }],
       citations: [
         { source: sources.handbook.id, place: '3-7-2.a', title: 'Runway and taxiway markings' },
       ],
     },
     R3: {
+      knowledgeStatement: 'When a handoff is due and what the receiving controller needs.',
+      skillStatement: 'Hand off an aircraft and transfer communications in good time.',
       mappings: [
         { competency: competencies['USA 1.2'].id },
         { competency: competencies['GCAP A.1'].id },
@@ -327,7 +333,7 @@ async function seedCourses({
     estimatedWeeks: { min: 4, max: 8 },
   })
 
-  // Scenarios first: a lesson plan offers them. Exactly one practical task is required.
+  // Scenarios first: a lesson plan offers them. They hold no tasks.
   const scenarioOne = await make(payload, out.scenarios, 'scenarios', 'ground-push', {
     course,
     name: 'Example ground push',
@@ -336,10 +342,6 @@ async function seedCourses({
     teacherPosition: positions.SDF_D_APP.id,
     difficulty: 'easy',
     mode: 'sim',
-    practicalTasks: [
-      { task: tasks.R3.id, teacherNotes: 'Pose a handoff to the tower.', required: true },
-      { task: tasks.R1b.id, teacherNotes: 'Ask for a taxi route.', required: false },
-    ],
   })
   const scenarioTwo = await make(payload, out.scenarios, 'scenarios', 'departure-release', {
     course,
@@ -349,7 +351,6 @@ async function seedCourses({
     teacherPosition: positions.PKB_TWR.id,
     difficulty: 'medium',
     mode: 'live',
-    practicalTasks: [{ task: tasks.R2b.id, teacherNotes: 'Hold the push.', required: false }],
   })
 
   // Numbered on save: the first created is edition 1.
@@ -363,7 +364,9 @@ async function seedCourses({
       defaultMinimum: DEFAULT_MINIMUM,
     })
 
-  // Edition 1: two modules, three lesson plans, published.
+  // Edition 1: two modules, three lesson plans, published. Their tasks start graded on each
+  // statement their task has unless a row says otherwise; X-GC-1 and X-GC-3 each have an optional
+  // row, and X-GC-3 one that grades only one of its task's two statements.
   const first = await edition('X-GC edition 1')
   const plan = (key: string, version: string, data: object) =>
     make(payload, out['lesson-plans'], 'lesson-plans', key, {
@@ -374,21 +377,29 @@ async function seedCourses({
   const lessonOne = await plan('X-GC-1', first, {
     code: 'X-GC-1',
     title: 'Finding your way around',
-    theoryItems: [
+    tasks: [
       { task: tasks.R1a1.id, teacherNotes: 'Ask where the hold-short lines are.' },
-      { task: tasks.R1b.id },
+      { task: tasks.R1b.id, required: false },
     ],
   })
   const lessonTwo = await plan('X-GC-2', first, {
     code: 'X-GC-2',
     title: 'Issuing clearances',
     minimum: 3,
-    theoryItems: [{ task: tasks.R2b.id }],
+    tasks: [{ task: tasks.R2b.id, teacherNotes: 'Hold the push.' }],
   })
   const lessonThree = await plan('X-GC-3', first, {
     code: 'X-GC-3',
     title: 'Putting it together',
-    theoryItems: [{ task: tasks.R3.id }],
+    tasks: [
+      {
+        task: tasks.R3.id,
+        gradesKnowledge: false,
+        gradesSkill: true,
+        teacherNotes: 'Pose a handoff to the tower.',
+      },
+      { task: tasks.R1b.id, required: false, teacherNotes: 'Ask for a taxi route.' },
+    ],
     scenarios: [scenarioOne, scenarioTwo],
   })
   await payload.update({
@@ -410,7 +421,7 @@ async function seedCourses({
   const draftPlan = await plan('X-GC-1 (edition 2)', second, {
     code: 'X-GC-1',
     title: 'Finding your way around, revised',
-    theoryItems: [{ task: tasks.R1b.id }, { task: tasks.R3.id }],
+    tasks: [{ task: tasks.R1b.id }, { task: tasks.R3.id }],
     scenarios: [scenarioOne],
   })
   await payload.update({

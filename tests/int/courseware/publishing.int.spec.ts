@@ -19,6 +19,14 @@ const POINTS = [
   { label: 'Exemplary', description: 'Beyond it' },
 ]
 
+/** A made-up task with both statements, so a lesson plan task can grade either. */
+function taskNamed(name: string) {
+  return payload.create({
+    collection: 'tasks',
+    data: { name, knowledgeStatement: `Know ${name}`, skillStatement: `Do ${name}` },
+  })
+}
+
 /** A made-up course with a draft version that passes the publishing check. */
 async function readyVersion() {
   const scale = await payload.create({
@@ -39,7 +47,7 @@ async function readyVersion() {
       defaultMinimum: 2,
     },
   })
-  const radio = await payload.create({ collection: 'tasks', data: { name: 'Radio' } })
+  const radio = await taskNamed('Radio')
   const plan = await payload.create({
     collection: 'lesson-plans',
     depth: 0,
@@ -47,7 +55,7 @@ async function readyVersion() {
       courseVersion: version.id,
       code: 'X-TWR-1',
       title: 'Radio',
-      theoryItems: [{ task: radio.id }],
+      tasks: [{ task: radio.id }],
     },
   })
   await payload.update({
@@ -323,12 +331,34 @@ describe('publishing', () => {
         'The version names no grading scale.',
         'A lesson plan in Tower has no code.',
         'A lesson plan in Tower has no title.',
-        'A lesson plan in Tower has no theory item or scenario.',
+        'A lesson plan in Tower has no tasks.',
         'X-TWR-1 uses the retired task Radio.',
       ]),
     )
+    expect(messages).not.toContain('A lesson plan in Tower has no theory item or scenario.')
     const after = await payload.findByID({ collection: 'course-versions', id: version.id })
     expect(after.status).toBe('draft')
+  })
+
+  it('refuses a lesson plan with no tasks, even one that offers a scenario', async () => {
+    const { course, version, plan } = await readyVersion()
+    const scenario = await payload.create({
+      collection: 'scenarios',
+      data: {
+        course: course.id,
+        name: 'Quiet',
+        airport: 'KXYZ',
+        ...(await scenarioPositions(payload)),
+        mode: 'sim',
+      },
+    })
+    await payload.update({
+      collection: 'lesson-plans',
+      id: plan.id,
+      data: { code: 'S-GC-3', tasks: [], scenarios: [scenario.id] },
+    })
+
+    expect(await refusal(publish(version.id))).toEqual(['Lesson plan S-GC-3 has no tasks.'])
   })
 
   it('does not block on unmapped tasks', async () => {
@@ -355,7 +385,7 @@ describe('publishing', () => {
         courseVersion: next.id,
         code: 'X-TWR-1',
         title: 'Radio',
-        theoryItems: [{ task: radio.id }],
+        tasks: [{ task: radio.id }],
       },
     })
     await payload.update({
@@ -379,9 +409,7 @@ describe('a published edition', () => {
   const NEW_PLAN =
     'This edition is published, so adding a lesson plan to it is a structural change, which needs the Training Admin or a lead.'
   const PLAN_STRUCTURE =
-    'This lesson plan is in a published edition, so changing its theory items, their order, its minimum, the scenarios it offers or its edition is a structural change, which needs the Training Admin or a lead. Its wording and teacher notes can still change.'
-  const SCENARIO_STRUCTURE =
-    'A published edition offers this scenario, so changing its practical tasks or their required flags is a structural change, which needs the Training Admin or a lead. Its wording and teacher notes can still change.'
+    'This lesson plan is in a published edition, so changing its tasks, their order, whether each is required or what it grades, its minimum, the scenarios it offers or its edition is a structural change, which needs the Training Admin or a lead. Its wording and teacher notes can still change.'
 
   let admin: User
   let lead: User
@@ -401,15 +429,15 @@ describe('a published edition', () => {
   const as = (user: User) => ({ user, overrideAccess: false, depth: 0 })
 
   /**
-   * A published edition of a course the author writes, whose lesson plan has two theory items and
-   * offers a scenario with two practical tasks, beside a draft of the next edition.
+   * A published edition of a course the author writes, whose lesson plan has two tasks (the second
+   * optional and grading skill only) and offers a scenario, beside a draft of the next edition.
    */
   async function publishedEdition() {
     const ready = await readyVersion()
     const { course, version, radio, scale } = ready
     await payload.update({ collection: 'courses', id: course.id, data: { authors: [author.cid!] } })
-    const readbacks = await payload.create({ collection: 'tasks', data: { name: 'Readbacks' } })
-    const other = await payload.create({ collection: 'tasks', data: { name: 'Other' } })
+    const readbacks = await taskNamed('Readbacks')
+    const other = await taskNamed('Other')
     const scenario = await payload.create({
       collection: 'scenarios',
       depth: 0,
@@ -419,7 +447,6 @@ describe('a published edition', () => {
         airport: 'KXYZ',
         ...(await scenarioPositions(payload)),
         mode: 'sim',
-        practicalTasks: [{ task: radio.id }, { task: readbacks.id, required: false }],
       },
     })
     const plan = await payload.update({
@@ -427,7 +454,10 @@ describe('a published edition', () => {
       id: ready.plan.id,
       depth: 0,
       data: {
-        theoryItems: [...(ready.plan.theoryItems ?? []), { task: readbacks.id }],
+        tasks: [
+          ...(ready.plan.tasks ?? []),
+          { task: readbacks.id, required: false, gradesKnowledge: false, gradesSkill: true },
+        ],
         scenarios: [scenario.id],
       },
     })
@@ -446,7 +476,7 @@ describe('a published edition', () => {
     const draftPlan = await payload.create({
       collection: 'lesson-plans',
       depth: 0,
-      data: { courseVersion: draft.id, code: 'X-TWR-1', theoryItems: [{ task: radio.id }] },
+      data: { courseVersion: draft.id, code: 'X-TWR-1', tasks: [{ task: radio.id }] },
     })
     const published = await payload.findByID({
       collection: 'course-versions',
@@ -492,7 +522,7 @@ describe('a published edition', () => {
   })
 
   it('takes structural changes from the Training Admin and leads', async () => {
-    const { version, plan, scenario, radio, readbacks, other } = await publishedEdition()
+    const { version, plan, radio, other } = await publishedEdition()
 
     for (const [index, user] of [admin, lead].entries()) {
       const added = await payload.create({
@@ -501,7 +531,7 @@ describe('a published edition', () => {
           courseVersion: version.id,
           code: `X-TWR-${index + 2}`,
           title: 'Added',
-          theoryItems: [{ task: other.id }],
+          tasks: [{ task: other.id }],
         },
         ...as(user),
       })
@@ -521,44 +551,39 @@ describe('a published edition', () => {
       expect(reshaped.defaultMinimum).toBe(3)
       expect(reshaped.modules?.[0].lessonPlans).toEqual([added.id])
 
+      const [first] = plan.tasks ?? []
       const replanned = await payload.update({
         collection: 'lesson-plans',
         id: plan.id,
         data: {
           minimum: 3,
-          theoryItems: [{ task: other.id }, ...[...(plan.theoryItems ?? [])].reverse().slice(1)],
+          tasks: [
+            { task: other.id },
+            { ...first, required: false, gradesKnowledge: false, gradesSkill: true },
+          ],
           scenarios: [],
         },
         ...as(user),
       })
       expect(replanned.minimum).toBe(3)
-      expect(replanned.theoryItems?.map((item) => item.task)).toEqual([other.id, radio.id])
-      expect(replanned.scenarios).toEqual([])
-
-      const retasked = await payload.update({
-        collection: 'scenarios',
-        id: scenario.id,
-        data: {
-          practicalTasks: [
-            { task: readbacks.id, required: true },
-            { task: other.id, required: false },
-          ],
-        },
-        ...as(user),
-      })
       expect(
-        retasked.practicalTasks?.map((row) => ({ task: row.task, required: row.required })),
+        replanned.tasks?.map(({ task, required, gradesKnowledge, gradesSkill }) => ({
+          task,
+          required,
+          gradesKnowledge,
+          gradesSkill,
+        })),
       ).toEqual([
-        { task: readbacks.id, required: true },
-        { task: other.id, required: false },
+        { task: other.id, required: true, gradesKnowledge: true, gradesSkill: true },
+        { task: radio.id, required: false, gradesKnowledge: false, gradesSkill: true },
       ])
+      expect(replanned.scenarios).toEqual([])
     }
   })
 
   it('refuses a course author’s structural change, saying it needs a lead', async () => {
-    const { version, plan, scenario, other, draft, draftPlan } = await publishedEdition()
-    const items = plan.theoryItems ?? []
-    const rows = scenario.practicalTasks ?? []
+    const { version, plan, other, draft, draftPlan } = await publishedEdition()
+    const rows = plan.tasks ?? []
 
     // The edition's own record is drafts-only for a course author (decision 0018).
     await expect(
@@ -571,9 +596,12 @@ describe('a published edition', () => {
     ).rejects.toThrow('You are not allowed to perform this action.')
 
     for (const data of [
-      { theoryItems: [...items, { task: other.id }] },
-      { theoryItems: items.slice(1) },
-      { theoryItems: [...items].reverse() },
+      { tasks: [...rows, { task: other.id }] },
+      { tasks: rows.slice(1) },
+      { tasks: [...rows].reverse() },
+      { tasks: rows.map((row) => ({ ...row, required: !row.required })) },
+      { tasks: rows.map((row) => ({ ...row, gradesKnowledge: !row.gradesKnowledge })) },
+      { tasks: rows.map((row, index) => (index ? row : { ...row, gradesSkill: false })) },
       { minimum: 3 },
       { scenarios: [] },
       { courseVersion: draft.id },
@@ -605,26 +633,8 @@ describe('a published edition', () => {
       ),
     ).toEqual([NEW_PLAN])
 
-    for (const practicalTasks of [
-      [...rows, { task: other.id }],
-      rows.slice(1),
-      [...rows].reverse(),
-      rows.map((row) => ({ ...row, required: !row.required })),
-    ]) {
-      expect(
-        await refusal(
-          payload.update({
-            collection: 'scenarios',
-            id: scenario.id,
-            data: { practicalTasks },
-            ...as(author),
-          }),
-        ),
-      ).toEqual([SCENARIO_STRUCTURE])
-    }
-
     const after = await payload.findByID({ collection: 'lesson-plans', id: plan.id, depth: 0 })
-    expect(after.theoryItems).toEqual(items)
+    expect(after.tasks).toEqual(rows)
     expect(after.minimum).toBe(plan.minimum)
   })
 
@@ -637,34 +647,24 @@ describe('a published edition', () => {
       data: {
         title: 'Radio, reworded',
         description: 'Fixed a typo',
-        theoryItems: (plan.theoryItems ?? []).map((item) => ({ ...item, teacherNotes: 'New' })),
+        tasks: (plan.tasks ?? []).map((row) => ({ ...row, teacherNotes: 'New' })),
       },
       ...as(author),
     })
     expect(reworded.title).toBe('Radio, reworded')
-    expect(reworded.theoryItems?.map((item) => item.teacherNotes)).toEqual(['New', 'New'])
+    expect(reworded.tasks?.map((row) => row.teacherNotes)).toEqual(['New', 'New'])
 
     const renoted = await payload.update({
       collection: 'scenarios',
       id: scenario.id,
-      data: {
-        airport: 'KXYW',
-        practicalTasks: (scenario.practicalTasks ?? []).map((row) => ({
-          ...row,
-          teacherNotes: 'Pose it early',
-        })),
-      },
+      data: { airport: 'KXYW' },
       ...as(author),
     })
     expect(renoted.airport).toBe('KXYW')
-    expect(renoted.practicalTasks?.map((row) => row.teacherNotes)).toEqual([
-      'Pose it early',
-      'Pose it early',
-    ])
   })
 
   it('leaves a course author free to change anything a draft holds', async () => {
-    const { course, draft, draftPlan, other, radio } = await publishedEdition()
+    const { course, draft, draftPlan, other } = await publishedEdition()
     const draftOnly = await payload.create({
       collection: 'scenarios',
       depth: 0,
@@ -674,22 +674,29 @@ describe('a published edition', () => {
         airport: 'KXYZ',
         ...(await scenarioPositions(payload)),
         mode: 'sim',
-        practicalTasks: [{ task: radio.id }],
       },
     })
 
     const added = await payload.create({
       collection: 'lesson-plans',
-      data: { courseVersion: draft.id, code: 'X-TWR-2', theoryItems: [{ task: other.id }] },
+      data: { courseVersion: draft.id, code: 'X-TWR-2', tasks: [{ task: other.id }] },
       ...as(author),
     })
     const replanned = await payload.update({
       collection: 'lesson-plans',
       id: draftPlan.id,
-      data: { minimum: 3, theoryItems: [{ task: other.id }], scenarios: [draftOnly.id] },
+      data: {
+        minimum: 3,
+        tasks: [{ task: other.id, required: false, gradesKnowledge: true, gradesSkill: false }],
+        scenarios: [draftOnly.id],
+      },
       ...as(author),
     })
-    expect(replanned).toMatchObject({ minimum: 3, scenarios: [draftOnly.id] })
+    expect(replanned).toMatchObject({
+      minimum: 3,
+      tasks: [{ task: other.id, required: false, gradesKnowledge: true, gradesSkill: false }],
+      scenarios: [draftOnly.id],
+    })
     const reshaped = await payload.update({
       collection: 'course-versions',
       id: draft.id,
@@ -697,12 +704,40 @@ describe('a published edition', () => {
       ...as(author),
     })
     expect(reshaped.modules?.[0].lessonPlans).toEqual([added.id, draftPlan.id])
-    const retasked = await payload.update({
-      collection: 'scenarios',
-      id: draftOnly.id,
-      data: { practicalTasks: [{ task: other.id, required: false }] },
-      ...as(author),
+  })
+
+  it('refuses, on a draft, a row grading a statement its task lacks or grading neither', async () => {
+    const { draftPlan } = await publishedEdition()
+    const knowing = await payload.create({
+      collection: 'tasks',
+      data: { name: 'Phraseology', knowledgeStatement: 'Know the words' },
     })
-    expect(retasked.practicalTasks).toMatchObject([{ task: other.id, required: false }])
+    const bare = await payload.create({ collection: 'tasks', data: { name: 'Bare' } })
+    // Numbered from the tree: Radio 1, Readbacks 2, Other 3, Phraseology 4, Bare 5.
+    const save = (row: object) =>
+      payload.update({
+        collection: 'lesson-plans',
+        id: draftPlan.id,
+        data: { tasks: [...(draftPlan.tasks ?? []), row] },
+        ...as(author),
+      })
+
+    expect(
+      await refusal(save({ task: knowing.id, gradesKnowledge: true, gradesSkill: true })),
+    ).toEqual(['Task 4 has no skill statement to grade.'])
+    expect(
+      await refusal(save({ task: bare.id, gradesKnowledge: true, gradesSkill: false })),
+    ).toEqual(['Task 5 has no knowledge statement to grade.'])
+    // Both rules broken: the first wins.
+    expect(
+      await refusal(save({ task: bare.id, gradesKnowledge: false, gradesSkill: true })),
+    ).toEqual(['Task 5 has no skill statement to grade.'])
+    expect(
+      await refusal(save({ task: knowing.id, gradesKnowledge: false, gradesSkill: false })),
+    ).toEqual(['Pick knowledge, skill or both to grade on task 4.'])
+    // A task with no statements can't start graded on any.
+    expect(await refusal(save({ task: bare.id }))).toEqual([
+      'Pick knowledge, skill or both to grade on task 5.',
+    ])
   })
 })

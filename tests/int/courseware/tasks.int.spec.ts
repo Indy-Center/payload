@@ -132,13 +132,16 @@ describe('the task tree', () => {
   })
 })
 
-describe('theory items', () => {
+/** A task with both statements, so a lesson plan task can grade it either way. */
+const STATEMENTS = { knowledgeStatement: 'Know it', skillStatement: 'Do it' }
+
+describe('lesson plan tasks', () => {
   it('expands a parent task into a row for each task beneath it, in that save', async () => {
     const version = await draftVersion()
-    const radio = await task('Radio')
-    const readbacks = await task('Readbacks', radio.id)
-    const numbersTask = await task('Numbers', readbacks.id)
-    const phraseology = await task('Phraseology', radio.id)
+    const radio = await task('Radio', undefined, STATEMENTS)
+    const readbacks = await task('Readbacks', radio.id, STATEMENTS)
+    const numbersTask = await task('Numbers', readbacks.id, STATEMENTS)
+    const phraseology = await task('Phraseology', radio.id, STATEMENTS)
     await task('Old habit', radio.id, { retired: true })
 
     const plan = await payload.create({
@@ -146,83 +149,119 @@ describe('theory items', () => {
       depth: 0,
       data: {
         courseVersion: version.id,
-        theoryItems: [{ task: radio.id, teacherNotes: 'Ask what a readback is for' }],
+        tasks: [{ task: radio.id, required: false, teacherNotes: 'Ask what a readback is for' }],
       },
     })
 
-    expect(plan.theoryItems?.map((item) => item.task)).toEqual([
+    expect(plan.tasks?.map((row) => row.task)).toEqual([
       radio.id,
       readbacks.id,
       numbersTask.id,
       phraseology.id,
     ])
-    expect(plan.theoryItems?.[0].teacherNotes).toBe('Ask what a readback is for')
+    expect(plan.tasks?.[0]).toMatchObject({
+      required: false,
+      teacherNotes: 'Ask what a readback is for',
+    })
+    // The rows it added are required, as any new row is.
+    expect(plan.tasks?.slice(1).map((row) => row.required)).toEqual([true, true, true])
   })
 
   it('keeps rows the author removed or reordered after expanding', async () => {
     const version = await draftVersion()
-    const radio = await task('Radio')
-    await task('Readbacks', radio.id)
-    const phraseology = await task('Phraseology', radio.id)
+    const radio = await task('Radio', undefined, STATEMENTS)
+    await task('Readbacks', radio.id, STATEMENTS)
+    const phraseology = await task('Phraseology', radio.id, STATEMENTS)
     const plan = await payload.create({
       collection: 'lesson-plans',
       depth: 0,
-      data: { courseVersion: version.id, theoryItems: [{ task: radio.id }] },
+      data: { courseVersion: version.id, tasks: [{ task: radio.id }] },
     })
 
-    const rows = plan.theoryItems ?? []
+    const rows = plan.tasks ?? []
     const updated = await payload.update({
       collection: 'lesson-plans',
       id: plan.id,
       depth: 0,
-      data: { theoryItems: [rows[2], rows[0]] },
+      data: { tasks: [rows[2], rows[0]] },
     })
 
-    expect(updated.theoryItems?.map((item) => item.task)).toEqual([phraseology.id, radio.id])
+    expect(updated.tasks?.map((row) => row.task)).toEqual([phraseology.id, radio.id])
   })
 
   it('does not change a saved lesson plan when a task is added to the tree later', async () => {
     const version = await draftVersion()
-    const radio = await task('Radio')
-    await task('Readbacks', radio.id)
+    const radio = await task('Radio', undefined, STATEMENTS)
+    await task('Readbacks', radio.id, STATEMENTS)
     const plan = await payload.create({
       collection: 'lesson-plans',
-      data: { courseVersion: version.id, theoryItems: [{ task: radio.id }] },
+      data: { courseVersion: version.id, tasks: [{ task: radio.id }] },
     })
 
-    await task('Phraseology', radio.id)
+    await task('Phraseology', radio.id, STATEMENTS)
     const resaved = await payload.update({
       collection: 'lesson-plans',
       id: plan.id,
       data: { title: 'Radio work' },
     })
 
-    expect(resaved.theoryItems).toHaveLength(2)
+    expect(resaved.tasks).toHaveLength(2)
   })
 
-  it('refuses a retired task as a new theory item', async () => {
+  it('refuses a retired task as a new row', async () => {
     const version = await draftVersion()
-    const retired = await task('Old habit', undefined, { retired: true })
+    const retired = await task('Old habit', undefined, { ...STATEMENTS, retired: true })
 
     await expect(
       payload.create({
         collection: 'lesson-plans',
-        data: { courseVersion: version.id, theoryItems: [{ task: retired.id }] },
+        data: { courseVersion: version.id, tasks: [{ task: retired.id }] },
       }),
-    ).rejects.toThrow()
+    ).rejects.toThrow('tasks.0.task')
   })
 
-  it('serves theory items in order with their task numbers and teacher notes', async () => {
+  it('starts a new row graded on each statement its task has, and keeps what a row says', async () => {
     const version = await draftVersion()
-    const radio = await task('Radio')
-    const clearances = await task('Clearances')
+    const both = await task('Radio', undefined, STATEMENTS)
+    const knowing = await task('Phraseology', undefined, { knowledgeStatement: 'Know it' })
+    const doing = await task('Readbacks', undefined, { skillStatement: 'Do it' })
+
+    const plan = await payload.create({
+      collection: 'lesson-plans',
+      depth: 0,
+      data: {
+        courseVersion: version.id,
+        tasks: [
+          { task: both.id },
+          { task: knowing.id },
+          { task: doing.id },
+          { task: both.id, gradesKnowledge: false, gradesSkill: true },
+          // The box it leaves out starts from its task.
+          { task: both.id, gradesSkill: false },
+        ],
+      },
+    })
+
+    expect(plan.tasks?.map((row) => [row.gradesKnowledge, row.gradesSkill])).toEqual([
+      [true, true],
+      [true, false],
+      [false, true],
+      [false, true],
+      [true, false],
+    ])
+  })
+
+  it('serves its tasks in order with their task numbers, required, grades and teacher notes', async () => {
+    const version = await draftVersion()
+    const radio = await task('Radio', undefined, STATEMENTS)
+    const clearances = await task('Clearances', undefined, { skillStatement: 'Issue one' })
     const plan = await payload.create({
       collection: 'lesson-plans',
       data: {
         courseVersion: version.id,
-        theoryItems: [
+        tasks: [
           { task: clearances.id, teacherNotes: 'Have them read one back' },
-          { task: radio.id },
+          { task: radio.id, required: false, gradesSkill: false, gradesKnowledge: true },
         ],
       },
     })
@@ -234,15 +273,21 @@ describe('theory items', () => {
 
     const { body } = await callEndpoint(payload, '/courseware/courses/X-TWR/draft')
 
-    expect(body.modules[0].lessonPlans[0].theoryItems).toEqual([
+    const served = body.modules[0].lessonPlans[0]
+    expect(served).not.toHaveProperty('theoryItems')
+    expect(served.tasks).toEqual([
       {
         id: expect.any(String),
         task: { id: clearances.id, number: '2', name: 'Clearances' },
+        required: true,
+        grades: { knowledge: false, skill: true },
         teacherNotes: 'Have them read one back',
       },
       {
         id: expect.any(String),
         task: { id: radio.id, number: '1', name: 'Radio' },
+        required: false,
+        grades: { knowledge: true, skill: false },
         teacherNotes: '',
       },
     ])

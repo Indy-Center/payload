@@ -32,11 +32,7 @@ async function course(code: string, authors: string[] = []) {
   return { course: record, version }
 }
 
-async function task(name: string, parent?: string) {
-  return payload.create({ collection: 'tasks', data: { name, parent } })
-}
-
-function scenario(courseId: string, practicalTasks: { task: string; required?: boolean }[] = []) {
+function scenario(courseId: string) {
   return payload.create({
     collection: 'scenarios',
     depth: 0,
@@ -48,7 +44,6 @@ function scenario(courseId: string, practicalTasks: { task: string; required?: b
       teacherPosition: center.id,
       difficulty: 'hard',
       mode: 'sim',
-      practicalTasks,
     },
   })
 }
@@ -65,21 +60,15 @@ async function refusal(promise: Promise<unknown>): Promise<{ path: string; messa
 }
 
 describe('scenarios', () => {
-  it('expands a parent task into its children, required by default', async () => {
+  it('hold no tasks', async () => {
     const { course: owner } = await course('X-TWR')
-    const departures = await task('Departures')
-    const takeoff = await task('Takeoff clearance', departures.id)
-    const luaw = await task('Line up and wait', departures.id)
 
-    const created = await scenario(owner.id, [{ task: departures.id }])
+    const created = await scenario(owner.id)
 
+    expect(created).not.toHaveProperty('practicalTasks')
     expect(
-      created.practicalTasks?.map((row) => ({ task: row.task, required: row.required })),
-    ).toEqual([
-      { task: departures.id, required: true },
-      { task: takeoff.id, required: true },
-      { task: luaw.id, required: true },
-    ])
+      payload.collections.scenarios.config.flattenedFields.map((field) => field.name),
+    ).not.toContain('practicalTasks')
   })
 
   it('is retired, not deleted', async () => {
@@ -298,7 +287,6 @@ describe('scenarios offered by a lesson plan', () => {
 
   async function served(data: Partial<Scenario>) {
     const { course: owner, version } = await course('X-TWR')
-    const takeoff = await task('Takeoff clearance')
     const offered = await payload.create({
       collection: 'scenarios',
       data: {
@@ -308,9 +296,6 @@ describe('scenarios offered by a lesson plan', () => {
         studentPosition: tower.id,
         teacherPosition: center.id,
         mode: 'live',
-        practicalTasks: [
-          { task: takeoff.id, teacherNotes: 'Hold one for wake turbulence', required: false },
-        ],
         ...data,
       },
     })
@@ -325,11 +310,11 @@ describe('scenarios offered by a lesson plan', () => {
     })
 
     const { body } = await callEndpoint(payload, '/courseware/courses/X-TWR/draft')
-    return { offered, takeoff, scenarios: body.modules[0].lessonPlans[0].scenarios }
+    return { offered, scenarios: body.modules[0].lessonPlans[0].scenarios }
   }
 
-  it('are served with their positions, difficulty, practical tasks and teacher notes', async () => {
-    const { offered, takeoff, scenarios } = await served({ difficulty: 'hard' })
+  it('are served with their positions and difficulty, and no tasks', async () => {
+    const { offered, scenarios } = await served({ difficulty: 'hard' })
 
     expect(scenarios).toEqual([
       {
@@ -342,14 +327,6 @@ describe('scenarios offered by a lesson plan', () => {
         difficulty: 'hard',
         mode: 'live',
         retired: false,
-        practicalTasks: [
-          {
-            id: expect.any(String),
-            task: { id: takeoff.id, number: '1', name: 'Takeoff clearance' },
-            teacherNotes: 'Hold one for wake turbulence',
-            required: false,
-          },
-        ],
       },
     ])
   })

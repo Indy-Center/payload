@@ -584,9 +584,15 @@ export interface LessonPlan {
   /**
    * Adding a task that has tasks beneath it adds a row for each of them when you save.
    */
-  theoryItems?:
+  tasks?:
     | {
         task: string | Task;
+        /**
+         * A student must reach the minimum on it to advance.
+         */
+        required?: boolean | null;
+        gradesKnowledge?: boolean | null;
+        gradesSkill?: boolean | null;
         /**
          * Shown only to teachers: the prompt to ask.
          */
@@ -620,23 +626,6 @@ export interface Scenario {
   teacherPosition: string | Position;
   difficulty?: ('easy' | 'medium' | 'hard') | null;
   mode: 'sim' | 'live';
-  /**
-   * Adding a task that has tasks beneath it adds a row for each of them when you save.
-   */
-  practicalTasks?:
-    | {
-        task: string | Task;
-        /**
-         * Shown only to teachers: how to pose the challenge.
-         */
-        teacherNotes?: string | null;
-        /**
-         * The scenario cannot be completed without it.
-         */
-        required?: boolean | null;
-        id?: string | null;
-      }[]
-    | null;
   /**
    * Retired scenarios stay where they are offered but are not offered anew.
    */
@@ -1328,10 +1317,13 @@ export interface LessonPlansSelect<T extends boolean = true> {
   time?: T;
   isExam?: T;
   minimum?: T;
-  theoryItems?:
+  tasks?:
     | T
     | {
         task?: T;
+        required?: T;
+        gradesKnowledge?: T;
+        gradesSkill?: T;
         teacherNotes?: T;
         id?: T;
       };
@@ -1351,14 +1343,6 @@ export interface ScenariosSelect<T extends boolean = true> {
   teacherPosition?: T;
   difficulty?: T;
   mode?: T;
-  practicalTasks?:
-    | T
-    | {
-        task?: T;
-        teacherNotes?: T;
-        required?: T;
-        id?: T;
-      };
   retired?: T;
   updatedAt?: T;
   createdAt?: T;

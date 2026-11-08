@@ -238,7 +238,7 @@
     color: var(--theme-elevation-700);
   }
 
-  // A module's lesson plans: code, title, minutes, theory items, then ↑ ↓ and Remove.
+  // A module's lesson plans: code, title, minutes, tasks, then ↑ ↓ and Remove.
   &__plans {
     width: 100%;
     border-collapse: collapse;
@@ -361,7 +361,7 @@
   }
 }
 
-// On a phone, a module's lesson plans drop minutes and theory items, and a drawer opened from the
+// On a phone, a module's lesson plans drop minutes and tasks, and a drawer opened from the
 // course page fills the screen: Payload sizes it to leave a strip of the page beside it, by the
 // page's gutter, which is zeroed for the drawer and restored inside it.
 @media (max-width: breakpoints.$phone) {

@@ -1,9 +1,18 @@
 import type { PayloadRequest } from 'payload'
 import { idOf } from './ids'
+import { gradableStatements } from './lesson-plan-tasks'
 import { buildTaskTree, loadTaskTree, type TaskTree } from './task-tree'
 
-/** A task as a picker offers it: "2.2.1 Taxi to runway". */
-export type TaskOption = { id: string; number: string; label: string }
+/**
+ * A task as a picker offers it: "2.2.1 Taxi to runway", and which statements it has, which a
+ * lesson plan task's grade boxes start ticked for when it is picked.
+ */
+export type TaskOption = {
+  id: string
+  number: string
+  label: string
+  statements: { knowledge: boolean; skill: boolean }
+}
 
 export type TaskOptions = {
   /** The tasks a search matches, in tree order. */
@@ -21,15 +30,18 @@ export type TaskOptionsQuery = {
   exclude?: string
 }
 
-const labelOf = (tree: TaskTree, id: string): TaskOption => ({
-  id,
-  number: tree.number(id),
-  label: `${tree.number(id)} ${tree.get(id)?.name ?? ''}`,
-})
+const labelOf = (tree: TaskTree, id: string): TaskOption => {
+  const task = tree.get(id)
+  return {
+    id,
+    number: tree.number(id),
+    label: `${tree.number(id)} ${task?.name ?? ''}`,
+    statements: task ? gradableStatements(task) : { knowledge: false, skill: false },
+  }
+}
 
 /**
- * The options of every task picker: a lesson plan's theory items, a scenario's practical tasks and
- * a task's parent. A number is never stored (0025), so Payload's own picker, which searches and
+ * The options of every task picker: a lesson plan's tasks and a task's parent. A number is never stored (0025), so Payload's own picker, which searches and
  * labels by stored fields, cannot match or show it; this reads the tree and does both. Retired
  * tasks are left out unless already chosen, as the fields' `filterOptions` say.
  */
@@ -90,11 +102,18 @@ export async function loadTaskNumber(req: PayloadRequest, id: string): Promise<s
   return tree.get(id) ? tree.number(id) : null
 }
 
-/** `admin.components` for a relationship to tasks: the numbered picker, `TaskPicker`. */
-export const taskPickerComponents = ({ excludeSelf = false }: { excludeSelf?: boolean } = {}) => ({
+/**
+ * `admin.components` for a relationship to tasks: the numbered picker, `TaskPicker`. With
+ * `ticksGrades`, as on a lesson plan task, picking a task sets the row's `gradesKnowledge` and
+ * `gradesSkill` to the statements it has.
+ */
+export const taskPickerComponents = ({
+  excludeSelf = false,
+  ticksGrades = false,
+}: { excludeSelf?: boolean; ticksGrades?: boolean } = {}) => ({
   Field: {
     path: '/components/admin/TaskPicker',
     exportName: 'TaskPicker',
-    clientProps: { excludeSelf },
+    clientProps: { excludeSelf, ticksGrades },
   },
 })

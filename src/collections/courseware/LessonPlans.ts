@@ -6,6 +6,7 @@ import { refuseMinimumOffScale } from '@/courseware/minimums'
 import { placeLessonPlan } from '@/courseware/outline'
 import { rowLabelComponent } from '@/courseware/row-label-component'
 import { lessonPlanBodyEditor } from '@/courseware/rich-text'
+import { settleLessonPlanTasks } from '@/courseware/lesson-plan-tasks'
 import { refuseAuthorsLessonPlanStructure } from '@/courseware/structure'
 import { taskPickerComponents } from '@/courseware/task-picker'
 import { expandTaskRows, pickableTask } from '@/courseware/task-rows'
@@ -76,13 +77,11 @@ export const LessonPlans: CollectionConfig = {
           'minimum' in data ? data.minimum : originalDoc?.minimum,
           version?.gradingScale,
         )
-        data.theoryItems = await expandTaskRows(
-          req,
-          data.theoryItems,
-          originalDoc?.theoryItems,
-          'theoryItems',
-          { teacherNotes: '' },
-        )
+        const rows = await expandTaskRows(req, data.tasks, originalDoc?.tasks, 'tasks', {
+          teacherNotes: '',
+          required: true,
+        })
+        data.tasks = await settleLessonPlanTasks(req, rows, 'tasks')
         return data
       },
     ],
@@ -144,11 +143,11 @@ export const LessonPlans: CollectionConfig = {
       },
     },
     {
-      name: 'theoryItems',
+      name: 'tasks',
       type: 'array',
-      labels: { singular: 'Theory item', plural: 'Theory items' },
+      labels: { singular: 'Task', plural: 'Tasks' },
       admin: {
-        components: { RowLabel: rowLabelComponent('theoryItem') },
+        components: { RowLabel: rowLabelComponent('lessonPlanTask') },
         description:
           'Adding a task that has tasks beneath it adds a row for each of them when you save.',
       },
@@ -159,7 +158,22 @@ export const LessonPlans: CollectionConfig = {
           relationTo: 'tasks',
           required: true,
           filterOptions: pickableTask,
-          admin: { components: taskPickerComponents() },
+          admin: { components: taskPickerComponents({ ticksGrades: true }) },
+        },
+        {
+          name: 'required',
+          type: 'checkbox',
+          defaultValue: true,
+          admin: { description: 'A student must reach the minimum on it to advance.' },
+        },
+        {
+          // No default: a row that leaves both unset starts graded on each statement its task
+          // has (`settleLessonPlanTasks`), and picking its task ticks them in the form.
+          type: 'row',
+          fields: [
+            { name: 'gradesKnowledge', label: 'Grade knowledge', type: 'checkbox' },
+            { name: 'gradesSkill', label: 'Grade skill', type: 'checkbox' },
+          ],
         },
         {
           name: 'teacherNotes',

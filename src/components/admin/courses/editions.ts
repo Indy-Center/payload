@@ -80,7 +80,7 @@ export type OutlinePlan = {
   code: string | null
   title: string | null
   minutes: number | null
-  theoryItems: number
+  tasks: number
 }
 
 const outlinePlan = (plan: LessonPlan): OutlinePlan => ({
@@ -88,7 +88,7 @@ const outlinePlan = (plan: LessonPlan): OutlinePlan => ({
   code: plan.code ?? null,
   title: plan.title ?? null,
   minutes: plan.time ?? null,
-  theoryItems: plan.theoryItems?.length ?? 0,
+  tasks: plan.tasks?.length ?? 0,
 })
 
 export async function loadOutline(req: PayloadRequest, id: string): Promise<EditionOutline> {

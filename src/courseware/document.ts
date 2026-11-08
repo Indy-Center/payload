@@ -34,12 +34,21 @@ export type CourseList = { courses: CourseSummary[] }
 /** One point of a grading scale, numbered from 1 in the scale's order (lowest first). */
 export type GradePoint = { position: number; label: string; description: string }
 
-/** A task as a lesson plan or scenario points at it. `number` comes from the tree, e.g. "2.3.1". */
+/** A task as a lesson plan points at it. `number` comes from the tree, e.g. "2.3.1". */
 export type TaskRef = { id: string; number: string; name: string }
 
-export type TheoryItem = { id: string; task: TaskRef; teacherNotes: string }
-
-export type PracticalTask = { id: string; task: TaskRef; teacherNotes: string; required: boolean }
+/**
+ * A task as one lesson plan teaches it (decision 0065): whether a student must reach the minimum
+ * on it to advance, which of its task's statements the teacher grades (at least one, and only
+ * statements the catalogue task has), and the teacher notes.
+ */
+export type LessonPlanTask = {
+  id: string
+  task: TaskRef
+  required: boolean
+  grades: { knowledge: boolean; skill: boolean }
+  teacherNotes: string
+}
 
 /**
  * One of the catalogue's positions as a scenario names it (decision 0060): its vNAS id, to look
@@ -62,7 +71,6 @@ export type Scenario = {
   difficulty: 'easy' | 'medium' | 'hard' | null
   mode: 'live' | 'sim'
   retired: boolean
-  practicalTasks: PracticalTask[]
 }
 
 export type LessonPlan = {
@@ -86,7 +94,8 @@ export type LessonPlan = {
   time: number | null
   isExam: boolean
   minimum: GradePoint | null
-  theoryItems: TheoryItem[]
+  /** In the lesson plan's order. */
+  tasks: LessonPlanTask[]
   scenarios: Scenario[]
 }
 

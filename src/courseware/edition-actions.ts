@@ -143,9 +143,12 @@ function copyOfPlan(plan: LessonPlan, courseVersion: string) {
     time: plan.time,
     isExam: plan.isExam,
     minimum: plan.minimum,
-    theoryItems: (plan.theoryItems ?? []).map((item) => ({
-      task: idOf(item.task)!,
-      teacherNotes: item.teacherNotes,
+    tasks: (plan.tasks ?? []).map((row) => ({
+      task: idOf(row.task)!,
+      required: row.required,
+      gradesKnowledge: row.gradesKnowledge,
+      gradesSkill: row.gradesSkill,
+      teacherNotes: row.teacherNotes,
     })),
     scenarios: (plan.scenarios ?? []).map((scenario) => idOf(scenario)!),
   }

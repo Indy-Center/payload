@@ -89,6 +89,26 @@ describe('the browser-check seed', () => {
       overrideAccess: false,
     })
     expect(release.teacherPosition).toMatchObject({ callsign: 'PKB_TWR', retired: true })
+
+    // A lesson plan with a required row grading one of two statements and an optional row.
+    const together = await payload.findByID({
+      collection: 'lesson-plans',
+      id: records['lesson-plans']['X-GC-3'].id,
+      depth: 0,
+      user,
+      overrideAccess: false,
+    })
+    expect(
+      together.tasks?.map(({ task, required, gradesKnowledge, gradesSkill }) => ({
+        task,
+        required,
+        gradesKnowledge,
+        gradesSkill,
+      })),
+    ).toEqual([
+      { task: records.tasks.R3.id, required: true, gradesKnowledge: false, gradesSkill: true },
+      { task: records.tasks.R1b.id, required: false, gradesKnowledge: true, gradesSkill: false },
+    ])
   })
 
   it('refuses a database that has rows, unless asked to reset it', async () => {
