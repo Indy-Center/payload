@@ -4,31 +4,46 @@ import { Button, useConfig, useDocumentInfo } from '@payloadcms/ui'
 import { formatAdminURL } from 'payload/shared'
 
 /**
- * Above a saved lesson plan's Tasks: "Add tasks" and "Edit as grid", both opening the lesson
- * plan's grid tab, the first with its picker showing. A lesson plan not yet saved has neither.
+ * A lesson plan's Tasks in its form: how many it holds, with "Add tasks" and "Edit as grid", both
+ * opening the lesson plan's grid tab, the first with its picker showing. The tasks themselves are
+ * shown and edited only there. A lesson plan not yet saved has neither link.
  */
 export function LessonPlanTaskLinks() {
-  const { id } = useDocumentInfo()
+  const { id, savedDocumentData } = useDocumentInfo()
   const { config } = useConfig()
-  if (!id) return null
-  const grid = formatAdminURL({
-    adminRoute: config.routes.admin,
-    path: `/collections/lesson-plans/${id}/grid`,
-  })
+  const count = Array.isArray(savedDocumentData?.tasks) ? savedDocumentData.tasks.length : 0
+  const grid = id ? gridURL(config.routes.admin, id) : ''
   return (
-    <div className="lesson-plan-task-links">
-      <Button
-        el="link"
-        url={`${grid}?add=true`}
-        buttonStyle="secondary"
-        size="small"
-        margin={false}
-      >
-        Add tasks
-      </Button>
-      <Button el="link" url={grid} buttonStyle="secondary" size="small" margin={false}>
-        Edit as grid
-      </Button>
+    <div className="lesson-plan-task-links field-type">
+      <span className="field-label">Tasks</span>
+      {id ? (
+        <>
+          <p className="lesson-plan-task-links__count">
+            {count === 0
+              ? 'No tasks yet.'
+              : `${count} ${count === 1 ? 'task' : 'tasks'}, shown on the grid.`}
+          </p>
+          <div className="lesson-plan-task-links__buttons">
+            <Button
+              el="link"
+              url={`${grid}?add=true`}
+              buttonStyle="secondary"
+              size="small"
+              margin={false}
+            >
+              Add tasks
+            </Button>
+            <Button el="link" url={grid} buttonStyle="secondary" size="small" margin={false}>
+              Edit as grid
+            </Button>
+          </div>
+        </>
+      ) : (
+        <p className="lesson-plan-task-links__count">Save the lesson plan to add its tasks.</p>
+      )}
     </div>
   )
 }
+
+const gridURL = (adminRoute: string, id: string | number) =>
+  formatAdminURL({ adminRoute, path: `/collections/lesson-plans/${id}/grid` })

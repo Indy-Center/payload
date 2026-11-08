@@ -234,6 +234,12 @@ function taskRef(tree: TaskTree, task: string | { id: string }): TaskRef {
   return { id, number: tree.number(id), name: tree.get(id)?.name ?? '' }
 }
 
+/** A lesson plan task's statements, as its task has them today (0066). */
+function statementsOf(tree: TaskTree, task: string | { id: string }) {
+  const found = tree.get(idOf(task)!)
+  return { knowledge: found?.knowledgeStatement ?? '', skill: found?.skillStatement ?? '' }
+}
+
 /**
  * Looks up the named positions as a scenario serves them, `{ id: vNAS id, callsign }`, retired
  * ones included: a position vNAS has dropped stays on the scenario that names it.
@@ -301,7 +307,7 @@ function lessonPlan(
       id: row.id ?? '',
       task: taskRef(tree, row.task),
       required: row.required ?? true,
-      grades: { knowledge: row.gradesKnowledge ?? false, skill: row.gradesSkill ?? false },
+      statements: statementsOf(tree, row.task),
       teacherNotes: row.teacherNotes ?? '',
     })),
     resources: (plan.resources ?? []).map((resource) => ({

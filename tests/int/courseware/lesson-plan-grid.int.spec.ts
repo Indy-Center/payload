@@ -17,7 +17,7 @@ let author: User
 let stranger: User
 
 const PLAN_STRUCTURE =
-  'This lesson plan is in a published edition, so changing its tasks, their order, whether each is required or what it grades, its minimum, the scenarios it offers or its edition is a structural change, which needs the Training Admin or a lead. Its wording and teacher notes can still change.'
+  'This lesson plan is in a published edition, so changing its tasks, their order, whether each is required, its minimum, the scenarios it offers or its edition is a structural change, which needs the Training Admin or a lead. Its wording and teacher notes can still change.'
 
 beforeAll(async () => {
   payload = await testPayload()
@@ -98,10 +98,16 @@ const asSent = (rows: LessonPlan['tasks']): LessonPlanGridRow[] =>
     id: row.id!,
     task: row.task as string,
     required: row.required !== false,
-    gradesKnowledge: row.gradesKnowledge === true,
-    gradesSkill: row.gradesSkill === true,
     teacherNotes: row.teacherNotes ?? '',
   }))
+
+/** A row added from the picker, as the grid sends it. */
+const added = (key: string, task: Task, teacherNotes = ''): LessonPlanGridRow => ({
+  key,
+  task: task.id,
+  required: true,
+  teacherNotes,
+})
 
 const save = (rows: LessonPlanGridRow[], user: User | null = lead, id = plan.id) =>
   callEndpoint(payload, `/courseware/lesson-plans/${id}/tasks`, {
@@ -111,12 +117,12 @@ const save = (rows: LessonPlanGridRow[], user: User | null = lead, id = plan.id)
     ...(user ? { user } : {}),
   })
 
-/** The lesson plan's rows as "task required K S notes". */
+/** The lesson plan's rows as "task required (notes)". */
 async function rowsNow(id = plan.id) {
   const after = await payload.findByID({ collection: 'lesson-plans', id, depth: 1 })
   return (after.tasks ?? []).map(
     (row) =>
-      `${(row.task as Task).name}${row.required ? ' required' : ''}${row.gradesKnowledge ? ' K' : ''}${row.gradesSkill ? ' S' : ''}${row.teacherNotes ? ` (${row.teacherNotes})` : ''}`,
+      `${(row.task as Task).name}${row.required ? ' required' : ''}${row.teacherNotes ? ` (${row.teacherNotes})` : ''}`,
   )
 }
 
@@ -143,7 +149,7 @@ describe('saving a lesson plan’s grid from the copy it opened', () => {
 
     expect(status).toBe(409)
     expect(body.errors).toEqual([{ message: STALE_PLAN }])
-    expect(await rowsNow()).toEqual(['Ground required K S (Ask about taxiways)', 'Numbers S'])
+    expect(await rowsNow()).toEqual(['Ground required (Ask about taxiways)', 'Numbers'])
   })
 
   it('answers the new updatedAt, from which a second Save lands', async () => {
@@ -158,8 +164,8 @@ describe('saving a lesson plan’s grid from the copy it opened', () => {
 
     expect(second.status).toBe(200)
     expect(await rowsNow()).toEqual([
-      'Ground required K S (Ask about taxiways)',
-      'Numbers S (Count twice)',
+      'Ground required (Ask about taxiways)',
+      'Numbers (Count twice)',
     ])
   })
 
@@ -168,17 +174,7 @@ describe('saving a lesson plan’s grid from the copy it opened', () => {
     await payload.update({ collection: 'lesson-plans', id: plan.id, data: { title: 'Radio work' } })
 
     // A retired task's row would be refused too.
-    const { body } = await saveFrom(plan.updatedAt, [
-      ground,
-      {
-        key: 'new:1',
-        task: t.weather.id,
-        required: true,
-        gradesKnowledge: false,
-        gradesSkill: true,
-        teacherNotes: '',
-      },
-    ])
+    const { body } = await saveFrom(plan.updatedAt, [ground, added('new:1', t.weather)])
 
     expect(body.errors).toEqual([{ message: STALE_PLAN }])
   })
@@ -190,30 +186,16 @@ describe('saving a lesson plan’s grid', () => {
 
     // Numbers is removed; Radio and Readbacks are added either side of Ground.
     const { status } = await save([
-      {
-        key: 'new:1',
-        task: t.radio.id,
-        required: true,
-        gradesKnowledge: true,
-        gradesSkill: false,
-        teacherNotes: '',
-      },
-      { ...ground, required: false, gradesSkill: false, teacherNotes: 'Ask about hold short' },
-      {
-        key: 'new:2',
-        task: t.readbacks.id,
-        required: true,
-        gradesKnowledge: true,
-        gradesSkill: false,
-        teacherNotes: 'Count',
-      },
+      added('new:1', t.radio),
+      { ...ground, required: false, teacherNotes: 'Ask about hold short' },
+      added('new:2', t.readbacks, 'Count'),
     ])
 
     expect(status).toBe(200)
     expect(await rowsNow()).toEqual([
-      'Radio required K',
-      'Ground K (Ask about hold short)',
-      'Readbacks required K (Count)',
+      'Radio required',
+      'Ground (Ask about hold short)',
+      'Readbacks required (Count)',
     ])
   })
 
@@ -221,23 +203,13 @@ describe('saving a lesson plan’s grid', () => {
     const rows = asSent(plan.tasks)
 
     // From the picker: Radio ticked with what is beneath it, then Readbacks unticked.
-    const { status } = await save([
-      ...rows,
-      {
-        key: 'new:1',
-        task: t.radio.id,
-        required: true,
-        gradesKnowledge: true,
-        gradesSkill: true,
-        teacherNotes: '',
-      },
-    ])
+    const { status } = await save([...rows, added('new:1', t.radio)])
 
     expect(status).toBe(200)
     expect(await rowsNow()).toEqual([
-      'Ground required K S (Ask about taxiways)',
-      'Numbers S',
-      'Radio required K S',
+      'Ground required (Ask about taxiways)',
+      'Numbers',
+      'Radio required',
     ])
   })
 
@@ -247,40 +219,13 @@ describe('saving a lesson plan’s grid', () => {
 
     const { status, body } = await save([
       { ...ground, teacherNotes: 'Changed' },
-      { ...numbers, gradesKnowledge: true },
-      {
-        key: 'new:1',
-        task: t.readbacks.id,
-        required: true,
-        gradesKnowledge: false,
-        gradesSkill: false,
-        teacherNotes: '',
-      },
-    ])
-
-    expect(status).toBe(400)
-    expect(body.errors).toEqual([
-      { row: numbers.key, message: 'Task 1.1.1 has no knowledge statement to grade.' },
-      { row: 'new:1', message: 'Pick knowledge, skill or both to grade on task 1.1.' },
-    ])
-    expect(await rowsNow()).toEqual(before)
-  })
-
-  it('refuses a retired task in an added row', async () => {
-    const { status, body } = await save([
-      ...asSent(plan.tasks),
-      {
-        key: 'new:1',
-        task: t.weather.id,
-        required: true,
-        gradesKnowledge: false,
-        gradesSkill: true,
-        teacherNotes: '',
-      },
+      numbers,
+      added('new:1', t.weather),
     ])
 
     expect(status).toBe(400)
     expect(body.errors).toEqual([{ row: 'new:1', message: 'This task is retired.' }])
+    expect(await rowsNow()).toEqual(before)
   })
 
   it('lets a course author change anything on a draft', async () => {
@@ -289,10 +234,7 @@ describe('saving a lesson plan’s grid', () => {
     const { status } = await save([{ ...numbers, required: true }, ground], author)
 
     expect(status).toBe(200)
-    expect(await rowsNow()).toEqual([
-      'Numbers required S',
-      'Ground required K S (Ask about taxiways)',
-    ])
+    expect(await rowsNow()).toEqual(['Numbers required', 'Ground required (Ask about taxiways)'])
   })
 
   it('refuses anyone not signed in, and an account that may not edit the lesson plan', async () => {
@@ -322,19 +264,7 @@ describe('saving a lesson plan’s grid', () => {
         [numbers, ground],
         [ground],
         [{ ...ground, required: false }, numbers],
-        [{ ...ground, gradesSkill: false }, numbers],
-        [
-          ground,
-          numbers,
-          {
-            key: 'new:1',
-            task: t.radio.id,
-            required: true,
-            gradesKnowledge: true,
-            gradesSkill: true,
-            teacherNotes: '',
-          },
-        ],
+        [ground, numbers, added('new:1', t.radio)],
       ]) {
         const { status, body } = await save(rows, author)
         expect(status).toBe(400)
@@ -346,13 +276,10 @@ describe('saving a lesson plan’s grid', () => {
       const [ground, numbers] = asSent(plan.tasks)
 
       expect((await save([ground, { ...numbers, teacherNotes: 'New' }], author)).status).toBe(200)
-      expect(await rowsNow()).toEqual([
-        'Ground required K S (Ask about taxiways)',
-        'Numbers S (New)',
-      ])
+      expect(await rowsNow()).toEqual(['Ground required (Ask about taxiways)', 'Numbers (New)'])
 
       expect((await save([{ ...numbers, teacherNotes: 'New' }], lead)).status).toBe(200)
-      expect(await rowsNow()).toEqual(['Numbers S (New)'])
+      expect(await rowsNow()).toEqual(['Numbers (New)'])
     })
   })
 })
@@ -368,16 +295,28 @@ describe('what the grid starts from', () => {
     const grid = await load(lead)
 
     expect(
-      grid.rows.map(({ number, name, hasKnowledge, hasSkill, required }) => ({
+      grid.rows.map(({ number, name, knowledgeStatement, skillStatement, required }) => ({
         number,
         name,
-        hasKnowledge,
-        hasSkill,
+        knowledgeStatement,
+        skillStatement,
         required,
       })),
     ).toEqual([
-      { number: '2', name: 'Ground', hasKnowledge: true, hasSkill: true, required: true },
-      { number: '1.1.1', name: 'Numbers', hasKnowledge: false, hasSkill: true, required: false },
+      {
+        number: '2',
+        name: 'Ground',
+        knowledgeStatement: 'Know ground',
+        skillStatement: 'Taxi',
+        required: true,
+      },
+      {
+        number: '1.1.1',
+        name: 'Numbers',
+        knowledgeStatement: '',
+        skillStatement: 'Say them',
+        required: false,
+      },
     ])
     expect(grid.picker.map((task) => `${task.number} ${task.name}`)).toEqual([
       '1 Radio',

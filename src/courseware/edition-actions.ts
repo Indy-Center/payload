@@ -146,8 +146,6 @@ function copyOfPlan(plan: LessonPlan, courseVersion: string) {
     tasks: (plan.tasks ?? []).map((row) => ({
       task: idOf(row.task)!,
       required: row.required,
-      gradesKnowledge: row.gradesKnowledge,
-      gradesSkill: row.gradesSkill,
       teacherNotes: row.teacherNotes,
     })),
     resources: (plan.resources ?? []).map((resource) => ({

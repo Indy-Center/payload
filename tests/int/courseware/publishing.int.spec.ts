@@ -19,7 +19,7 @@ const POINTS = [
   { label: 'Exemplary', description: 'Beyond it' },
 ]
 
-/** A made-up task with both statements, so a lesson plan task can grade either. */
+/** A made-up task with both statements. */
 function taskNamed(name: string) {
   return payload.create({
     collection: 'tasks',
@@ -360,76 +360,15 @@ describe('publishing', () => {
     expect(await refusal(publish(version.id))).toEqual(['Lesson plan S-GC-3 has no tasks.'])
   })
 
-  describe('a lesson plan row that grades', () => {
-    /** The ready version's one lesson plan, named S-GC-3, its row grading `grades`. */
-    async function gradingRow(grades: { gradesKnowledge: boolean; gradesSkill: boolean }) {
-      const ready = await readyVersion()
-      await payload.update({
-        collection: 'lesson-plans',
-        id: ready.plan.id,
-        data: { code: 'S-GC-3', tasks: [{ task: ready.radio.id, ...grades }] },
-      })
-      return ready
-    }
-
-    it('a knowledge statement its task no longer has is refused', async () => {
-      const { version, radio } = await gradingRow({ gradesKnowledge: true, gradesSkill: true })
-      await payload.update({ collection: 'tasks', id: radio.id, data: { knowledgeStatement: '' } })
-
-      expect(await refusal(publish(version.id))).toEqual([
-        'S-GC-3 grades a knowledge statement task 1 doesn’t have.',
-      ])
+  it('publishes a row whose task has no statements: what is graded waits for grading', async () => {
+    const { version, radio } = await readyVersion()
+    await payload.update({
+      collection: 'tasks',
+      id: radio.id,
+      data: { knowledgeStatement: '', skillStatement: '' },
     })
 
-    it('a skill statement its task no longer has is refused', async () => {
-      const { version, radio } = await gradingRow({ gradesKnowledge: true, gradesSkill: true })
-      await payload.update({ collection: 'tasks', id: radio.id, data: { skillStatement: '' } })
-
-      expect(await refusal(publish(version.id))).toEqual([
-        'S-GC-3 grades a skill statement task 1 doesn’t have.',
-      ])
-    })
-
-    it('nothing is refused, as rows migrated from theory items are', async () => {
-      const { version, plan, radio } = await gradingRow({
-        gradesKnowledge: true,
-        gradesSkill: true,
-      })
-      const saved = await payload.findByID({ collection: 'lesson-plans', id: plan.id, depth: 0 })
-      // Below the hook, as the migration leaves it.
-      await payload.db.updateOne({
-        collection: 'lesson-plans',
-        id: plan.id,
-        data: {
-          tasks: [
-            { id: saved.tasks![0].id, task: radio.id, gradesKnowledge: false, gradesSkill: false },
-          ],
-        },
-      })
-
-      expect(await refusal(publish(version.id))).toEqual(['S-GC-3 grades nothing on task 1.'])
-    })
-
-    it('a retired task gets both faults when both apply', async () => {
-      const { version, radio } = await gradingRow({ gradesKnowledge: true, gradesSkill: false })
-      await payload.update({
-        collection: 'tasks',
-        id: radio.id,
-        data: { knowledgeStatement: '', retired: true },
-      })
-
-      expect(await refusal(publish(version.id))).toEqual([
-        'S-GC-3 uses the retired task Radio.',
-        'S-GC-3 grades a knowledge statement task 1 doesn’t have.',
-      ])
-    })
-
-    it('a statement its task has publishes', async () => {
-      const { version, radio } = await gradingRow({ gradesKnowledge: true, gradesSkill: false })
-      await payload.update({ collection: 'tasks', id: radio.id, data: { skillStatement: '' } })
-
-      await expect(publish(version.id)).resolves.toMatchObject({ status: 'published' })
-    })
+    await expect(publish(version.id)).resolves.toMatchObject({ status: 'published' })
   })
 
   it('does not block on unmapped tasks', async () => {
@@ -480,7 +419,7 @@ describe('a published edition', () => {
   const NEW_PLAN =
     'This edition is published, so adding a lesson plan to it is a structural change, which needs the Training Admin or a lead.'
   const PLAN_STRUCTURE =
-    'This lesson plan is in a published edition, so changing its tasks, their order, whether each is required or what it grades, its minimum, the scenarios it offers or its edition is a structural change, which needs the Training Admin or a lead. Its wording and teacher notes can still change.'
+    'This lesson plan is in a published edition, so changing its tasks, their order, whether each is required, its minimum, the scenarios it offers or its edition is a structural change, which needs the Training Admin or a lead. Its wording and teacher notes can still change.'
 
   let admin: User
   let lead: User
@@ -524,10 +463,7 @@ describe('a published edition', () => {
       id: ready.plan.id,
       depth: 0,
       data: {
-        tasks: [
-          ...(ready.plan.tasks ?? []),
-          { task: readbacks.id, required: false, gradesKnowledge: false, gradesSkill: true },
-        ],
+        tasks: [...(ready.plan.tasks ?? []), { task: readbacks.id, required: false }],
         scenarios: [scenario.id],
       },
     })
@@ -627,25 +563,15 @@ describe('a published edition', () => {
         id: plan.id,
         data: {
           minimum: 3,
-          tasks: [
-            { task: other.id },
-            { ...first, required: false, gradesKnowledge: false, gradesSkill: true },
-          ],
+          tasks: [{ task: other.id }, { ...first, required: false }],
           scenarios: [],
         },
         ...as(user),
       })
       expect(replanned.minimum).toBe(3)
-      expect(
-        replanned.tasks?.map(({ task, required, gradesKnowledge, gradesSkill }) => ({
-          task,
-          required,
-          gradesKnowledge,
-          gradesSkill,
-        })),
-      ).toEqual([
-        { task: other.id, required: true, gradesKnowledge: true, gradesSkill: true },
-        { task: radio.id, required: false, gradesKnowledge: false, gradesSkill: true },
+      expect(replanned.tasks?.map(({ task, required }) => ({ task, required }))).toEqual([
+        { task: other.id, required: true },
+        { task: radio.id, required: false },
       ])
       expect(replanned.scenarios).toEqual([])
     }
@@ -670,8 +596,6 @@ describe('a published edition', () => {
       { tasks: rows.slice(1) },
       { tasks: [...rows].reverse() },
       { tasks: rows.map((row) => ({ ...row, required: !row.required })) },
-      { tasks: rows.map((row) => ({ ...row, gradesKnowledge: !row.gradesKnowledge })) },
-      { tasks: rows.map((row, index) => (index ? row : { ...row, gradesSkill: false })) },
       { minimum: 3 },
       { scenarios: [] },
       { courseVersion: draft.id },
@@ -724,6 +648,16 @@ describe('a published edition', () => {
     expect(reworded.title).toBe('Radio, reworded')
     expect(reworded.tasks?.map((row) => row.teacherNotes)).toEqual(['New', 'New'])
 
+    // The lesson plan's form sends no tasks (they are edited on its grid), and leaves them be.
+    const fromTheForm = await payload.update({
+      collection: 'lesson-plans',
+      id: plan.id,
+      data: { title: 'Radio, from the form' },
+      ...as(author),
+    })
+    expect(fromTheForm.title).toBe('Radio, from the form')
+    expect(fromTheForm.tasks).toEqual(reworded.tasks)
+
     const renoted = await payload.update({
       collection: 'scenarios',
       id: scenario.id,
@@ -756,14 +690,14 @@ describe('a published edition', () => {
       id: draftPlan.id,
       data: {
         minimum: 3,
-        tasks: [{ task: other.id, required: false, gradesKnowledge: true, gradesSkill: false }],
+        tasks: [{ task: other.id, required: false }],
         scenarios: [draftOnly.id],
       },
       ...as(author),
     })
     expect(replanned).toMatchObject({
       minimum: 3,
-      tasks: [{ task: other.id, required: false, gradesKnowledge: true, gradesSkill: false }],
+      tasks: [{ task: other.id, required: false }],
       scenarios: [draftOnly.id],
     })
     const reshaped = await payload.update({
@@ -775,38 +709,19 @@ describe('a published edition', () => {
     expect(reshaped.modules?.[0].lessonPlans).toEqual([added.id, draftPlan.id])
   })
 
-  it('refuses, on a draft, a row grading a statement its task lacks or grading neither', async () => {
+  it('takes, on a draft, a row whose task has no statements', async () => {
     const { draftPlan } = await publishedEdition()
-    const knowing = await payload.create({
-      collection: 'tasks',
-      data: { name: 'Phraseology', knowledgeStatement: 'Know the words' },
-    })
     const bare = await payload.create({ collection: 'tasks', data: { name: 'Bare' } })
-    // Numbered from the tree: Radio 1, Readbacks 2, Other 3, Phraseology 4, Bare 5.
-    const save = (row: object) =>
-      payload.update({
-        collection: 'lesson-plans',
-        id: draftPlan.id,
-        data: { tasks: [...(draftPlan.tasks ?? []), row] },
-        ...as(author),
-      })
 
-    expect(
-      await refusal(save({ task: knowing.id, gradesKnowledge: true, gradesSkill: true })),
-    ).toEqual(['Task 4 has no skill statement to grade.'])
-    expect(
-      await refusal(save({ task: bare.id, gradesKnowledge: true, gradesSkill: false })),
-    ).toEqual(['Task 5 has no knowledge statement to grade.'])
-    // Both rules broken: the first wins.
-    expect(
-      await refusal(save({ task: bare.id, gradesKnowledge: false, gradesSkill: true })),
-    ).toEqual(['Task 5 has no skill statement to grade.'])
-    expect(
-      await refusal(save({ task: knowing.id, gradesKnowledge: false, gradesSkill: false })),
-    ).toEqual(['Pick knowledge, skill or both to grade on task 4.'])
-    // A task with no statements can't start graded on any.
-    expect(await refusal(save({ task: bare.id }))).toEqual([
-      'Pick knowledge, skill or both to grade on task 5.',
+    const saved = await payload.update({
+      collection: 'lesson-plans',
+      id: draftPlan.id,
+      data: { tasks: [...(draftPlan.tasks ?? []), { task: bare.id }] },
+      ...as(author),
+    })
+    expect(saved.tasks?.map((row) => row.task)).toEqual([
+      ...(draftPlan.tasks ?? []).map((row) => row.task),
+      bare.id,
     ])
   })
 })

@@ -30,6 +30,7 @@ import * as migration_20261108_042342_task_knowledge_and_skill_statements from '
 import * as migration_20261108_050841_lesson_plans_hold_every_task from './20261108_050841_lesson_plans_hold_every_task';
 import * as migration_20261108_054800_scenario_description_and_atctrainer from './20261108_054800_scenario_description_and_atctrainer';
 import * as migration_20261108_061041_lesson_plan_resources from './20261108_061041_lesson_plan_resources';
+import * as migration_20261108_183706_drop_lesson_plan_grade_boxes from './20261108_183706_drop_lesson_plan_grade_boxes';
 
 export const migrations = [
   {
@@ -190,6 +191,11 @@ export const migrations = [
   {
     up: migration_20261108_061041_lesson_plan_resources.up,
     down: migration_20261108_061041_lesson_plan_resources.down,
-    name: '20261108_061041_lesson_plan_resources'
+    name: '20261108_061041_lesson_plan_resources',
+  },
+  {
+    up: migration_20261108_183706_drop_lesson_plan_grade_boxes.up,
+    down: migration_20261108_183706_drop_lesson_plan_grade_boxes.down,
+    name: '20261108_183706_drop_lesson_plan_grade_boxes'
   },
 ];

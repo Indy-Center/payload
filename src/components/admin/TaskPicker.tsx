@@ -1,14 +1,7 @@
 'use client'
 import React, { useEffect, useState } from 'react'
 import type { RelationshipFieldClientComponent } from 'payload'
-import {
-  SelectInput,
-  useConfig,
-  useDebounce,
-  useDocumentInfo,
-  useField,
-  useForm,
-} from '@payloadcms/ui'
+import { SelectInput, useConfig, useDebounce, useDocumentInfo, useField } from '@payloadcms/ui'
 import type { TaskOption, TaskOptions } from '@/courseware/task-picker'
 
 /**
@@ -17,13 +10,11 @@ import type { TaskOption, TaskOptions } from '@/courseware/task-picker'
  * (0025), so the options come from the tree: "2.2.1 Taxi to runway", in tree order, and a search
  * matches the name or the number ("2.2" finds 2.2 and everything beneath it). The field stays a
  * relationship, so its `filterOptions` still decide what a save accepts. On a task's own Parent
- * picker, `excludeSelf` leaves the task out. On a lesson plan task, `ticksGrades` ticks the row's
- * "Grade knowledge" and "Grade skill" for the statements the picked task has (0065).
+ * picker, `excludeSelf` leaves the task out.
  */
 export const TaskPicker: RelationshipFieldClientComponent = (props) => {
   const { field, path: pathFromProps, readOnly } = props
-  const { excludeSelf, ticksGrades } = props as { excludeSelf?: boolean; ticksGrades?: boolean }
-  const { dispatchFields } = useForm()
+  const { excludeSelf } = props as { excludeSelf?: boolean }
   const { config } = useConfig()
   const { id: documentId } = useDocumentInfo()
   const { value, setValue, path, showError, disabled } = useField<string | null>({
@@ -81,21 +72,6 @@ export const TaskPicker: RelationshipFieldClientComponent = (props) => {
       onChange={(option) => {
         const chosen = Array.isArray(option) ? option[0] : option
         setValue(chosen ? String(chosen.value) : null)
-        const picked = chosen && all.find((candidate) => candidate.id === String(chosen.value))
-        if (ticksGrades && picked) {
-          // Siblings in the same row: `tasks.2.task` sits beside `tasks.2.gradesKnowledge`.
-          const row = path.slice(0, path.length - field.name.length)
-          dispatchFields({
-            type: 'UPDATE',
-            path: `${row}gradesKnowledge`,
-            value: picked.statements.knowledge,
-          })
-          dispatchFields({
-            type: 'UPDATE',
-            path: `${row}gradesSkill`,
-            value: picked.statements.skill,
-          })
-        }
       }}
     />
   )

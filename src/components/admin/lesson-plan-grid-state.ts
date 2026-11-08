@@ -6,7 +6,7 @@ import type { GridPlanTask, LessonPlanGridBatch, PickerTask } from '@/courseware
  */
 
 /** The cells a row edits. */
-export type RowField = 'required' | 'gradesKnowledge' | 'gradesSkill' | 'teacherNotes'
+export type RowField = 'required' | 'teacherNotes'
 
 export type GridRow = Omit<GridPlanTask, 'id'> & {
   /** The saved row's id, or `new:<n>` for a row added here. */
@@ -68,8 +68,7 @@ export function gridReducer(state: GridState, action: GridAction): GridState {
       return change(state, action.key, { removed: !row.removed })
     }
     case 'add': {
-      // Added rows start as a lesson plan task does (0065): required, and graded on each
-      // statement their task has.
+      // Added rows start as a lesson plan task does (0065): required, with no teacher notes.
       const added = action.tasks.map((task, index): GridRow => ({
         key: `new:${state.next + index}`,
         isNew: true,
@@ -78,11 +77,9 @@ export function gridReducer(state: GridState, action: GridAction): GridState {
         number: task.number,
         name: task.name,
         retired: false,
-        hasKnowledge: task.hasKnowledge,
-        hasSkill: task.hasSkill,
+        knowledgeStatement: task.knowledgeStatement,
+        skillStatement: task.skillStatement,
         required: true,
-        gradesKnowledge: task.hasKnowledge,
-        gradesSkill: task.hasSkill,
         teacherNotes: '',
       }))
       return { ...state, rows: [...state.rows, ...added], next: state.next + added.length }
@@ -100,7 +97,7 @@ export function changedCells(state: GridState, row: GridRow): Set<RowField> {
   const saved = state.saved.find((each) => each.id === row.key)
   const changed = new Set<RowField>()
   if (!saved) return changed
-  for (const field of ['required', 'gradesKnowledge', 'gradesSkill', 'teacherNotes'] as const) {
+  for (const field of ['required', 'teacherNotes'] as const) {
     if (row[field] !== saved[field]) changed.add(field)
   }
   return changed
@@ -135,8 +132,6 @@ export function gridBatch(state: GridState, updatedAt: string): LessonPlanGridBa
         ...(row.isNew ? {} : { id: row.key }),
         task: row.task,
         required: row.required,
-        gradesKnowledge: row.gradesKnowledge,
-        gradesSkill: row.gradesSkill,
         teacherNotes: row.teacherNotes,
       })),
   }

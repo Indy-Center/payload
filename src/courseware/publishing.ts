@@ -2,7 +2,6 @@ import { ValidationError, type PayloadRequest } from 'payload'
 import type { CourseVersion, Scenario } from '@/payload-types'
 import { idOf } from './ids'
 import { inScale } from './minimums'
-import { gradableStatements } from './lesson-plan-tasks'
 import { loadTaskTree } from './task-tree'
 
 const refuse = (path: string, messages: string[]): never => {
@@ -31,9 +30,8 @@ export function refuseScaleChange(
 
 /**
  * The publishing check (decision 0034): the version names a scale; every lesson plan has a code, a
- * title, a minimum, and at least one task (0065), each grading a statement its task has; nothing
- * it uses is retired. Unmapped
- * tasks do not block (0020). Refuses with every fault, each naming its record.
+ * title, a minimum, and at least one task (0065); nothing it uses is retired. Unmapped tasks do
+ * not block (0020). Refuses with every fault, each naming its record.
  */
 export async function refuseUnpublishable(
   req: PayloadRequest,
@@ -103,18 +101,6 @@ export async function publishingFaults(
       const task = tree.get(idOf(row.task) ?? '')
       if (!task) continue
       if (task.retired) faults.push(`${name} uses the retired task ${task.name}.`)
-      // A lead can clear a statement after a row graded it, and migrated rows grade neither (0065).
-      const number = tree.number(task.id)
-      const statements = gradableStatements(task)
-      if (row.gradesKnowledge && !statements.knowledge) {
-        faults.push(`${name} grades a knowledge statement task ${number} doesn’t have.`)
-      }
-      if (row.gradesSkill && !statements.skill) {
-        faults.push(`${name} grades a skill statement task ${number} doesn’t have.`)
-      }
-      if (!row.gradesKnowledge && !row.gradesSkill) {
-        faults.push(`${name} grades nothing on task ${number}.`)
-      }
     }
     for (const offered of plan.scenarios ?? []) {
       const scenario = scenariosById.get(idOf(offered) ?? '')

@@ -227,8 +227,8 @@ async function seedTasks(payload: Payload, competencies: MadeIn, sources: MadeIn
   // Two tasks carry mappings and citations (a place and a title).
   const extras: Record<string, object> = {
     // Knowledge and skill statements: R1a1 and R3 have both, R2a and R2b only a skill, R1b only
-    // knowledge, the rest (parents, and the retired one) none. A lesson plan task grades only
-    // statements its task has, so every task a lesson plan uses has one.
+    // knowledge, the rest (parents, and the retired one) none. A lesson plan's grid shows them
+    // beside each row.
     R1a1: {
       knowledgeStatement: 'The symbols and legends on the airport diagram, and what each shows.',
       skillStatement: 'Find a taxi route on the diagram and describe it in standard phraseology.',
@@ -366,9 +366,8 @@ async function seedCourses({
       defaultMinimum: DEFAULT_MINIMUM,
     })
 
-  // Edition 1: two modules, three lesson plans, published. Their tasks start graded on each
-  // statement their task has unless a row says otherwise; X-GC-1 and X-GC-3 each have an optional
-  // row, and X-GC-3 one that grades only one of its task's two statements.
+  // Edition 1: two modules, three lesson plans, published. X-GC-1 and X-GC-3 each have an optional
+  // row.
   const first = await edition('X-GC edition 1')
   const plan = (key: string, version: string, data: object) =>
     make(payload, out['lesson-plans'], 'lesson-plans', key, {
@@ -398,12 +397,7 @@ async function seedCourses({
     code: 'X-GC-3',
     title: 'Putting it together',
     tasks: [
-      {
-        task: tasks.R3.id,
-        gradesKnowledge: false,
-        gradesSkill: true,
-        teacherNotes: 'Pose a handoff to the tower.',
-      },
+      { task: tasks.R3.id, teacherNotes: 'Pose a handoff to the tower.' },
       { task: tasks.R1b.id, required: false, teacherNotes: 'Ask for a taxi route.' },
     ],
     scenarios: [scenarioOne, scenarioTwo],
@@ -548,7 +542,7 @@ async function seedGridLessonPlan(
       row('R4d1', { teacherNotes: 'Ask before crossing 5L.' }),
       row('R4e', { required: false }),
       row('R4f'),
-      row('R4i', { gradesKnowledge: false, gradesSkill: true }),
+      row('R4i'),
       row('R4j', { teacherNotes: 'Taxiway B closed today.' }),
     ],
   })

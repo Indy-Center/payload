@@ -542,7 +542,7 @@ describe('a course author in a published edition', () => {
         errors: [
           {
             message:
-              'This lesson plan is in a published edition, so changing its tasks, their order, whether each is required or what it grades, its minimum, the scenarios it offers or its edition is a structural change, which needs the Training Admin or a lead. Its wording and teacher notes can still change.',
+              'This lesson plan is in a published edition, so changing its tasks, their order, whether each is required, its minimum, the scenarios it offers or its edition is a structural change, which needs the Training Admin or a lead. Its wording and teacher notes can still change.',
           },
         ],
       },

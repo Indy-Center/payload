@@ -39,14 +39,14 @@ export type TaskRef = { id: string; number: string; name: string }
 
 /**
  * A task as one lesson plan teaches it (decision 0065): whether a student must reach the minimum
- * on it to advance, which of its task's statements the teacher grades (at least one, and only
- * statements the catalogue task has), and the teacher notes.
+ * on it to advance, the task's knowledge and skill statements as the catalogue task has them
+ * (0066; empty when unset), and the teacher notes. What a teacher grades is not decided yet.
  */
 export type LessonPlanTask = {
   id: string
   task: TaskRef
   required: boolean
-  grades: { knowledge: boolean; skill: boolean }
+  statements: { knowledge: string; skill: string }
   teacherNotes: string
 }
 

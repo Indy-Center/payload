@@ -7,7 +7,7 @@ import {
   type LessonPlanGridBatch,
   type PickerTask,
 } from './lesson-plan-grid'
-import { gradableStatements, ROWS_AS_SENT } from './lesson-plan-tasks'
+import { ROWS_AS_SENT } from './lesson-plan-tasks'
 import { mayChangeLessonPlanStructure } from './structure'
 import { TaskGridRefused } from './task-grid-batch'
 import type { TaskGridRefusal } from './task-grid'
@@ -27,7 +27,7 @@ export type LessonPlanGrid = {
   picker: PickerTask[]
   /** Whether the person may save this lesson plan at all. */
   mayEdit: boolean
-  /** Whether they may change its rows, their order, required and grades, or only teacher notes. */
+  /** Whether they may change its rows, their order and required, or only teacher notes. */
   mayChangeStructure: boolean
 }
 
@@ -45,7 +45,6 @@ export async function loadLessonPlanGrid(req: PayloadRequest, id: string): Promi
     const taskId = idOf(row.task)
     const task = taskId ? tree.get(taskId) : undefined
     if (!taskId || !task || !row.id) return []
-    const statements = gradableStatements(task)
     return [
       {
         id: row.id,
@@ -53,11 +52,9 @@ export async function loadLessonPlanGrid(req: PayloadRequest, id: string): Promi
         number: tree.number(taskId),
         name: task.name,
         retired: task.retired,
-        hasKnowledge: statements.knowledge,
-        hasSkill: statements.skill,
+        knowledgeStatement: task.knowledgeStatement,
+        skillStatement: task.skillStatement,
         required: row.required !== false,
-        gradesKnowledge: row.gradesKnowledge === true,
-        gradesSkill: row.gradesSkill === true,
         teacherNotes: row.teacherNotes ?? '',
       },
     ]
@@ -65,18 +62,15 @@ export async function loadLessonPlanGrid(req: PayloadRequest, id: string): Promi
   const depth = (taskId: string) => tree.ancestors(taskId).length
   const picker = tree.inOrder
     .filter((task) => !task.retired)
-    .map((task) => {
-      const statements = gradableStatements(task)
-      return {
-        id: task.id,
-        parentId: task.parentId,
-        number: tree.number(task.id),
-        name: task.name,
-        depth: depth(task.id),
-        hasKnowledge: statements.knowledge,
-        hasSkill: statements.skill,
-      }
-    })
+    .map((task): PickerTask => ({
+      id: task.id,
+      parentId: task.parentId,
+      number: tree.number(task.id),
+      name: task.name,
+      depth: depth(task.id),
+      knowledgeStatement: task.knowledgeStatement,
+      skillStatement: task.skillStatement,
+    }))
   const permissions = await docAccessOperation({
     collection: req.payload.collections['lesson-plans'],
     id,
@@ -130,8 +124,6 @@ export async function saveLessonPlanGrid(
     ...(row.id ? { id: row.id } : {}),
     task: row.task,
     required: row.required !== false,
-    gradesKnowledge: row.gradesKnowledge === true,
-    gradesSkill: row.gradesSkill === true,
     teacherNotes: row.teacherNotes ?? '',
   }))
   let saved: { updatedAt: string }

@@ -581,9 +581,6 @@ export interface LessonPlan {
    * The point on the version’s scale, counted from 1. Starts from the version’s default.
    */
   minimum?: number | null;
-  /**
-   * Adding a task that has tasks beneath it adds a row for each of them when you save.
-   */
   tasks?:
     | {
         task: string | Task;
@@ -591,8 +588,6 @@ export interface LessonPlan {
          * A student must reach the minimum on it to advance.
          */
         required?: boolean | null;
-        gradesKnowledge?: boolean | null;
-        gradesSkill?: boolean | null;
         /**
          * Shown only to teachers: the prompt to ask.
          */
@@ -1340,8 +1335,6 @@ export interface LessonPlansSelect<T extends boolean = true> {
     | {
         task?: T;
         required?: T;
-        gradesKnowledge?: T;
-        gradesSkill?: T;
         teacherNotes?: T;
         id?: T;
       };

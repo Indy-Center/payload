@@ -1,5 +1,5 @@
 import type { PostgresAdapter } from '@payloadcms/db-postgres'
-import { ValidationError, type Payload, type PayloadRequest } from 'payload'
+import type { Payload, PayloadRequest } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as migration from '@/migrations/20261108_050841_lesson_plans_hold_every_task'
 import { resetDatabase, scenarioPositions, testPayload } from './helpers'
@@ -123,7 +123,7 @@ async function setting() {
 }
 
 describe('the migration to lesson plans that hold every task', () => {
-  it('carries theory items over in order, with their notes, required and grading neither', async () => {
+  it('carries theory items over in order, with their notes, and required', async () => {
     const { radio, readbacks, clearances, first, second, scenario } = await setting()
 
     const ended = await migrateOver(
@@ -140,22 +140,8 @@ describe('the migration to lesson plans that hold every task', () => {
     const read = (id: string) =>
       payload.findByID({ collection: 'lesson-plans', id, depth: 0 }).then((plan) => plan.tasks)
     expect(await read(first.id)).toEqual([
-      {
-        id: 'row-a',
-        task: radio.id,
-        required: true,
-        gradesKnowledge: false,
-        gradesSkill: false,
-        teacherNotes: 'Ask why',
-      },
-      {
-        id: 'row-b',
-        task: readbacks.id,
-        required: true,
-        gradesKnowledge: false,
-        gradesSkill: false,
-        teacherNotes: null,
-      },
+      { id: 'row-a', task: radio.id, required: true, teacherNotes: 'Ask why' },
+      { id: 'row-b', task: readbacks.id, required: true, teacherNotes: null },
     ])
     expect(await read(second.id)).toMatchObject([{ id: 'row-c', teacherNotes: 'Read one' }])
 
@@ -169,15 +155,14 @@ describe('the migration to lesson plans that hold every task', () => {
       await payload.findByID({ collection: 'scenarios', id: scenario.id, depth: 0 }),
     ).not.toHaveProperty('practicalTasks')
 
-    // No task has a statement yet, so saving the lesson plan asks what each row grades.
-    const refused = await payload
-      .update({ collection: 'lesson-plans', id: first.id, data: { title: 'Radio' } })
-      .catch((error: unknown) => error)
-    expect(refused).toBeInstanceOf(ValidationError)
-    expect((refused as ValidationError).data.errors.map((entry) => entry.message)).toEqual([
-      'Pick knowledge, skill or both to grade on task 1.',
-      'Pick knowledge, skill or both to grade on task 2.',
-    ])
+    // The carried rows save as they are.
+    const saved = await payload.update({
+      collection: 'lesson-plans',
+      id: first.id,
+      depth: 0,
+      data: { title: 'Radio' },
+    })
+    expect(saved.tasks?.map((row) => row.id)).toEqual(['row-a', 'row-b'])
   })
 
   it('runs on a database with no theory items or practical tasks', async () => {

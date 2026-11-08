@@ -12,12 +12,10 @@ export type GridPlanTask = {
   number: string
   name: string
   retired: boolean
-  /** Which statements the task has: a row may grade only those (0065, 0066). */
-  hasKnowledge: boolean
-  hasSkill: boolean
+  /** The task's own statements (0066), shown on the row as they read today; empty when unset. */
+  knowledgeStatement: string
+  skillStatement: string
   required: boolean
-  gradesKnowledge: boolean
-  gradesSkill: boolean
   teacherNotes: string
 }
 
@@ -28,8 +26,8 @@ export type PickerTask = {
   number: string
   name: string
   depth: number
-  hasKnowledge: boolean
-  hasSkill: boolean
+  knowledgeStatement: string
+  skillStatement: string
 }
 
 /** One row as Save sends it: a saved row keeps its `id`; `key` names the row in a refusal. */
@@ -38,8 +36,6 @@ export type LessonPlanGridRow = {
   id?: string
   task: string
   required: boolean
-  gradesKnowledge: boolean
-  gradesSkill: boolean
   teacherNotes: string
 }
 

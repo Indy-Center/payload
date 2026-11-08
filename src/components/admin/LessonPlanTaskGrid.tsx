@@ -25,8 +25,9 @@ type Refusals = { rows: Record<string, string[]>; batch: string[] }
 const noRefusals: Refusals = { rows: {}, batch: [] }
 
 /**
- * A lesson plan's "Edit as grid" tab (0065): its tasks one per row, with Required, the grade boxes
- * and teacher notes edited in place, rows reordered, removed and added from "Add tasks", all saved
+ * A lesson plan's "Edit as grid" tab (0065), the only place its tasks are shown: one per row, with
+ * the task's knowledge and skill statements beside it, read-only. Required and teacher notes are
+ * edited in place, rows reordered, removed and added from "Add tasks", all saved
  * together by Save or dropped by Discard. In a published edition a course author may change only
  * teacher notes (0055); the rest is greyed out with `lockedNote`.
  */
@@ -165,8 +166,8 @@ export function LessonPlanTaskGrid({
                 <th className={`${baseClass}__number`}>Order</th>
                 <th>Task</th>
                 <th>Required</th>
-                <th>Grade knowledge</th>
-                <th>Grade skill</th>
+                <th>Knowledge statement</th>
+                <th>Skill statement</th>
                 <th>Teacher notes</th>
                 <th aria-label="Actions" />
               </tr>
@@ -235,18 +236,10 @@ function Row({
     refusals.length > 0 && `${baseClass}__row--refused`,
   ]
   const editable = mayStructure && !row.removed
-  const box = (field: 'required' | 'gradesKnowledge' | 'gradesSkill', name: string, has = true) => (
-    <td className={changed.has(field) ? `${baseClass}__cell--changed` : undefined}>
-      <input
-        type="checkbox"
-        aria-label={`${name} on ${row.number}`}
-        checked={row[field]}
-        // A box for a statement the task lacks can't be ticked; one already ticked can be cleared.
-        disabled={!editable || (!has && !row[field])}
-        onChange={(event) =>
-          dispatch({ type: 'set', key: row.key, field, value: event.target.checked })
-        }
-      />
+  // The task's own statement, read-only: it is written on the task (0066).
+  const statement = (text: string) => (
+    <td className={`${baseClass}__statement`}>
+      {text.trim() ? text : <span className={`${baseClass}__statement--none`}>None</span>}
     </td>
   )
 
@@ -288,9 +281,19 @@ function Row({
           </div>
         ))}
       </td>
-      {box('required', 'Required')}
-      {box('gradesKnowledge', 'Grade knowledge', row.hasKnowledge)}
-      {box('gradesSkill', 'Grade skill', row.hasSkill)}
+      <td className={changed.has('required') ? `${baseClass}__cell--changed` : undefined}>
+        <input
+          type="checkbox"
+          aria-label={`Required on ${row.number}`}
+          checked={row.required}
+          disabled={!editable}
+          onChange={(event) =>
+            dispatch({ type: 'set', key: row.key, field: 'required', value: event.target.checked })
+          }
+        />
+      </td>
+      {statement(row.knowledgeStatement)}
+      {statement(row.skillStatement)}
       <td className={`${baseClass}__description`}>
         <textarea
           name="teacherNotes"

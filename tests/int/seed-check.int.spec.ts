@@ -90,7 +90,7 @@ describe('the browser-check seed', () => {
     })
     expect(release.teacherPosition).toMatchObject({ callsign: 'PKB_TWR', retired: true })
 
-    // A lesson plan with a required row grading one of two statements and an optional row.
+    // A lesson plan with a required row and an optional row.
     const together = await payload.findByID({
       collection: 'lesson-plans',
       id: records['lesson-plans']['X-GC-3'].id,
@@ -98,16 +98,9 @@ describe('the browser-check seed', () => {
       user,
       overrideAccess: false,
     })
-    expect(
-      together.tasks?.map(({ task, required, gradesKnowledge, gradesSkill }) => ({
-        task,
-        required,
-        gradesKnowledge,
-        gradesSkill,
-      })),
-    ).toEqual([
-      { task: records.tasks.R3.id, required: true, gradesKnowledge: false, gradesSkill: true },
-      { task: records.tasks.R1b.id, required: false, gradesKnowledge: true, gradesSkill: false },
+    expect(together.tasks?.map(({ task, required }) => ({ task, required }))).toEqual([
+      { task: records.tasks.R3.id, required: true },
+      { task: records.tasks.R1b.id, required: false },
     ])
 
     // A lesson plan for the grid: eight rows, the last on a task retired since.
