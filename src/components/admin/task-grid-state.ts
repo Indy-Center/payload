@@ -296,11 +296,12 @@ export function pendingCount(state: GridState): number {
 }
 
 /**
- * The batch Save sends. Names are trimmed: a name of spaces is no name. Each changed task says
- * when it was last saved, as loaded, so a task saved since is refused.
+ * The batch Save sends. Names are trimmed: a name of spaces is no name. Each changed or moved task
+ * says when it was last saved, as loaded, so a task saved since is refused.
  */
 export function gridBatch(state: GridState): TaskGridBatch {
-  const ids = new Set([...Object.keys(state.edits), ...Object.keys(state.retire)])
+  // A moved task has its sort key rewritten, so it is checked like an edited one.
+  const ids = new Set([...Object.keys(state.edits), ...Object.keys(state.retire), ...moved(state)])
   const loaded = new Map(state.saved.map((task) => [task.id, task.updatedAt]))
   return {
     changes: [...ids].map((id) => ({

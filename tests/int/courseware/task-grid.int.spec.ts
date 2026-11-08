@@ -243,6 +243,29 @@ describe('saving the Tasks grid', () => {
       ])
     })
 
+    it('refuses a second reorder of the same siblings from one load, and writes nothing', async () => {
+      const t = await seedTree()
+      const reorder = {
+        // As the grid sends it: the moved task, with when it was loaded.
+        // Runway goes after Ramp, so Runway's sort key is the one rewritten.
+        changes: [{ id: t.runway.id, updatedAt: t.runway.updatedAt }],
+        orders: [{ parent: t.taxi.id, tasks: [t.ramp.id, t.runway.id] }],
+      }
+
+      expect((await save(reorder)).status).toBe(200)
+      const after = await tree()
+      const savedAt = (await payload.findByID({ collection: 'tasks', id: t.runway.id })).updatedAt
+
+      const { status, body } = await save(reorder)
+
+      expect(status).toBe(400)
+      expect(body.errors).toEqual([{ row: t.runway.id, message: STALE }])
+      expect(await tree()).toEqual(after)
+      expect((await payload.findByID({ collection: 'tasks', id: t.runway.id })).updatedAt).toBe(
+        savedAt,
+      )
+    })
+
     it('refuses a stale row before any other rule on it', async () => {
       const t = await seedTree()
       await payload.update({ collection: 'tasks', id: t.radio.id, data: { name: 'Radio calls' } })

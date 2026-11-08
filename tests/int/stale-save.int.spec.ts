@@ -274,7 +274,7 @@ describe("an edit form's save", () => {
     })
 
     expect(status).toBe(403)
-    expect(body.errors).not.toEqual([expect.objectContaining({ message: STALE_SAVE })])
+    expect(body.errors).toEqual([{ message: 'You are not allowed to perform this action.' }])
   })
 })
 

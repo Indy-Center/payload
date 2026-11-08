@@ -295,7 +295,7 @@ describe('a course author', () => {
         data: { time: 45 },
         ...as(author),
       }),
-    ).rejects.toThrow()
+    ).rejects.toThrow('You are not allowed to perform this action.')
   })
 
   it('cannot retire a scenario', async () => {

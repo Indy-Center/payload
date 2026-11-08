@@ -223,7 +223,8 @@ async function plan(req: PayloadRequest, batch: TaskGridBatch): Promise<Write[]>
         ([, value]) => value !== undefined,
       ),
     )
-    updates.set(id, { ...updates.get(id), ...data })
+    // A moved task is sent only to be checked; its new key is written below.
+    if (Object.keys(data).length) updates.set(id, { ...updates.get(id), ...data })
   }
   for (const [id, key] of keys) {
     if (saved.has(id)) updates.set(id, { ...updates.get(id), _order: key })
