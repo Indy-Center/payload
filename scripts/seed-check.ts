@@ -226,6 +226,12 @@ async function seedTasks(payload: Payload, competencies: MadeIn, sources: MadeIn
   const into: MadeIn = {}
   // Two tasks carry mappings and citations (a place and a title).
   const extras: Record<string, object> = {
+    // Knowledge and skill statements: one task with both, one with only a skill, the rest none.
+    R1a1: {
+      knowledgeStatement: 'The symbols and legends on the airport diagram, and what each shows.',
+      skillStatement: 'Find a taxi route on the diagram and describe it in standard phraseology.',
+    },
+    R2a: { skillStatement: 'Issue a complete IFR clearance without prompting.' },
     R1b: {
       mappings: [{ competency: competencies['USA 1.1'].id }],
       citations: [

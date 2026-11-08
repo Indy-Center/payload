@@ -5,6 +5,8 @@ export type TreeTask = {
   id: string
   name: string
   description: string
+  knowledgeStatement: string
+  skillStatement: string
   parentId: string | null
   retired: boolean
   /** The orderable collection's fractional key: siblings sort by it. */
@@ -95,6 +97,8 @@ export async function loadTaskTree(
     select: {
       name: true,
       description: true,
+      knowledgeStatement: true,
+      skillStatement: true,
       parent: true,
       retired: true,
       _order: true,
@@ -108,6 +112,8 @@ export async function loadTaskTree(
       id: task.id,
       name: task.name,
       description: task.description ?? '',
+      knowledgeStatement: task.knowledgeStatement ?? '',
+      skillStatement: task.skillStatement ?? '',
       parentId: idOf(task.parent),
       retired: task.retired ?? false,
       order: task._order ?? '',

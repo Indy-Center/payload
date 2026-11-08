@@ -83,6 +83,52 @@ describe('the task list', () => {
   })
 })
 
+describe('a task’s knowledge and skill statements', () => {
+  it('are set and cleared by the Training Admin and leads', async () => {
+    for (const user of [admin, lead]) {
+      const task = await payload.create({
+        collection: 'tasks',
+        data: { name: 'Radio' },
+        ...as(user),
+      })
+      const set = await payload.update({
+        collection: 'tasks',
+        id: task.id,
+        data: { knowledgeStatement: 'Phraseology', skillStatement: 'Speak it' },
+        ...as(user),
+      })
+      expect(set).toMatchObject({ knowledgeStatement: 'Phraseology', skillStatement: 'Speak it' })
+
+      const cleared = await payload.update({
+        collection: 'tasks',
+        id: task.id,
+        data: { knowledgeStatement: null, skillStatement: '' },
+        ...as(user),
+      })
+      expect(cleared.knowledgeStatement ?? '').toBe('')
+      expect(cleared.skillStatement ?? '').toBe('')
+    }
+  })
+
+  it('can be read but not changed by a course author', async () => {
+    const task = await payload.create({
+      collection: 'tasks',
+      data: { name: 'Radio', knowledgeStatement: 'Phraseology', skillStatement: 'Speak it' },
+    })
+
+    const read = await payload.findByID({ collection: 'tasks', id: task.id, ...as(author) })
+    expect(read).toMatchObject({ knowledgeStatement: 'Phraseology', skillStatement: 'Speak it' })
+
+    for (const data of [{ knowledgeStatement: 'Changed' }, { skillStatement: 'Changed' }]) {
+      await expect(
+        payload.update({ collection: 'tasks', id: task.id, data, ...as(author) }),
+      ).rejects.toThrow('You are not allowed to perform this action.')
+    }
+    const after = await payload.findByID({ collection: 'tasks', id: task.id })
+    expect(after).toMatchObject({ knowledgeStatement: 'Phraseology', skillStatement: 'Speak it' })
+  })
+})
+
 describe('a course author', () => {
   it('edits their own course’s drafts, lesson plans and scenarios', async () => {
     const { own, ownDraft, task } = await courses()

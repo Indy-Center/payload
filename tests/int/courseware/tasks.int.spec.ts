@@ -64,6 +64,27 @@ describe('the task tree', () => {
     expect(body.tasks[1]).toMatchObject({ parentId: radio.id, retired: false })
   })
 
+  it('serves each task’s statements, empty when unset', async () => {
+    await task('Radio', undefined, {
+      knowledgeStatement: 'Phraseology',
+      skillStatement: 'Speak it',
+    })
+    await task('Clearances')
+
+    const { body } = await callEndpoint(payload, '/courseware/catalogue')
+
+    expect(
+      body.tasks.map((entry: Record<string, string>) => [
+        entry.name,
+        entry.knowledgeStatement,
+        entry.skillStatement,
+      ]),
+    ).toEqual([
+      ['Radio', 'Phraseology', 'Speak it'],
+      ['Clearances', '', ''],
+    ])
+  })
+
   it('renumbers later siblings when a task is moved in between, with no other edit', async () => {
     const user = await payload.create({
       collection: 'users',
