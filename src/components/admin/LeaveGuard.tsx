@@ -35,12 +35,23 @@ type Guard = {
 const guards: Guard[] = []
 /** A leave was accepted, so nothing asks again on the way out. */
 let leaving = false
-/** The address and history state of the page with unsaved changes, to put back after a back. */
-let here: { url: string; state: unknown } | null = null
+/** Marks the history entry the guard adds over a page with unsaved changes (see `arm`). */
+const SPARE = '__leaveGuardSpare'
+/** The address is on the guard's spare entry, so a back lands on the page's own entry. */
+let onSpare = false
 
-/** Keeps where the page is, as the changes become unsaved. */
-const remember = () => {
-  here = { url: window.location.href, state: window.history.state }
+/**
+ * Where the browser can't hold a back (no Navigation API), adds a spare history entry over the
+ * page, with the page's own address and Next's state, once its changes become unsaved. A back
+ * then only steps from the spare to the page's own entry: whoever hears of it first, Next draws
+ * the same page, and the guard asks before taking the real back. Nothing here stops Next or
+ * depends on running before it.
+ */
+function arm() {
+  if (navigationApi() || onSpare) return
+  const state = window.history.state as Record<string, unknown> | null
+  window.history.pushState({ ...state, [SPARE]: true }, '', window.location.href)
+  onSpare = true
 }
 
 function asking(needsLinks = false): Guard | undefined {
@@ -95,17 +106,18 @@ function onNavigate(event: Event) {
 }
 
 /**
- * The browser's back where it could not be held before the address moved. Listening in the
- * capture phase on `window` runs this before Next's own listener, which it stops, so the page
- * stays drawn; the page's address is put back at once, in the same step (a second history move
- * could be overtaken by others in flight), and back is taken once the person chooses to leave.
+ * The browser's back, where it could not be held: it has stepped off the spare entry onto the
+ * page's own, so the page is unchanged. The spare goes back at once, and the real back (two
+ * steps, past the spare) is taken once the person chooses to leave.
  */
 function onPopState(event: PopStateEvent) {
+  const wasOnSpare = onSpare
+  onSpare = Boolean((event.state as Record<string, unknown> | null)?.[SPARE])
+  if (leaving || !wasOnSpare || onSpare) return
   const guard = asking()
-  if (!guard || !here) return
-  event.stopImmediatePropagation()
-  window.history.pushState(here.state, '', here.url)
-  guard.ask(() => leave(() => window.history.back()))
+  if (!guard) return
+  arm()
+  guard.ask(() => leave(() => window.history.go(-2)))
 }
 
 function onClick(event: MouseEvent) {
@@ -158,7 +170,8 @@ function register(guard: Guard) {
     if (guards.length) return
     listen(false)
     leaving = false
-    here = null
+    // Left the page (a link, a tab): whatever entry the address is on now is not the spare.
+    onSpare = false
   }
 }
 
@@ -181,7 +194,7 @@ export function LeaveGuard({ unsaved, links = true }: { unsaved: boolean; links?
   useEffect(() => {
     guard.current.unsaved = unsaved
     guard.current.links = links
-    if (unsaved) remember()
+    if (unsaved) arm()
   }, [unsaved, links])
   useEffect(() => {
     guard.current.ask = (go) => {

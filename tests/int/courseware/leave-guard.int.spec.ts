@@ -54,6 +54,7 @@ afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
   delete (globalThis as { navigation?: unknown }).navigation
+  undoNext.splice(0).forEach((undo) => undo())
   vi.mocked(router.push).mockClear()
   nextPopState.mockClear()
 })
@@ -116,8 +117,56 @@ function back() {
 
 /** The Courses list, then a course's page pushed by Next's router, as a link click leaves them. */
 function enteredByLink() {
-  window.history.replaceState({ __NA: true }, '', '/admin/collections/courses')
-  window.history.pushState({ __NA: true }, '', '/admin/collections/courses/course-1')
+  const nextState = (tree: string) => ({ __NA: true, __PRIVATE_NEXTJS_INTERNALS_TREE: tree })
+  window.history.replaceState(nextState('courses list'), '', '/admin/collections/courses')
+  window.history.pushState(nextState('course page'), '', '/admin/collections/courses/course-1')
+}
+
+/** Undoes what a test put on `window` for Next's router. */
+const undoNext: (() => void)[] = []
+
+/**
+ * Next's app router as far as history goes (`node_modules/next/dist/client/components/
+ * app-router.js`, its `onPopState` and its patched `history.pushState`). On popstate it draws the
+ * page in the entry's own state (`__PRIVATE_NEXTJS_INTERNALS_TREE`), and ignores an entry with no
+ * state. Its pushState passes Next's own state (`__NA`) through; any other state is given the
+ * current entry's tree, which it then draws. `first` puts its listener ahead of the guard's
+ * (the same phase, registered earlier); otherwise the guard's capture listener runs first.
+ */
+// Draws the page of the entry the address is on when it starts.
+function nextRouter({ first }: { first: boolean }) {
+  type NextState = { __NA?: boolean; __PRIVATE_NEXTJS_INTERNALS_TREE?: string } | null
+  const router = { drawn: (window.history.state as NextState)?.__PRIVATE_NEXTJS_INTERNALS_TREE }
+  const onPopState = (event: PopStateEvent) => {
+    const state = event.state as NextState
+    if (!state) return
+    router.drawn = state.__PRIVATE_NEXTJS_INTERNALS_TREE
+  }
+  window.addEventListener('popstate', onPopState, first)
+  const history = window.history
+  const original = history.pushState.bind(history)
+  history.pushState = (data: unknown, unused: string, url?: string | URL | null) => {
+    const state = data as NextState
+    if (state?.__NA) return original(data, unused, url)
+    const current = history.state as NextState
+    const copied = {
+      ...state,
+      __NA: current?.__NA,
+      __PRIVATE_NEXTJS_INTERNALS_TREE: current?.__PRIVATE_NEXTJS_INTERNALS_TREE,
+    }
+    if (url) router.drawn = copied.__PRIVATE_NEXTJS_INTERNALS_TREE
+    return original(copied, unused, url)
+  }
+  undoNext.push(() => {
+    window.removeEventListener('popstate', onPopState, first)
+    history.pushState = original
+  })
+  return {
+    get drawn() {
+      // Kept up to date as the history moves; read after each move.
+      return router.drawn
+    },
+  }
 }
 
 /** A history move in jsdom, which lands a moment later, as the browser's does. */
@@ -248,20 +297,56 @@ describe('the leave guard', () => {
     expect(traverse('another-entry', { cancelable: false }).defaultPrevented).toBe(false)
   })
 
-  it('without the Navigation API, puts the address back at once and takes back on Leave anyway', async () => {
-    enteredByLink()
-    show(guard(true))
+  describe('without the Navigation API, on a page reached by an in-app link', () => {
+    // Whichever of Next's listener and the guard's the browser runs first.
+    for (const nextFirst of [true, false]) {
+      const order = nextFirst ? "Next's listener first" : "the guard's listener first"
 
-    await historyMove(() => window.history.back())
-    // Next never drew the list, and the address is the course page's again, in the same step.
-    expect(nextPopState).not.toHaveBeenCalled()
-    expect(window.location.pathname).toBe('/admin/collections/courses/course-1')
-    expect(modalHeading()).toBe('Leave without saving')
+      it(`asks before back and keeps the page drawn (${order})`, async () => {
+        enteredByLink()
+        const next = nextRouter({ first: nextFirst })
+        show(guard(true))
 
-    await press(modalButton('Leave anyway'))
-    await historyMove(() => {})
-    expect(nextPopState).toHaveBeenCalledTimes(1)
-    expect(window.location.pathname).toBe('/admin/collections/courses')
+        await historyMove(() => window.history.back())
+
+        expect(next.drawn).toBe('course page')
+        expect(window.location.pathname).toBe('/admin/collections/courses/course-1')
+        expect(modalHeading()).toBe('Leave without saving')
+
+        await press(modalButton('Leave anyway'))
+        await historyMove(() => {})
+        expect(next.drawn).toBe('courses list')
+        expect(window.location.pathname).toBe('/admin/collections/courses')
+      })
+
+      it(`asks again on the next back after Stay on this page (${order})`, async () => {
+        enteredByLink()
+        const next = nextRouter({ first: nextFirst })
+        show(guard(true))
+
+        await historyMove(() => window.history.back())
+        await press(modalButton('Stay on this page'))
+        await historyMove(() => window.history.back())
+
+        expect(next.drawn).toBe('course page')
+        expect(window.location.pathname).toBe('/admin/collections/courses/course-1')
+        expect(modalHeading()).toBe('Leave without saving')
+      })
+    }
+
+    it('asks nothing on back once the changes are saved', async () => {
+      enteredByLink()
+      const next = nextRouter({ first: true })
+      show(guard(true))
+      act(() => root!.render(page(guard(false))))
+
+      // The first back steps off the guard's spare entry, onto the same page.
+      await historyMove(() => window.history.back())
+      expect(modalHeading()).toBeNull()
+      expect(next.drawn).toBe('course page')
+      await historyMove(() => window.history.back())
+      expect(next.drawn).toBe('courses list')
+    })
   })
 
   it('runs a switch inside the screen at once with nothing unsaved, and after asking with', async () => {
