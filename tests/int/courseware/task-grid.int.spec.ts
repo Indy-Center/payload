@@ -60,6 +60,10 @@ async function tree() {
   )
 }
 
+/** The tasks as the grid opened them: each sends its id and when it was loaded. */
+const loaded = (...tasks: { id: string; updatedAt: string }[]) =>
+  tasks.map(({ id, updatedAt }) => ({ id, updatedAt }))
+
 const save = (body: unknown, user: User | null = lead) =>
   callEndpoint(payload, '/courseware/task-grid', {
     method: 'post',
@@ -74,8 +78,14 @@ describe('saving the Tasks grid', () => {
 
     const { status } = await save({
       changes: [
-        { id: t.radio.id, name: 'Radio work', description: 'On frequency' },
+        {
+          id: t.radio.id,
+          updatedAt: t.radio.updatedAt,
+          name: 'Radio work',
+          description: 'On frequency',
+        },
         { id: t.crossings.id, retired: true },
+        ...loaded(t.ground, t.ramp, t.runway),
       ],
       adds: [
         // Below "Taxi to runway", and a child of that new task.
@@ -154,8 +164,9 @@ describe('saving the Tasks grid', () => {
 
     const { status, body } = await save({
       changes: [
-        { id: t.radio.id, name: 'Radio work' },
-        { id: t.runway.id, name: '' },
+        { id: t.radio.id, updatedAt: t.radio.updatedAt, name: 'Radio work' },
+        { id: t.runway.id, updatedAt: t.runway.updatedAt, name: '' },
+        ...loaded(t.ground, t.ramp),
       ],
       adds: [
         { key: 'new:1', parent: t.taxi.id, name: 'Taxi to hold' },
@@ -191,6 +202,7 @@ describe('saving the Tasks grid', () => {
     const before = await tree()
 
     const { status, body } = await save({
+      changes: loaded(t.ramp, t.runway),
       orders: [{ parent: t.taxi.id, tasks: [t.ramp.id, t.runway.id] }],
     })
 
@@ -243,27 +255,44 @@ describe('saving the Tasks grid', () => {
       ])
     })
 
-    it('refuses a second reorder of the same siblings from one load, and writes nothing', async () => {
+    it('refuses a reorder of siblings another person reordered since, and writes nothing', async () => {
       const t = await seedTree()
-      const reorder = {
-        // As the grid sends it: the moved task, with when it was loaded.
-        // Runway goes after Ramp, so Runway's sort key is the one rewritten.
-        changes: [{ id: t.runway.id, updatedAt: t.runway.updatedAt }],
-        orders: [{ parent: t.taxi.id, tasks: [t.ramp.id, t.runway.id] }],
-      }
+      const gate = await task('Taxi to gate', t.taxi.id)
+      // Taxi holds, from this one load: runway, ramp, gate.
+      const siblings = loaded(t.runway, t.ramp, gate)
 
-      expect((await save(reorder)).status).toBe(200)
+      // The first person moves Gate to the top.
+      const first = await save({
+        changes: siblings,
+        orders: [{ parent: t.taxi.id, tasks: [gate.id, t.runway.id, t.ramp.id] }],
+      })
+      expect(first.status).toBe(200)
       const after = await tree()
-      const savedAt = (await payload.findByID({ collection: 'tasks', id: t.runway.id })).updatedAt
+      expect(
+        after.filter((row) => row.includes('Taxi to')).map((row) => row.trim().slice(6)),
+      ).toEqual(['Taxi to gate', 'Taxi to runway', 'Taxi to ramp'])
 
-      const { status, body } = await save(reorder)
-
-      expect(status).toBe(400)
-      expect(body.errors).toEqual([{ row: t.runway.id, message: STALE }])
+      // The second moves Runway to the end and sends only Runway, whose copy is still current.
+      // The save would rewrite Ramp or Gate from the stored order and undo the first move.
+      const only = await save({
+        changes: loaded(t.runway),
+        orders: [{ parent: t.taxi.id, tasks: [t.ramp.id, gate.id, t.runway.id] }],
+      })
+      expect(only.status).toBe(400)
+      expect(only.body.errors).toEqual([
+        { row: t.ramp.id, message: STALE },
+        { row: gate.id, message: STALE },
+      ])
       expect(await tree()).toEqual(after)
-      expect((await payload.findByID({ collection: 'tasks', id: t.runway.id })).updatedAt).toBe(
-        savedAt,
-      )
+
+      // Sent with every sibling's loaded copy, Gate shows as saved since.
+      const all = await save({
+        changes: siblings,
+        orders: [{ parent: t.taxi.id, tasks: [t.ramp.id, gate.id, t.runway.id] }],
+      })
+      expect(all.status).toBe(400)
+      expect(all.body.errors).toEqual([{ row: gate.id, message: STALE }])
+      expect(await tree()).toEqual(after)
     })
 
     it('refuses a stale row before any other rule on it', async () => {
@@ -303,7 +332,7 @@ describe('saving the Tasks grid', () => {
     const before = await tree()
 
     const { status, body } = await save({
-      changes: [{ id: t.taxi.id, retired: true }],
+      changes: [{ id: t.taxi.id, retired: true }, ...loaded(t.runway, t.ramp)],
       adds: [{ key: 'new:1', parent: t.taxi.id, name: 'Taxi to hold' }],
       orders: [{ parent: t.taxi.id, tasks: [t.runway.id, t.ramp.id, 'new:1'] }],
     })

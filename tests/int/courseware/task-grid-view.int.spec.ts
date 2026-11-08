@@ -300,8 +300,13 @@ describe('the Tasks grid', () => {
     const [url, init] = fetch.mock.calls[0] as [string, RequestInit]
     expect(url).toBe('/api/courseware/task-grid')
     expect(JSON.parse(init.body as string)).toEqual({
-      // The moved task says when it was loaded: its sort key is rewritten, so it is checked too.
-      changes: [{ id: 'a', updatedAt: LOADED }],
+      // Every saved sibling in the reordered group says when it was loaded: the server rewrites
+      // keys from the stored order, so any of them may be the one it rewrites.
+      changes: [
+        { id: 'd', updatedAt: LOADED },
+        { id: 'a', updatedAt: LOADED },
+        { id: 'e', updatedAt: LOADED },
+      ],
       adds: [
         {
           key: 'new:1',
