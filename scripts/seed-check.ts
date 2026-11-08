@@ -302,7 +302,8 @@ type Ctx = {
 type Courseware = Record<'courses' | 'course-versions' | 'lesson-plans' | 'scenarios', MadeIn>
 
 /**
- * X-GC (two editions, two scenarios) and X-TWR (no editions). The scenarios pick positions: one
+ * X-GC (two editions, four scenarios: one offered by two lesson plans of the draft, one by none,
+ * one retired) and X-TWR (no editions). The scenarios pick positions: one
  * shown by vNAS's short name (IND_83_CTR, "FLM 83 · Falmouth 83"), the others by a generated one
  * (LOU_TWR is "LOU LC"), and PKB_TWR, which `seedPositions` retires afterwards, so a scenario
  * names a retired position.
@@ -421,18 +422,62 @@ async function seedCourses({
     overrideAccess: true,
   })
 
-  // Edition 2: a draft that passes the publishing check.
+  // For the course page's Scenarios tab: one no lesson plan offers, and a retired one.
+  await make(payload, out.scenarios, 'scenarios', 'event-rush', {
+    course,
+    name: 'Example event rush',
+    airport: 'KIND',
+    studentPosition: positions.LOU_TWR.id,
+    teacherPosition: positions.SDF_D_APP.id,
+    difficulty: 'hard',
+    description: 'Made-up setup: thirty movements in forty minutes. No lesson plan offers it yet.',
+  })
+  await make(payload, out.scenarios, 'scenarios', 'old-ground', {
+    course,
+    name: 'Example old ground',
+    airport: 'KIND',
+    studentPosition: positions.LOU_TWR.id,
+    teacherPosition: positions.SDF_D_APP.id,
+    difficulty: 'medium',
+    description: 'Made-up setup from before the taxiway rebuild.',
+    retired: true,
+  })
+
+  // Edition 2: a draft that passes the publishing check. X-GC-1 has a required and an optional
+  // task and a teacher-only resource; it and X-GC-2 both offer the ground push; X-GC-9, in no
+  // module, has no tasks yet (the publishing check reads only lesson plans in modules); and
+  // Working traffic is an empty module.
   const second = await edition('X-GC edition 2')
   const draftPlan = await plan('X-GC-1 (edition 2)', second, {
     code: 'X-GC-1',
     title: 'Finding your way around, revised',
-    tasks: [{ task: tasks.R1b.id }, { task: tasks.R3.id }],
+    tasks: [{ task: tasks.R1b.id }, { task: tasks.R3.id, required: false }],
+    resources: [
+      { title: 'Airport diagram', url: 'https://example.com/x-gc/diagram' },
+      { title: 'Answer key', url: 'https://example.com/x-gc/answers', teacherOnly: true },
+    ],
     scenarios: [scenarioOne],
+  })
+  const draftTwo = await plan('X-GC-2 (edition 2)', second, {
+    code: 'X-GC-2',
+    title: 'Issuing clearances, revised',
+    tasks: [{ task: tasks.R2b.id }],
+    scenarios: [scenarioOne, scenarioTwo],
+  })
+  await plan('X-GC-9 (edition 2)', second, {
+    code: 'X-GC-9',
+    title: 'Not written yet',
+    tasks: [],
   })
   await payload.update({
     collection: 'course-versions',
     id: second,
-    data: { modules: [{ title: 'Getting started', lessonPlans: [draftPlan] }] },
+    data: {
+      modules: [
+        { title: 'Getting started', lessonPlans: [draftPlan, draftTwo] },
+        { title: 'Working traffic', description: 'In the sim.', lessonPlans: [] },
+      ],
+    },
     depth: 0,
     overrideAccess: true,
   })

@@ -37,8 +37,8 @@ describe('the browser-check seed', () => {
     expect(await count('grading-scales')).toBe(1)
     expect(await count('courses')).toBe(2)
     expect(await count('course-versions')).toBe(2)
-    expect(await count('lesson-plans')).toBe(4)
-    expect(await count('scenarios')).toBe(2)
+    expect(await count('lesson-plans')).toBe(6)
+    expect(await count('scenarios')).toBe(4)
     expect(await count('positions')).toBe(7)
 
     const live = await payload.findByID({
