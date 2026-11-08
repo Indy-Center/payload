@@ -41,6 +41,8 @@ import { ChecklistFeatureClient as ChecklistFeatureClient_e70f5e05f09f93e00b997e
 import { BlockquoteFeatureClient as BlockquoteFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { HorizontalRuleFeatureClient as HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { InlineToolbarFeatureClient as InlineToolbarFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
+import { LessonPlanTaskLinks as LessonPlanTaskLinks_d607c6cc4bc21a165cd9aaa492aed509 } from '../../../components/admin/LessonPlanTaskLinks'
+import { LessonPlanGridView as LessonPlanGridView_f2272469e4dea8ab3fa8c5a4ab390f53 } from '../../../components/admin/LessonPlanGridView'
 import { PositionPicker as PositionPicker_bc532691c8bae6f7b7e39eff86f88f13 } from '../../../components/admin/positions/PositionPicker'
 import { FrequencyCell as FrequencyCell_f3122caea05cacf86ae3a5350c5931cc } from '../../../components/admin/positions/Frequency'
 import { FrequencyField as FrequencyField_f3122caea05cacf86ae3a5350c5931cc } from '../../../components/admin/positions/Frequency'
@@ -99,6 +101,8 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#BlockquoteFeatureClient": BlockquoteFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#HorizontalRuleFeatureClient": HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#InlineToolbarFeatureClient": InlineToolbarFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+  "/components/admin/LessonPlanTaskLinks#LessonPlanTaskLinks": LessonPlanTaskLinks_d607c6cc4bc21a165cd9aaa492aed509,
+  "/components/admin/LessonPlanGridView#LessonPlanGridView": LessonPlanGridView_f2272469e4dea8ab3fa8c5a4ab390f53,
   "/components/admin/positions/PositionPicker#PositionPicker": PositionPicker_bc532691c8bae6f7b7e39eff86f88f13,
   "/components/admin/positions/Frequency#FrequencyCell": FrequencyCell_f3122caea05cacf86ae3a5350c5931cc,
   "/components/admin/positions/Frequency#FrequencyField": FrequencyField_f3122caea05cacf86ae3a5350c5931cc,

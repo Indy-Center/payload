@@ -6,7 +6,7 @@ import { refuseMinimumOffScale } from '@/courseware/minimums'
 import { placeLessonPlan } from '@/courseware/outline'
 import { rowLabelComponent } from '@/courseware/row-label-component'
 import { lessonPlanBodyEditor } from '@/courseware/rich-text'
-import { settleLessonPlanTasks } from '@/courseware/lesson-plan-tasks'
+import { ROWS_AS_SENT, settleLessonPlanTasks } from '@/courseware/lesson-plan-tasks'
 import { refuseAuthorsLessonPlanStructure } from '@/courseware/structure'
 import { taskPickerComponents } from '@/courseware/task-picker'
 import { expandTaskRows, pickableTask } from '@/courseware/task-rows'
@@ -44,6 +44,18 @@ export const LessonPlans: CollectionConfig = {
     // Out of the nav: lesson plans are reached from their edition on the course's page (0056).
     // The collection's pages still open by link.
     group: false,
+    components: {
+      views: {
+        // The lesson plan's tasks as a grid, with "Add tasks" (src/components/admin).
+        edit: {
+          grid: {
+            path: '/grid',
+            Component: '/components/admin/LessonPlanGridView#LessonPlanGridView',
+            tab: { label: 'Edit as grid', href: '/grid' },
+          },
+        },
+      },
+    },
   },
   access: lessonPlanAccess,
   hooks: {
@@ -77,10 +89,14 @@ export const LessonPlans: CollectionConfig = {
           'minimum' in data ? data.minimum : originalDoc?.minimum,
           version?.gradingScale,
         )
-        const rows = await expandTaskRows(req, data.tasks, originalDoc?.tasks, 'tasks', {
-          teacherNotes: '',
-          required: true,
-        })
+        const rows = await expandTaskRows(
+          req,
+          data.tasks,
+          originalDoc?.tasks,
+          'tasks',
+          { teacherNotes: '', required: true },
+          { expand: !context[ROWS_AS_SENT] },
+        )
         data.tasks = await settleLessonPlanTasks(req, rows, 'tasks')
         return data
       },
@@ -140,6 +156,14 @@ export const LessonPlans: CollectionConfig = {
       admin: {
         description:
           'The point on the version’s scale, counted from 1. Starts from the version’s default.',
+      },
+    },
+    {
+      name: 'taskLinks',
+      type: 'ui',
+      admin: {
+        components: { Field: '/components/admin/LessonPlanTaskLinks#LessonPlanTaskLinks' },
+        disableListColumn: true,
       },
     },
     {

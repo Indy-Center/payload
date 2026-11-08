@@ -396,6 +396,65 @@ span.task-tree__toggle {
   }
 }
 
+// A lesson plan's grid (src/components/admin/LessonPlanTaskGrid.tsx) wears the Tasks grid's look;
+// its task cell is read-only text in line with the boxes beside it.
+.lesson-plan-grid .task-grid__task {
+  line-height: 2rem;
+}
+
+// Its "Add tasks" picker: the live task tree, a box before each task, scrolling inside its box.
+.lesson-plan-picker {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: var(--style-radius-m);
+
+  &__list {
+    max-height: 24rem;
+    overflow-y: auto;
+    margin: 0 0 0.75rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__task {
+    display: flex;
+    align-items: baseline;
+    gap: 0.375rem;
+    padding-block: 0.25rem;
+    cursor: pointer;
+  }
+
+  &__task--added {
+    color: var(--theme-elevation-500);
+    cursor: default;
+  }
+
+  &__number {
+    font-family: var(--font-mono);
+  }
+
+  &__added {
+    margin-inline-start: 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  &__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+}
+
+// "Add tasks" and "Edit as grid" above a lesson plan's Tasks.
+.lesson-plan-task-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
 // The Training Admin's and leads' ↑ and ↓, before each number. A missing one keeps its space, so
 // the numbers stay in line.
 .task-tree__moves {
