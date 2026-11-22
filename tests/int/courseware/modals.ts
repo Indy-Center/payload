@@ -19,9 +19,12 @@ const Root = withChildren(RootProvider)
  */
 export function AdminShell({
   config,
+  serverFunction = async () => ({}),
   children,
 }: {
   config: ClientConfig
+  /** What the CMS answers the admin's server functions, such as a drawer's `render-document`. */
+  serverFunction?: ServerFunctionClient
   children?: React.ReactNode
 }) {
   // Payload watches the window's width; jsdom has no layout, so no width query ever matches.
@@ -52,7 +55,7 @@ export function AdminShell({
           languageCode: 'en',
           languageOptions: [],
           permissions: {} as SanitizedPermissions,
-          serverFunction: (async () => ({})) as ServerFunctionClient,
+          serverFunction,
           theme: 'light',
           translations: enTranslations,
           // Signed in, so the admin is drawn at once rather than after asking the CMS who is.
