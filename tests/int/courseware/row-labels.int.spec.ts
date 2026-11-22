@@ -59,6 +59,38 @@ describe('what a row says', () => {
     )
   })
 
+  it('names a scenario event by number, difficulty, callsign, type and first line', () => {
+    expect(
+      rowLabel(
+        'scenario-event',
+        {
+          difficulty: 'hard',
+          callsign: 'AAL1423',
+          aircraftType: 'A321',
+          description: '\nAsks for 5000.\nThen 7000.',
+        },
+        null,
+        2,
+      )?.text,
+    ).toBe('3 · Hard · AAL1423 · A321 · Asks for 5000.')
+  })
+
+  it('leaves out the parts of a scenario event that are empty', () => {
+    expect(
+      rowLabel(
+        'scenario-event',
+        { difficulty: 'medium', callsign: ' ', aircraftType: '', description: 'TMU ground stop.' },
+        null,
+        0,
+      )?.text,
+    ).toBe('1 · Medium · TMU ground stop.')
+  })
+
+  it('names a new scenario event by its number and Easy', () => {
+    expect(rowLabel('scenario-event', {}, null, 1)?.text).toBe('2 · Easy')
+    expect(rowLabel('scenario-event', { difficulty: 'easy' }, null, 0)?.text).toBe('1 · Easy')
+  })
+
   it('says nothing for an empty row or before the lookup arrives', () => {
     expect(rowLabel('mapping', {}, lookup)).toBeNull()
     expect(rowLabel('mapping', { competency: 'c1' }, null)).toBeNull()
@@ -76,6 +108,7 @@ describe('the label of an empty row', () => {
     point: ['grading-scales', 'points'],
     module: ['course-versions', 'modules'],
     prerequisite: ['courses', 'prerequisites'],
+    'scenario-event': ['scenarios', 'events'],
   }
 
   it.each(Object.entries(arrays) as [RowLabelKind, [string, string]][])(

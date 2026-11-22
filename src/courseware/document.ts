@@ -65,15 +65,26 @@ export type ScenarioPosition = {
   callsign: string
 }
 
+/** One thing that happens in a scenario, tagged with the difficulty it first appears at (decision 0070). */
+export type ScenarioEvent = {
+  difficulty: 'easy' | 'medium' | 'hard'
+  /** Such as AAL1423; empty when unset. */
+  callsign: string
+  /** Such as A321; empty when unset. */
+  aircraftType: string
+  description: string
+}
+
 export type Scenario = {
   id: string
   name: string
   airport: string
   studentPosition: ScenarioPosition
   teacherPosition: ScenarioPosition
-  difficulty: 'easy' | 'medium' | 'hard' | null
   /** For the teacher; empty when unset. */
   description: string
+  /** Every event, in the scenario's order. Harder difficulties keep what easier ones have. */
+  events: ScenarioEvent[]
   /** The scenario's link or ID in ATCTrainer; empty when unset. */
   atctrainer: string
   retired: boolean

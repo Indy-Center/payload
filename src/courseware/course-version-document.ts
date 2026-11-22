@@ -277,8 +277,13 @@ function scenario(
     airport: record.airport,
     studentPosition: positionOf(record.studentPosition),
     teacherPosition: positionOf(record.teacherPosition),
-    difficulty: record.difficulty ?? null,
     description: record.description ?? '',
+    events: (record.events ?? []).map((event) => ({
+      difficulty: event.difficulty,
+      callsign: event.callsign ?? '',
+      aircraftType: event.aircraftType ?? '',
+      description: event.description,
+    })),
     atctrainer: record.atctrainer ?? '',
     retired: record.retired ?? false,
   }

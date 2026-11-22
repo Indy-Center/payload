@@ -19,7 +19,7 @@ export const CoursewareRowLabel = ({ kind }: { kind: RowLabelKind }) => {
   // Partial: a row being typed has most of its fields empty.
   const { data, rowNumber = 0 } = useRowLabel<RowData>()
   const lookup = useRowLabelLookup()
-  const label = rowLabel(kind, data, lookup)
+  const label = rowLabel(kind, data, lookup, rowNumber)
   return (
     <>
       <span className="row-label" style={{ pointerEvents: 'none' }}>

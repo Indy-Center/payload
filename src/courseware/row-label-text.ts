@@ -14,7 +14,8 @@ export type RowLabelLookup = {
   credentials: Record<string, string>
 }
 
-export type RowLabelKind = 'mapping' | 'citation' | 'point' | 'module' | 'prerequisite'
+export type RowLabelKind =
+  'mapping' | 'citation' | 'point' | 'module' | 'prerequisite' | 'scenario-event'
 
 /** Payload's own label for an untitled row: "Mapping 01", "Mapping 02", and so on. */
 export const SINGULAR: Record<RowLabelKind, string> = {
@@ -23,7 +24,10 @@ export const SINGULAR: Record<RowLabelKind, string> = {
   point: 'Point',
   module: 'Module',
   prerequisite: 'Prerequisite',
+  'scenario-event': 'Scenario event',
 }
+
+const DIFFICULTY_NAME: Record<string, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' }
 
 export const numberedLabel = (kind: RowLabelKind, rowNumber: number) =>
   `${SINGULAR[kind]} ${String(rowNumber + 1).padStart(2, '0')}`
@@ -39,6 +43,10 @@ export type RowData = {
   title?: string | null
   label?: string | null
   anyOf?: Id[] | null
+  difficulty?: string | null
+  callsign?: string | null
+  aircraftType?: string | null
+  description?: string | null
 }
 
 export type RowLabelText = { text: string; tag?: string }
@@ -54,12 +62,30 @@ function citationLabel(row: RowData, lookup: RowLabelLookup): RowLabelText | nul
   return { text: title ? `${where} · ${title}` : where }
 }
 
+/**
+ * "3 · Hard · AAL1423 · A321 · Request to climb": the row number, difficulty, callsign, aircraft
+ * type and the description's first line, leaving out what is empty. A new row reads "1 · Easy".
+ */
+function scenarioEventLabel(row: RowData, rowNumber: number): RowLabelText {
+  const firstLine = clean(row.description?.split('\n').find((line) => line.trim()))
+  const parts = [
+    String(rowNumber + 1),
+    DIFFICULTY_NAME[row.difficulty ?? ''] ?? 'Easy',
+    clean(row.callsign),
+    clean(row.aircraftType),
+    firstLine,
+  ].filter(Boolean)
+  return { text: parts.join(' · ') }
+}
+
 /** The label for a row, or null while it has nothing to say (Payload's own label is shown). */
 export function rowLabel(
   kind: RowLabelKind,
   row: RowData | undefined,
   lookup: RowLabelLookup | null,
+  rowNumber = 0,
 ): RowLabelText | null {
+  if (kind === 'scenario-event') return scenarioEventLabel(row ?? {}, rowNumber)
   if (!row) return null
   switch (kind) {
     case 'point':

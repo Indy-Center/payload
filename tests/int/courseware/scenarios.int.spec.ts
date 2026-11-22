@@ -42,7 +42,6 @@ function scenario(courseId: string) {
       airport: 'KXYZ',
       studentPosition: tower.id,
       teacherPosition: center.id,
-      difficulty: 'hard',
     },
   })
 }
@@ -209,18 +208,111 @@ describe('a scenario saved by its course’s author', () => {
     ])
   })
 
-  it('picks its difficulty from Easy, Medium and Hard, or none', async () => {
-    for (const difficulty of ['easy', 'medium', 'hard'] as const) {
-      expect(await save({ difficulty })).toMatchObject({ difficulty })
-    }
-    expect((await save({})).difficulty ?? null).toBeNull()
+  it('saves scenario events, which come back in the saved order with their tags', async () => {
+    const events = [
+      {
+        difficulty: 'hard',
+        callsign: 'AAL1423',
+        aircraftType: 'A321',
+        description: 'Asks for 5000.',
+      },
+      { difficulty: 'easy', description: 'TMU ground stop on the north flow.' },
+      { difficulty: 'medium', callsign: 'DAL9', description: 'Asks to taxi to the ramp.' },
+    ] as const
+    const saved = await save({ events: events.map((event) => ({ ...event })) })
+
+    const read = await payload.findByID({ collection: 'scenarios', id: saved.id, depth: 0 })
+    expect(
+      read.events?.map(({ difficulty, callsign, aircraftType, description }) => ({
+        difficulty,
+        callsign: callsign ?? null,
+        aircraftType: aircraftType ?? null,
+        description,
+      })),
+    ).toEqual(
+      events.map((event) => ({
+        callsign: null,
+        aircraftType: null,
+        ...event,
+      })),
+    )
+
+    const reordered = await change(saved.id, {
+      events: [...read.events!].reverse().map(({ id: _id, ...event }) => event),
+    })
+    expect(reordered.events?.map(({ description }) => description)).toEqual(
+      events.map(({ description }) => description).reverse(),
+    )
   })
 
-  it('refuses any other difficulty', async () => {
-    for (const difficulty of ['Hard', 'very hard']) {
-      const refused = await refusal(save({ difficulty: difficulty as Scenario['difficulty'] }))
-      expect(refused.map(({ path }) => path)).toEqual(['difficulty'])
+  it('refuses an event with no description, naming its path', async () => {
+    const refused = await refusal(
+      save({
+        events: [{ difficulty: 'easy', description: 'Fine.' }, { difficulty: 'hard' } as never],
+      }),
+    )
+    expect(refused.map(({ path }) => path)).toEqual(['events.1.description'])
+  })
+
+  it('saves an event given no difficulty as easy', async () => {
+    const saved = await save({ events: [{ description: 'Asks for flight following.' } as never] })
+    expect(saved.events?.[0]).toMatchObject({ difficulty: 'easy' })
+  })
+
+  it('refuses a difficulty other than Easy, Medium or Hard', async () => {
+    const refused = await refusal(
+      save({ events: [{ difficulty: 'very hard' as never, description: 'Too much.' }] }),
+    )
+    expect(refused.map(({ path }) => path)).toEqual(['events.0.difficulty'])
+  })
+})
+
+describe('the migration to scenario events', () => {
+  const migration = () => import('@/migrations/20261122_184941_scenario_events')
+
+  it('keeps scenarios of every old difficulty and drops the column and its type', async () => {
+    const { pool, drizzle } = payload.db as unknown as PostgresAdapter
+    const { course: owner } = await course('X-TWR')
+    const args = { db: drizzle, payload, req: {} as PayloadRequest }
+    const { up, down } = await migration()
+
+    // Back to the old shape, then fill it as the old schema allowed.
+    await down(args)
+    try {
+      for (const [name, difficulty] of [
+        ['Busy afternoon', 'hard'],
+        ['Quiet morning', 'easy'],
+        ['Night shift', 'medium'],
+        ['No difficulty', null],
+      ] as const) {
+        await pool.query(
+          `insert into "scenarios" ("id", "course_id", "name", "airport", "student_position_id",
+            "teacher_position_id", "difficulty") values (gen_random_uuid(), $1, $2, 'KXYZ', $3, $4, $5)`,
+          [owner.id, name, tower.id, center.id, difficulty],
+        )
+      }
+    } finally {
+      await up(args)
     }
+
+    const { rows } = await pool.query(`select "name", "airport" from "scenarios" order by "name"`)
+    expect(rows).toEqual([
+      { name: 'Busy afternoon', airport: 'KXYZ' },
+      { name: 'Night shift', airport: 'KXYZ' },
+      { name: 'No difficulty', airport: 'KXYZ' },
+      { name: 'Quiet morning', airport: 'KXYZ' },
+    ])
+    const columns = await pool.query(
+      `select column_name from information_schema.columns
+       where table_name = 'scenarios' and column_name = 'difficulty'`,
+    )
+    expect(columns.rows).toEqual([])
+    const types = await pool.query(
+      `select typname from pg_type where typname = 'enum_scenarios_difficulty'`,
+    )
+    expect(types.rows).toEqual([])
+    const events = await pool.query(`select count(*)::int as n from "scenarios_events"`)
+    expect(events.rows).toEqual([{ n: 0 }])
   })
 })
 
@@ -325,11 +417,19 @@ describe('scenarios offered by a lesson plan', () => {
     return { offered, scenarios: body.modules[0].lessonPlans[0].scenarios }
   }
 
-  it('are served with their positions, difficulty, description and ATCTrainer link, and no tasks or mode', async () => {
+  it('are served with their positions, description, events and ATCTrainer link, and no tasks, mode or difficulty', async () => {
     const { offered, scenarios } = await served({
-      difficulty: 'hard',
       description: 'Three departures, flight plans filed.',
       atctrainer: 'busy-afternoon-1',
+      events: [
+        {
+          difficulty: 'medium',
+          callsign: 'AAL1423',
+          aircraftType: 'A321',
+          description: 'Asks for 5000.',
+        },
+        { difficulty: 'easy', description: 'TMU ground stop.' },
+      ],
     })
 
     expect(scenarios).toEqual([
@@ -340,13 +440,23 @@ describe('scenarios offered by a lesson plan', () => {
         // Each position by its vNAS id and callsign.
         studentPosition: { id: 'vnas-XYZ_TWR', callsign: 'XYZ_TWR' },
         teacherPosition: { id: 'vnas-XYZ_83_CTR', callsign: 'XYZ_83_CTR' },
-        difficulty: 'hard',
         description: 'Three departures, flight plans filed.',
+        // In the scenario's order, an unset callsign or type as an empty string.
+        events: [
+          {
+            difficulty: 'medium',
+            callsign: 'AAL1423',
+            aircraftType: 'A321',
+            description: 'Asks for 5000.',
+          },
+          { difficulty: 'easy', callsign: '', aircraftType: '', description: 'TMU ground stop.' },
+        ],
         atctrainer: 'busy-afternoon-1',
         retired: false,
       },
     ])
     expect(scenarios[0]).not.toHaveProperty('mode')
+    expect(scenarios[0]).not.toHaveProperty('difficulty')
   })
 
   it('serve an empty description and ATCTrainer link when unset', async () => {
@@ -355,10 +465,10 @@ describe('scenarios offered by a lesson plan', () => {
     expect(scenarios[0]).toMatchObject({ description: '', atctrainer: '' })
   })
 
-  it('serve null for a difficulty not given', async () => {
+  it('serve no events for a scenario with none', async () => {
     const { scenarios } = await served({})
 
-    expect(scenarios[0]).toMatchObject({ difficulty: null })
+    expect(scenarios[0]).toMatchObject({ events: [] })
     expect(scenarios[0]).not.toHaveProperty('position')
   })
 
