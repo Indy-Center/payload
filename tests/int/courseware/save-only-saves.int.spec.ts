@@ -16,9 +16,9 @@ import { AdminShell } from './modals'
 
 /**
  * Save only saves (0071): the lesson plan and scenario drawers stay open on save, the tab behind
- * them refreshes, and an "add" drawer goes on editing the record it created. Payload's own drawer
- * is drawn; its `closeDrawer` is watched, and the CMS's `render-document` answers with a stand-in
- * form whose Save reports what Payload's form reports.
+ * them refreshes, and an "add" drawer goes on to edit the record it created, in that record's own
+ * drawer. Payload's own drawer is drawn; its `closeDrawer` is watched, and the CMS's
+ * `render-document` answers with a stand-in form whose Save reports what Payload's form reports.
  */
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -62,27 +62,40 @@ const router = {
 /** The id the CMS gives a record an "add" drawer creates. */
 const CREATED = 'created-1'
 
-/** A stand-in for Payload's form in a drawer: which record it edits, and its Save. */
+/**
+ * A stand-in for Payload's form in a drawer: which record it edits, and its Save. Like Payload's,
+ * a create form that has saved keeps its own permissions, worked out with no record: for a course
+ * author, no Save. Payload's drawer swaps the created record's form into that same form, so only a
+ * form drawn afresh for the record can be saved again.
+ */
 function StandInForm({ id }: { id?: string }) {
   const { onSave } = useDocumentDrawerContext()
+  const [maySave, setMaySave] = React.useState(true)
   return React.createElement(
     'div',
     { className: 'stand-in-form' },
     React.createElement('p', null, id ? `Editing ${id}` : 'Creating'),
-    React.createElement(
-      'button',
-      {
-        type: 'button',
-        onClick: () =>
-          onSave?.({
-            doc: { id: id ?? CREATED },
-            operation: id ? 'update' : 'create',
-          } as unknown as Parameters<NonNullable<typeof onSave>>[0]),
-      },
-      'Save the form',
-    ),
+    maySave &&
+      React.createElement(
+        'button',
+        {
+          type: 'button',
+          onClick: () => {
+            onSave?.({
+              doc: { id: id ?? CREATED },
+              operation: id ? 'update' : 'create',
+            } as unknown as Parameters<NonNullable<typeof onSave>>[0])
+            if (!id) setMaySave(false)
+          },
+        },
+        'Save the form',
+      ),
   )
 }
+
+/** How many drawers are open on a form, and whether the open one can be saved. */
+const openForms = () => document.querySelectorAll('.stand-in-form').length
+const maySave = () => document.querySelector('.stand-in-form button') !== null
 
 let serverFunction: ReturnType<typeof vi.fn>
 let root: Root | null = null
@@ -219,7 +232,7 @@ describe('the lesson plan drawer on the Content tab', () => {
 })
 
 describe('“+ Add lesson plan”', () => {
-  it('stays open when saved, now editing the lesson plan it created, and the tab refreshes', async () => {
+  it('opens the lesson plan it created in its own drawer when saved, and the tab refreshes', async () => {
     show(contentTab([plan('x-1')]))
 
     await press('+ Add lesson plan')
@@ -227,8 +240,9 @@ describe('“+ Add lesson plan”', () => {
     await press('Save the form')
 
     expect(drawer()).toBe(`Editing ${CREATED}`)
-    expect(rendered()).toEqual([null, CREATED])
-    expect(closed.count).toBe(0)
+    expect(openForms()).toBe(1)
+    expect(maySave()).toBe(true)
+    expect(rendered().at(-1)).toBe(CREATED)
     expect(router.refresh).toHaveBeenCalledTimes(1)
   })
 
@@ -236,13 +250,15 @@ describe('“+ Add lesson plan”', () => {
     show(contentTab([plan('x-1')]))
     await press('+ Add lesson plan')
     await press('Save the form')
+    const renders = rendered().length
 
     draw(contentTab([plan('x-1'), plan(CREATED)]))
 
     expect(drawer()).toBe(`Editing ${CREATED}`)
     await press('Save the form')
     expect(drawer()).toBe(`Editing ${CREATED}`)
-    expect(rendered()).toEqual([null, CREATED])
+    expect(maySave()).toBe(true)
+    expect(rendered()).toHaveLength(renders)
     expect(router.refresh).toHaveBeenCalledTimes(2)
   })
 })
@@ -273,7 +289,7 @@ describe('the scenario drawer on the Scenarios tab', () => {
 })
 
 describe('“+ Add scenario”', () => {
-  it('stays open when saved, now editing the scenario it created, and the tab refreshes', async () => {
+  it('opens the scenario it created in its own drawer when saved, and the tab refreshes', async () => {
     show(scenariosTab([scenario('s1', 'KXYZ_GND_01')]))
 
     await press('+ Add scenario')
@@ -281,8 +297,9 @@ describe('“+ Add scenario”', () => {
     await press('Save the form')
 
     expect(drawer()).toBe(`Editing ${CREATED}`)
-    expect(rendered()).toEqual([null, CREATED])
-    expect(closed.count).toBe(0)
+    expect(openForms()).toBe(1)
+    expect(maySave()).toBe(true)
+    expect(rendered().at(-1)).toBe(CREATED)
     expect(router.refresh).toHaveBeenCalledTimes(1)
   })
 
@@ -290,13 +307,15 @@ describe('“+ Add scenario”', () => {
     show(scenariosTab([scenario('s1', 'KXYZ_GND_01')]))
     await press('+ Add scenario')
     await press('Save the form')
+    const renders = rendered().length
 
     draw(scenariosTab([scenario('s1', 'KXYZ_GND_01'), scenario(CREATED, 'KXYZ_GND_02')]))
 
     expect(drawer()).toBe(`Editing ${CREATED}`)
     await press('Save the form')
     expect(drawer()).toBe(`Editing ${CREATED}`)
-    expect(rendered()).toEqual([null, CREATED])
+    expect(maySave()).toBe(true)
+    expect(rendered()).toHaveLength(renders)
     expect(router.refresh).toHaveBeenCalledTimes(2)
   })
 })

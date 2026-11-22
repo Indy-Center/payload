@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Button, useDocumentDrawer } from '@payloadcms/ui'
 import { editionLabel } from './edition-label'
 import type { ScenarioRow, ScenarioTab } from './scenarios'
+import { useAddDrawer } from './useAddDrawer'
 
 type Props = {
   courseId: string
@@ -115,18 +116,22 @@ function ScenarioLink({ scenario, onSaved }: { scenario: ScenarioRow; onSaved: (
 }
 
 /**
- * "+ Add scenario": a new scenario of this course in a drawer. Saving keeps the drawer open, now
- * editing the scenario it created (Payload's drawer switches to a record it creates).
+ * "+ Add scenario": a new scenario of this course in a drawer. Saving opens the scenario it
+ * created in its own drawer, in place of the new one (see `useAddDrawer`).
  */
 function AddScenario({ courseId, onSaved }: { courseId: string; onSaved: () => void }) {
-  const [Drawer, , { openDrawer }] = useDocumentDrawer({ collectionSlug: 'scenarios' })
   const initialData = useMemo(() => ({ course: courseId }), [courseId])
+  const { openDrawer, drawers } = useAddDrawer({
+    collectionSlug: 'scenarios',
+    initialData,
+    onSaved,
+  })
   return (
     <>
       <Button margin={false} size="small" onClick={openDrawer}>
         + Add scenario
       </Button>
-      <Drawer initialData={initialData} onSave={onSaved} />
+      {drawers}
     </>
   )
 }
