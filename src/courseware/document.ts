@@ -67,6 +67,7 @@ export type ScenarioPosition = {
 
 /** One thing that happens in a scenario, tagged with the difficulty it first appears at (decision 0070). */
 export type ScenarioEvent = {
+  id: string
   difficulty: 'easy' | 'medium' | 'hard'
   /** Such as AAL1423; empty when unset. */
   callsign: string

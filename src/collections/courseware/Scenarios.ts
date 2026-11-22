@@ -76,6 +76,7 @@ export const Scenarios: CollectionConfig = {
       // appears at (decision 0070).
       name: 'events',
       type: 'array',
+      label: 'Scenario events',
       labels: { singular: 'Scenario event', plural: 'Scenario events' },
       admin: {
         components: { RowLabel: rowLabelComponent('scenario-event') },

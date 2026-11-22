@@ -12,7 +12,7 @@ import { useRowLabelLookup } from './row-label-lookup'
 /**
  * Names a courseware array row by what it holds, so a collapsed row can be read without opening
  * it. Every courseware array registers this one component, saying which kind of row it labels
- * (`clientProps: { kind }`). An empty or new row keeps Payload's own label ("Mapping 03"); the
+ * (`clientProps: { kind }`). An empty or new row keeps Payload's own label ("Mapping 03"), except a scenario event, which always reads its row number and difficulty ("2 · Easy"); the
  * `row-label` class keeps Payload's styling, such as the error colour on a row that failed to save.
  */
 export const CoursewareRowLabel = ({ kind }: { kind: RowLabelKind }) => {

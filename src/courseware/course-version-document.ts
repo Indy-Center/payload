@@ -279,6 +279,7 @@ function scenario(
     teacherPosition: positionOf(record.teacherPosition),
     description: record.description ?? '',
     events: (record.events ?? []).map((event) => ({
+      id: event.id ?? '',
       difficulty: event.difficulty,
       callsign: event.callsign ?? '',
       aircraftType: event.aircraftType ?? '',

@@ -259,6 +259,13 @@ describe('a scenario saved by its course’s author', () => {
     expect(saved.events?.[0]).toMatchObject({ difficulty: 'easy' })
   })
 
+  it('heads its events list "Scenario events"', () => {
+    const field = payload.collections.scenarios.config.fields.find(
+      (candidate) => 'name' in candidate && candidate.name === 'events',
+    )
+    expect(field).toMatchObject({ label: 'Scenario events' })
+  })
+
   it('refuses a difficulty other than Easy, Medium or Hard', async () => {
     const refused = await refusal(
       save({ events: [{ difficulty: 'very hard' as never, description: 'Too much.' }] }),
@@ -444,12 +451,19 @@ describe('scenarios offered by a lesson plan', () => {
         // In the scenario's order, an unset callsign or type as an empty string.
         events: [
           {
+            id: offered.events![0].id,
             difficulty: 'medium',
             callsign: 'AAL1423',
             aircraftType: 'A321',
             description: 'Asks for 5000.',
           },
-          { difficulty: 'easy', callsign: '', aircraftType: '', description: 'TMU ground stop.' },
+          {
+            id: offered.events![1].id,
+            difficulty: 'easy',
+            callsign: '',
+            aircraftType: '',
+            description: 'TMU ground stop.',
+          },
         ],
         atctrainer: 'busy-afternoon-1',
         retired: false,
