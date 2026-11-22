@@ -400,7 +400,11 @@ async function seedCourses({
       { task: tasks.R1b.id, required: false },
     ],
     resources: [
-      { title: 'Airport diagram', url: 'https://example.com/x-gc/diagram' },
+      {
+        title: 'Airport diagram',
+        url: 'https://example.com/x-gc/diagram',
+        note: 'Point out the hold-short lines on the taxi phase.',
+      },
       { title: 'Answer key', url: 'https://example.com/x-gc/answers', teacherOnly: true },
     ],
   })
@@ -462,7 +466,11 @@ async function seedCourses({
     title: 'Finding your way around, revised',
     tasks: [{ task: tasks.R1b.id }, { task: tasks.R3.id, required: false }],
     resources: [
-      { title: 'Airport diagram', url: 'https://example.com/x-gc/diagram' },
+      {
+        title: 'Airport diagram',
+        url: 'https://example.com/x-gc/diagram',
+        note: 'Use pages 3–5 for the taxi phase.',
+      },
       { title: 'Answer key', url: 'https://example.com/x-gc/answers', teacherOnly: true },
     ],
     scenarios: [scenarioOne],

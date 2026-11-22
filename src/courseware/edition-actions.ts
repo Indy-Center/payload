@@ -152,6 +152,7 @@ function copyOfPlan(plan: LessonPlan, courseVersion: string) {
       title: resource.title,
       url: resource.url,
       teacherOnly: resource.teacherOnly,
+      note: resource.note,
     })),
     scenarios: (plan.scenarios ?? []).map((scenario) => idOf(scenario)!),
   }

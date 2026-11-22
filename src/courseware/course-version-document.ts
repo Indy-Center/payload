@@ -318,6 +318,7 @@ function lessonPlan(
       title: resource.title,
       url: resource.url,
       teacherOnly: resource.teacherOnly ?? false,
+      note: resource.note ?? '',
     })),
     scenarios: (plan.scenarios ?? [])
       .map((offered) => scenarios.get(idOf(offered) ?? ''))

@@ -218,6 +218,15 @@ export const LessonPlans: CollectionConfig = {
           type: 'checkbox',
           defaultValue: false,
         },
+        {
+          // Wording like the rest of the row (0074): `lessonPlanStructure` in
+          // `src/courseware/structure.ts` leaves resources out, so a course author edits it
+          // in a published edition (0055).
+          name: 'note',
+          label: 'Note',
+          type: 'textarea',
+          admin: { description: 'For the teacher only, even when students see the resource.' },
+        },
       ],
     },
     {

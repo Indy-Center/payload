@@ -50,8 +50,17 @@ export type LessonPlanTask = {
   teacherNotes: string
 }
 
-/** A chart, video or other link a lesson plan offers (decision 0067). */
-export type LessonPlanResource = { id: string; title: string; url: string; teacherOnly: boolean }
+/**
+ * A chart, video or other link a lesson plan offers (decision 0067). `note` is for the teacher
+ * only, whatever `teacherOnly` says (decision 0074); empty when unset.
+ */
+export type LessonPlanResource = {
+  id: string
+  title: string
+  url: string
+  teacherOnly: boolean
+  note: string
+}
 
 /** One thing that happens in a scenario, tagged with the difficulty it first appears at (decision 0070). */
 export type ScenarioEvent = {
