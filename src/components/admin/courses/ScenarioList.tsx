@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Button, useDocumentDrawer } from '@payloadcms/ui'
 import { editionLabel } from './edition-label'
 import type { ScenarioRow, ScenarioTab } from './scenarios'
+import { useAddDrawer } from './useAddDrawer'
 
 type Props = {
   courseId: string
@@ -14,7 +15,7 @@ type Props = {
 /**
  * The Scenarios tab's groups: each lesson plan that offers scenarios ("S-GC-4 Taxi in the sim ·
  * 2 scenarios"), then "Offered by no lesson plan", then "Retired". A name opens the scenario's
- * form in a drawer; saving it closes the drawer and the tab reloads.
+ * form in a drawer; saving it keeps the drawer open and the tab reloads behind it (0071).
  */
 export function ScenarioList({ courseId, tab, mayAdd }: Props) {
   const router = useRouter()
@@ -100,41 +101,37 @@ function ScenarioTable({ scenarios, onSaved }: { scenarios: ScenarioRow[]; onSav
   )
 }
 
-/** A scenario's name, opening its form in a drawer; saving closes it. */
+/** A scenario's name, opening its form in a drawer; saving keeps it open on the scenario. */
 function ScenarioLink({ scenario, onSaved }: { scenario: ScenarioRow; onSaved: () => void }) {
-  const [Drawer, Toggler, { closeDrawer }] = useDocumentDrawer({
+  const [Drawer, Toggler] = useDocumentDrawer({
     collectionSlug: 'scenarios',
     id: scenario.id,
   })
   return (
     <>
       <Toggler className="edition-outline__plan-link">{scenario.name}</Toggler>
-      <Drawer
-        onSave={() => {
-          closeDrawer()
-          onSaved()
-        }}
-      />
+      <Drawer onSave={onSaved} />
     </>
   )
 }
 
-/** "+ Add scenario": a new scenario of this course in a drawer. */
+/**
+ * "+ Add scenario": a new scenario of this course in a drawer. Saving opens the scenario it
+ * created in its own drawer, in place of the new one (see `useAddDrawer`).
+ */
 function AddScenario({ courseId, onSaved }: { courseId: string; onSaved: () => void }) {
-  const [Drawer, , { openDrawer, closeDrawer }] = useDocumentDrawer({ collectionSlug: 'scenarios' })
   const initialData = useMemo(() => ({ course: courseId }), [courseId])
+  const { openDrawer, drawers } = useAddDrawer({
+    collectionSlug: 'scenarios',
+    initialData,
+    onSaved,
+  })
   return (
     <>
       <Button margin={false} size="small" onClick={openDrawer}>
         + Add scenario
       </Button>
-      <Drawer
-        initialData={initialData}
-        onSave={() => {
-          closeDrawer()
-          onSaved()
-        }}
-      />
+      {drawers}
     </>
   )
 }

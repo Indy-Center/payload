@@ -8,6 +8,7 @@ import { AskFirst } from './EditionActions'
 import { ModuleForm, type ModuleWording } from './ModuleForm'
 import { confirmLeave } from '../LeaveGuard'
 import { useEndpoint } from '../useEndpoint'
+import { useAddDrawer } from './useAddDrawer'
 
 type Props = {
   edition: Outline
@@ -510,9 +511,12 @@ function PlanTable({
   )
 }
 
-/** A lesson plan's code and title, each opening its form in a drawer; saving closes it. */
+/**
+ * A lesson plan's code and title, each opening its form in a drawer. Saving keeps the drawer open
+ * on the lesson plan and refreshes the outline behind it (0071); its close button leaves.
+ */
 function PlanCells({ plan, onSaved }: { plan: OutlinePlan; onSaved: () => void }) {
-  const [Drawer, Toggler, { closeDrawer }] = useDocumentDrawer({
+  const [Drawer, Toggler] = useDocumentDrawer({
     collectionSlug: 'lesson-plans',
     id: plan.id,
   })
@@ -525,12 +529,7 @@ function PlanCells({ plan, onSaved }: { plan: OutlinePlan; onSaved: () => void }
         <Toggler className="edition-outline__plan-link">
           {plan.title ?? (plan.code ? '' : 'Untitled lesson plan')}
         </Toggler>
-        <Drawer
-          onSave={() => {
-            closeDrawer()
-            onSaved()
-          }}
-        />
+        <Drawer onSave={onSaved} />
       </td>
     </>
   )
@@ -538,7 +537,9 @@ function PlanCells({ plan, onSaved }: { plan: OutlinePlan; onSaved: () => void }
 
 /**
  * "+ Add lesson plan": a new lesson plan in a drawer, already of this edition and in this module
- * (placed last when saved), its minimum starting from the edition's default.
+ * (placed last when saved), its minimum starting from the edition's default. Saving opens the
+ * lesson plan it created in its own drawer, in place of the new one, and refreshes the outline
+ * (0071; see `useAddDrawer`).
  */
 function AddLessonPlan({
   edition,
@@ -551,13 +552,15 @@ function AddLessonPlan({
   disabled: boolean
   onSaved: () => void
 }) {
-  const [Drawer, , { openDrawer, closeDrawer }] = useDocumentDrawer({
-    collectionSlug: 'lesson-plans',
-  })
   const initialData = useMemo(
     () => ({ courseVersion: edition.id, module: moduleId, minimum: edition.defaultMinimum }),
     [edition.id, edition.defaultMinimum, moduleId],
   )
+  const { openDrawer, drawers } = useAddDrawer({
+    collectionSlug: 'lesson-plans',
+    initialData,
+    onSaved,
+  })
   return (
     <>
       <Button
@@ -569,13 +572,7 @@ function AddLessonPlan({
       >
         + Add lesson plan
       </Button>
-      <Drawer
-        initialData={initialData}
-        onSave={() => {
-          closeDrawer()
-          onSaved()
-        }}
-      />
+      {drawers}
     </>
   )
 }
