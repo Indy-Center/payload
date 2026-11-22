@@ -180,7 +180,9 @@ describe('the catalogue', () => {
     expect(body.sources).toEqual([
       { id: order.id, name: 'Example Order', edition: 'B', url: 'https://example.com/order' },
     ])
-    expect(body.tasks[0].citations).toEqual([{ sourceId: order.id, place: '3-7-2', title: null }])
+    expect(body.tasks[0].citations).toEqual([
+      { sourceId: order.id, place: '3-7-2', title: null, url: null },
+    ])
     expect(body).not.toHaveProperty('references')
   })
 
@@ -205,9 +207,89 @@ describe('the catalogue', () => {
     const { body } = await callEndpoint(payload, '/courseware/catalogue')
 
     expect(body.tasks[0].citations).toEqual([
-      { sourceId: order.id, place: '3-7-2', title: 'Radio checks' },
-      { sourceId: order.id, place: 'Chapter 4', title: null },
+      { sourceId: order.id, place: '3-7-2', title: 'Radio checks', url: null },
+      { sourceId: order.id, place: 'Chapter 4', title: null, url: null },
     ])
     expect(body.tasks[0].citations[0]).not.toHaveProperty('section')
+  })
+
+  it("serves a citation's own link, null when it has none, and leaves the source's on the source", async () => {
+    const order = await payload.create({
+      collection: 'sources',
+      data: { name: 'Example Order', url: 'https://example.com/order' },
+      ...asLead(),
+    })
+    await payload.create({
+      collection: 'tasks',
+      data: {
+        name: 'Radio',
+        citations: [
+          { source: order.id, place: '3-7-2', url: 'https://example.com/order#3-7-2' },
+          { source: order.id, place: 'Chapter 4', url: '' },
+          { source: order.id, place: 'Chapter 5' },
+        ],
+      },
+      ...asLead(),
+    })
+
+    const { body } = await callEndpoint(payload, '/courseware/catalogue')
+
+    expect(body.tasks[0].citations.map((each: { url: string | null }) => each.url)).toEqual([
+      'https://example.com/order#3-7-2',
+      null,
+      null,
+    ])
+    expect(body.sources[0].url).toBe('https://example.com/order')
+  })
+})
+
+describe("a task's citation link", () => {
+  it('is saved when it starts with https, and an empty one saves as none', async () => {
+    const order = await payload.create({
+      collection: 'sources',
+      data: { name: 'Example Order', url: 'https://example.com/order' },
+      ...asLead(),
+    })
+    const task = await payload.create({
+      collection: 'tasks',
+      data: {
+        name: 'Radio',
+        citations: [
+          { source: order.id, url: 'https://example.com/order#3-7-2' },
+          { source: order.id, url: '' },
+          { source: order.id },
+        ],
+      },
+      ...asLead(),
+    })
+
+    expect(task.citations?.map((each) => each.url || null)).toEqual([
+      'https://example.com/order#3-7-2',
+      null,
+      null,
+    ])
+  })
+
+  it('is refused on the citation unless it starts with https', async () => {
+    const order = await payload.create({
+      collection: 'sources',
+      data: { name: 'Example Order', url: 'https://example.com/order' },
+      ...asLead(),
+    })
+    for (const url of ['http://example.com/order', 'example.com/order', 'ftp://example.com']) {
+      try {
+        await payload.create({
+          collection: 'tasks',
+          data: { name: 'Radio', citations: [{ source: order.id }, { source: order.id, url }] },
+          ...asLead(),
+        })
+        throw new Error('Expected the save to be refused')
+      } catch (error) {
+        if (!(error instanceof ValidationError)) throw error
+        expect(error.data.errors.map((entry) => [entry.path, entry.message])).toEqual([
+          ['citations.1.url', "A citation's link must start with https://."],
+        ])
+      }
+    }
   })
 })

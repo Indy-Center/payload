@@ -2,7 +2,7 @@ import { createLocalReq, type Payload } from 'payload'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { loadOfferedBy, loadScenarioTab } from '@/components/admin/courses/scenarios'
 import type { Course, User } from '@/payload-types'
-import { resetDatabase, scenarioPositions, testPayload } from './helpers'
+import { position, resetDatabase, scenarioPositions, testPayload } from './helpers'
 
 /**
  * The course page's Scenarios tab, as read for the signed-in person: the course's scenarios under
@@ -43,7 +43,6 @@ async function scenario(courseId: string, name: string, retired = false) {
       name,
       airport: 'KXYZ',
       ...(await scenarioPositions(payload)),
-      difficulty: 'medium',
       description: `About ${name}`,
       retired,
     },
@@ -123,9 +122,47 @@ describe('the Scenarios tab', () => {
       id: twice.id,
       name: 'Twice offered',
       studentPosition: 'XYZ_GND',
-      difficulty: 'Medium',
       description: 'About Twice offered',
       retired: false,
+    })
+  })
+
+  it('shows the student position by short name, and by callsign where it has none', async () => {
+    const { id } = await course()
+    const named = await position(payload, 'XYZ_83_CTR', { shortName: 'EXA 83' })
+    const unnamed = await position(payload, 'XYZ_RMP')
+    const teacher = await position(payload, 'XYZ_TWR')
+    const make = (name: string, student: string) =>
+      payload.create({
+        collection: 'scenarios',
+        depth: 0,
+        data: {
+          course: id,
+          name,
+          airport: 'KXYZ',
+          studentPosition: student,
+          teacherPosition: teacher.id,
+        },
+      })
+    await make('With short name', named.id)
+    await make('Without', unnamed.id)
+
+    const tab = await loadScenarioTab(
+      await asAuthor(),
+      await payload.findByID({ collection: 'courses', id }),
+    )
+
+    expect(
+      Object.fromEntries(tab.offeredByNone.map((row) => [row.name, row.studentPosition])),
+    ).toEqual({ 'With short name': 'EXA 83', Without: 'XYZ_RMP' })
+
+    await payload.update({ collection: 'positions', id: named.id, data: { retired: true } })
+    const retired = await loadScenarioTab(
+      await asAuthor(),
+      await payload.findByID({ collection: 'courses', id }),
+    )
+    expect(retired.offeredByNone.find((row) => row.name === 'With short name')).toMatchObject({
+      studentPosition: 'EXA 83',
     })
   })
 
