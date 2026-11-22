@@ -196,7 +196,6 @@ const scenario = (id: string, name: string): ScenarioRow => ({
   id,
   name,
   studentPosition: 'XYZ_GND',
-  difficulty: null,
   description: null,
   retired: false,
 })

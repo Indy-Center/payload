@@ -1,6 +1,7 @@
 import type { CollectionConfig, FieldHook, RelationshipFieldValidation } from 'payload'
 import { relationship } from 'payload/shared'
 import { staffAccess } from '@/courseware/access'
+import { isHttpsLink } from '@/courseware/https-link'
 import { hideRetiredUnlessAsked } from '@/courseware/retired'
 import { rowLabelComponent } from '@/courseware/row-label-component'
 import { taskPickerComponents } from '@/courseware/task-picker'
@@ -160,6 +161,18 @@ export const Tasks: CollectionConfig = {
           type: 'text',
           label: 'Title',
           admin: { description: 'The heading at that place.' },
+        },
+        {
+          // Used in place of the source's link (decision 0072); shared by every course (0025).
+          name: 'url',
+          type: 'text',
+          label: 'Link',
+          validate: (value: string | null | undefined) =>
+            !value || isHttpsLink(value) || "A citation's link must start with https://.",
+          admin: {
+            description:
+              "A direct link to this place, such as a page of the CRC docs. Leave empty to use the source's link.",
+          },
         },
       ],
     },

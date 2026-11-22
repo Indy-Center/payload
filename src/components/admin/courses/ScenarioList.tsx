@@ -71,7 +71,7 @@ export function ScenarioList({ courseId, tab, mayAdd }: Props) {
 const planName = (plan: ScenarioTab['offered'][number]) =>
   [plan.code, plan.title].filter(Boolean).join(' ') || 'A lesson plan'
 
-/** Name, student position, difficulty and description; a phone drops the description. */
+/** Name, student position and description; a phone drops the description. */
 function ScenarioTable({ scenarios, onSaved }: { scenarios: ScenarioRow[]; onSaved: () => void }) {
   return (
     <table className="edition-outline__plans scenario-list__table">
@@ -79,7 +79,6 @@ function ScenarioTable({ scenarios, onSaved }: { scenarios: ScenarioRow[]; onSav
         <tr>
           <th>Name</th>
           <th>Student position</th>
-          <th>Difficulty</th>
           <th className="edition-outline__wide-only">Description</th>
         </tr>
       </thead>
@@ -90,7 +89,6 @@ function ScenarioTable({ scenarios, onSaved }: { scenarios: ScenarioRow[]; onSav
               <ScenarioLink scenario={scenario} onSaved={onSaved} />
             </td>
             <td className="edition-outline__code">{scenario.studentPosition ?? '—'}</td>
-            <td>{scenario.difficulty ?? '—'}</td>
             <td className="edition-outline__wide-only scenario-list__description">
               {scenario.description ?? ''}
             </td>

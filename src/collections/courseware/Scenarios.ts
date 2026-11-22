@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 import { scenarioAccess, staffOnlyField } from '@/courseware/access'
 import { hideRetiredUnlessAsked } from '@/courseware/retired'
 import { positionPickerComponents, pickedPosition } from '@/courseware/position-picker'
+import { rowLabelComponent } from '@/courseware/row-label-component'
 
 /**
  * A setup a teacher may pick for a lesson plan; it holds no tasks, which are all on the lesson
@@ -62,22 +63,59 @@ export const Scenarios: CollectionConfig = {
       admin: { components: positionPickerComponents() },
     },
     {
-      name: 'difficulty',
-      type: 'select',
-      options: [
-        { label: 'Easy', value: 'easy' },
-        { label: 'Medium', value: 'medium' },
-        { label: 'Hard', value: 'hard' },
-      ],
-    },
-    {
       name: 'description',
       label: 'Description',
       type: 'textarea',
       admin: {
         description:
-          "For the teacher: what this scenario sets up, such as the flight plans built for it. Students don't see it.",
+          "For the teacher: what this scenario sets up, and how its difficulties differ. Students don't see it.",
       },
+    },
+    {
+      // One scenario per setup: its difficulties are the events, each tagged with the level it first
+      // appears at (decision 0070).
+      name: 'events',
+      type: 'array',
+      label: 'Scenario events',
+      labels: { singular: 'Scenario event', plural: 'Scenario events' },
+      admin: {
+        components: { RowLabel: rowLabelComponent('scenario-event') },
+        description:
+          'In the order they happen. Each is tagged with the difficulty it first appears at; harder levels keep everything easier ones have.',
+      },
+      fields: [
+        {
+          name: 'difficulty',
+          type: 'select',
+          required: true,
+          defaultValue: 'easy',
+          options: [
+            { label: 'Easy', value: 'easy' },
+            { label: 'Medium', value: 'medium' },
+            { label: 'Hard', value: 'hard' },
+          ],
+        },
+        {
+          name: 'callsign',
+          type: 'text',
+          admin: { description: 'Such as AAL1423.' },
+        },
+        {
+          name: 'aircraftType',
+          label: 'Aircraft type',
+          type: 'text',
+          admin: { description: 'Such as A321.' },
+        },
+        {
+          name: 'description',
+          type: 'textarea',
+          required: true,
+          admin: {
+            description:
+              "What happens: an aircraft's request, or a coordination such as a TMU ground stop.",
+          },
+        },
+      ],
     },
     {
       name: 'atctrainer',

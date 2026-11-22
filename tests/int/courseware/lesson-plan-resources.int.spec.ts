@@ -110,6 +110,27 @@ describe.each(['draft', 'published'] as const)(
       expect(changed.resources?.map((resource) => resource.title)).toEqual(['Answers', 'Big chart'])
     })
 
+    it('lets a course author add and change a resource’s note', async () => {
+      const { plan } = await lessonPlan(status)
+      const added = await payload.update({
+        collection: 'lesson-plans',
+        id: plan.id,
+        data: {
+          resources: [{ title: 'Chart', url: 'https://example.com/chart', note: 'Use pages 3–5' }],
+        },
+        ...asAuthor(),
+      })
+      expect(added.resources?.[0].note).toBe('Use pages 3–5')
+
+      const changed = await payload.update({
+        collection: 'lesson-plans',
+        id: plan.id,
+        data: { resources: [{ ...added.resources![0], note: 'Taxi phase only' }] },
+        ...asAuthor(),
+      })
+      expect(changed.resources?.[0].note).toBe('Taxi phase only')
+    })
+
     it('refuses a link that does not start with https://', async () => {
       const { plan } = await lessonPlan(status)
       for (const url of ['http://example.com/chart', 'example.com', 'ftp://example.com']) {
@@ -139,7 +160,12 @@ it('serves them in order, teacher-only ones included', async () => {
       resources: [
         { title: 'Second to none', url: 'https://example.com/a', teacherOnly: true },
         { title: 'Chart', url: 'https://example.com/b' },
-        { title: 'Video', url: 'https://example.com/c', teacherOnly: false },
+        {
+          title: 'Video',
+          url: 'https://example.com/c',
+          teacherOnly: false,
+          note: 'Skip the intro',
+        },
       ],
     },
   })
@@ -152,9 +178,22 @@ it('serves them in order, teacher-only ones included', async () => {
       title: 'Second to none',
       url: 'https://example.com/a',
       teacherOnly: true,
+      note: '',
     },
-    { id: expect.any(String), title: 'Chart', url: 'https://example.com/b', teacherOnly: false },
-    { id: expect.any(String), title: 'Video', url: 'https://example.com/c', teacherOnly: false },
+    {
+      id: expect.any(String),
+      title: 'Chart',
+      url: 'https://example.com/b',
+      teacherOnly: false,
+      note: '',
+    },
+    {
+      id: expect.any(String),
+      title: 'Video',
+      url: 'https://example.com/c',
+      teacherOnly: false,
+      note: 'Skip the intro',
+    },
   ])
 })
 
@@ -165,7 +204,7 @@ it('is copied, in order, when a new edition is started', async () => {
     id: plan.id,
     data: {
       resources: [
-        { title: 'Answers', url: 'https://example.com/a', teacherOnly: true },
+        { title: 'Answers', url: 'https://example.com/a', teacherOnly: true, note: 'Keep hidden' },
         { title: 'Chart', url: 'https://example.com/b' },
       ],
     },
@@ -190,8 +229,10 @@ it('is copied, in order, when a new edition is started', async () => {
     where: { courseVersion: { equals: started.body.edition.id } },
     depth: 0,
   })
-  expect(docs[0].resources?.map(({ title, teacherOnly }) => [title, teacherOnly])).toEqual([
-    ['Answers', true],
-    ['Chart', false],
+  expect(
+    docs[0].resources?.map(({ title, teacherOnly, note }) => [title, teacherOnly, note ?? null]),
+  ).toEqual([
+    ['Answers', true, 'Keep hidden'],
+    ['Chart', false, null],
   ])
 })

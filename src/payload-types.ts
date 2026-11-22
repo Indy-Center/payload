@@ -408,6 +408,10 @@ export interface Task {
          * The heading at that place.
          */
         title?: string | null;
+        /**
+         * A direct link to this place, such as a page of the CRC docs. Leave empty to use the source's link.
+         */
+        url?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -603,6 +607,10 @@ export interface LessonPlan {
         title: string;
         url: string;
         teacherOnly?: boolean | null;
+        /**
+         * For the teacher only, even when students see the resource.
+         */
+        note?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -630,11 +638,31 @@ export interface Scenario {
   airport: string;
   studentPosition: string | Position;
   teacherPosition: string | Position;
-  difficulty?: ('easy' | 'medium' | 'hard') | null;
   /**
-   * For the teacher: what this scenario sets up, such as the flight plans built for it. Students don't see it.
+   * For the teacher: what this scenario sets up, and how its difficulties differ. Students don't see it.
    */
   description?: string | null;
+  /**
+   * In the order they happen. Each is tagged with the difficulty it first appears at; harder levels keep everything easier ones have.
+   */
+  events?:
+    | {
+        difficulty: 'easy' | 'medium' | 'hard';
+        /**
+         * Such as AAL1423.
+         */
+        callsign?: string | null;
+        /**
+         * Such as A321.
+         */
+        aircraftType?: string | null;
+        /**
+         * What happens: an aircraft's request, or a coordination such as a TMU ground stop.
+         */
+        description: string;
+        id?: string | null;
+      }[]
+    | null;
   /**
    * The scenario's link or ID in ATCTrainer
    */
@@ -1233,6 +1261,7 @@ export interface TasksSelect<T extends boolean = true> {
         source?: T;
         place?: T;
         title?: T;
+        url?: T;
         id?: T;
       };
   retired?: T;
@@ -1344,6 +1373,7 @@ export interface LessonPlansSelect<T extends boolean = true> {
         title?: T;
         url?: T;
         teacherOnly?: T;
+        note?: T;
         id?: T;
       };
   scenarios?: T;
@@ -1360,8 +1390,16 @@ export interface ScenariosSelect<T extends boolean = true> {
   airport?: T;
   studentPosition?: T;
   teacherPosition?: T;
-  difficulty?: T;
   description?: T;
+  events?:
+    | T
+    | {
+        difficulty?: T;
+        callsign?: T;
+        aircraftType?: T;
+        description?: T;
+        id?: T;
+      };
   atctrainer?: T;
   retired?: T;
   updatedAt?: T;

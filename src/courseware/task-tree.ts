@@ -15,7 +15,7 @@ export type TreeTask = {
   updatedAt: string
   /** Competencies mapped on this task itself, not inherited. */
   competencyIds: string[]
-  citations: { sourceId: string; place: string; title: string | null }[]
+  citations: { sourceId: string; place: string; title: string | null; url: string | null }[]
 }
 
 /**
@@ -126,6 +126,7 @@ export async function loadTaskTree(
         sourceId: idOf(row.source)!,
         place: row.place ?? '',
         title: row.title || null,
+        url: row.url || null,
       })),
     })),
   )

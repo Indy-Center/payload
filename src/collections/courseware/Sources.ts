@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { staffAccess } from '@/courseware/access'
+import { isHttpsLink } from '@/courseware/https-link'
 
 /**
  * An outside document tasks cite, such as the 7110.65, at its https link. A reissue is fixed here
@@ -19,7 +20,7 @@ export const Sources: CollectionConfig = {
       required: true,
       validate: (value: string | null | undefined) => {
         if (!value) return 'A source needs a link, starting with https://.'
-        return value.startsWith('https://') || 'A link starts with https://.'
+        return isHttpsLink(value) || 'A link starts with https://.'
       },
     },
   ],
