@@ -251,7 +251,9 @@ describe('a scenario saved by its course’s author', () => {
         events: [{ difficulty: 'easy', description: 'Fine.' }, { difficulty: 'hard' } as never],
       }),
     )
-    expect(refused.map(({ path }) => path)).toEqual(['events.1.description'])
+    expect(refused.map(({ path, message }) => [path, message])).toEqual([
+      ['events.1.description', 'This field is required.'],
+    ])
   })
 
   it('saves an event given no difficulty as easy', async () => {
@@ -270,7 +272,9 @@ describe('a scenario saved by its course’s author', () => {
     const refused = await refusal(
       save({ events: [{ difficulty: 'very hard' as never, description: 'Too much.' }] }),
     )
-    expect(refused.map(({ path }) => path)).toEqual(['events.0.difficulty'])
+    expect(refused.map(({ path, message }) => [path, message])).toEqual([
+      ['events.0.difficulty', 'This field has an invalid selection.'],
+    ])
   })
 })
 
