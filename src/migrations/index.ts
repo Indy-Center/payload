@@ -33,6 +33,7 @@ import * as migration_20261108_061041_lesson_plan_resources from './20261108_061
 import * as migration_20261108_183706_drop_lesson_plan_grade_boxes from './20261108_183706_drop_lesson_plan_grade_boxes';
 import * as migration_20261122_184941_scenario_events from './20261122_184941_scenario_events';
 import * as migration_20261122_201012_citation_link from './20261122_201012_citation_link';
+import * as migration_20261122_203431_resource_note from './20261122_203431_resource_note';
 
 export const migrations = [
   {
@@ -208,6 +209,11 @@ export const migrations = [
   {
     up: migration_20261122_201012_citation_link.up,
     down: migration_20261122_201012_citation_link.down,
-    name: '20261122_201012_citation_link'
+    name: '20261122_201012_citation_link',
+  },
+  {
+    up: migration_20261122_203431_resource_note.up,
+    down: migration_20261122_203431_resource_note.down,
+    name: '20261122_203431_resource_note',
   },
 ];

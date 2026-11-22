@@ -607,6 +607,10 @@ export interface LessonPlan {
         title: string;
         url: string;
         teacherOnly?: boolean | null;
+        /**
+         * For the teacher only, even when students see the resource.
+         */
+        note?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -1369,6 +1373,7 @@ export interface LessonPlansSelect<T extends boolean = true> {
         title?: T;
         url?: T;
         teacherOnly?: T;
+        note?: T;
         id?: T;
       };
   scenarios?: T;
