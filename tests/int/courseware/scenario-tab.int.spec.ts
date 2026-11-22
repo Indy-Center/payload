@@ -43,7 +43,6 @@ async function scenario(courseId: string, name: string, retired = false) {
       name,
       airport: 'KXYZ',
       ...(await scenarioPositions(payload)),
-      difficulty: 'medium',
       description: `About ${name}`,
       retired,
     },
@@ -123,7 +122,6 @@ describe('the Scenarios tab', () => {
       id: twice.id,
       name: 'Twice offered',
       studentPosition: 'XYZ_GND',
-      difficulty: 'Medium',
       description: 'About Twice offered',
       retired: false,
     })

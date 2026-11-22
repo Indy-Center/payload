@@ -58,7 +58,6 @@ const scenario = (name: string, data: Partial<ScenarioRow> = {}): ScenarioRow =>
   id: name,
   name,
   studentPosition: 'XYZ_GND',
-  difficulty: 'Medium',
   description: `About ${name}`,
   retired: false,
   ...data,
@@ -73,10 +72,10 @@ const tab: ScenarioTab = {
       id: 'p4',
       code: 'X-GC-4',
       title: 'Taxi in the sim',
-      scenarios: [twice, scenario('KXYZ_GND_01', { difficulty: 'Easy' })],
+      scenarios: [twice, scenario('KXYZ_GND_01')],
     },
   ],
-  offeredByNone: [scenario('KXYZ_GND_RUSH', { difficulty: null, description: null })],
+  offeredByNone: [scenario('KXYZ_GND_RUSH', { description: null })],
   retired: [scenario('KXYZ_TWR_OLD', { retired: true })],
 }
 
@@ -135,24 +134,18 @@ describe('the Scenarios tab', () => {
     expect(namesIn('Retired')).toEqual(['KXYZ_TWR_OLD'])
   })
 
-  it('shows name, student position, difficulty and description, the description dropped on a phone', () => {
+  it('shows name, student position and description, the description dropped on a phone', () => {
     show()
 
     const headers = [...group('Retired').querySelectorAll('th')]
-    expect(headers.map((th) => th.textContent)).toEqual([
-      'Name',
-      'Student position',
-      'Difficulty',
-      'Description',
-    ])
+    expect(headers.map((th) => th.textContent)).toEqual(['Name', 'Student position', 'Description'])
     expect(headers.map((th) => th.classList.contains('edition-outline__wide-only'))).toEqual([
-      false,
       false,
       false,
       true,
     ])
     const cells = [...group('Retired').querySelectorAll('tbody td')].map((td) => td.textContent)
-    expect(cells).toEqual(['KXYZ_TWR_OLD', 'XYZ_GND', 'Medium', 'About KXYZ_TWR_OLD'])
+    expect(cells).toEqual(['KXYZ_TWR_OLD', 'XYZ_GND', 'About KXYZ_TWR_OLD'])
   })
 
   it('lists every scenario under offered by none, and no edition line, for a course with no editions', () => {

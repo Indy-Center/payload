@@ -9,7 +9,6 @@ export type ScenarioRow = {
   name: string
   /** The student position's callsign. */
   studentPosition: string | null
-  difficulty: string | null
   description: string | null
   retired: boolean
 }
@@ -32,15 +31,12 @@ export type ScenarioTab = {
   retired: ScenarioRow[]
 }
 
-const DIFFICULTY: Record<string, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' }
-
 const row = (scenario: Scenario): ScenarioRow => {
   const student = scenario.studentPosition as Position | string | null | undefined
   return {
     id: scenario.id,
     name: scenario.name,
     studentPosition: typeof student === 'object' && student ? student.callsign : null,
-    difficulty: scenario.difficulty ? (DIFFICULTY[scenario.difficulty] ?? null) : null,
     description: scenario.description ?? null,
     retired: scenario.retired === true,
   }

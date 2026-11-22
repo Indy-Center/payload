@@ -341,8 +341,26 @@ async function seedCourses({
     airport: 'KIND',
     studentPosition: positions.LOU_TWR.id,
     teacherPosition: positions.SDF_D_APP.id,
-    difficulty: 'easy',
     description: 'Made-up setup: three departures from KIND, flight plans already filed.',
+    events: [
+      {
+        difficulty: 'easy',
+        callsign: 'EXA101',
+        aircraftType: 'B738',
+        description: 'Asks for taxi to runway 5L.',
+      },
+      {
+        difficulty: 'medium',
+        callsign: 'EXA202',
+        aircraftType: 'A321',
+        description: 'Asks to return to the ramp with a flat tire.',
+      },
+      {
+        // A coordination, not an aircraft.
+        difficulty: 'hard',
+        description: 'The TMU calls a ground stop for departures to the north.',
+      },
+    ],
     atctrainer: 'example-ground-push',
   })
   const scenarioTwo = await make(payload, out.scenarios, 'scenarios', 'departure-release', {
@@ -351,7 +369,6 @@ async function seedCourses({
     airport: 'KIND',
     studentPosition: positions.IND_83_CTR.id,
     teacherPosition: positions.PKB_TWR.id,
-    difficulty: 'medium',
     description: 'Made-up setup: a busy departure push with releases to call.',
   })
 
@@ -423,7 +440,6 @@ async function seedCourses({
     airport: 'KIND',
     studentPosition: positions.LOU_TWR.id,
     teacherPosition: positions.SDF_D_APP.id,
-    difficulty: 'hard',
     description: 'Made-up setup: thirty movements in forty minutes. No lesson plan offers it yet.',
   })
   await make(payload, out.scenarios, 'scenarios', 'old-ground', {
@@ -432,7 +448,6 @@ async function seedCourses({
     airport: 'KIND',
     studentPosition: positions.LOU_TWR.id,
     teacherPosition: positions.SDF_D_APP.id,
-    difficulty: 'medium',
     description: 'Made-up setup from before the taxiway rebuild.',
     retired: true,
   })
