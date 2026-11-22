@@ -12,7 +12,6 @@ import type {
   GradePoint,
   LessonPlan,
   Scenario,
-  ScenarioPosition,
   TaskRef,
 } from './document'
 import { estimateCourse } from './estimated-weeks'
@@ -241,13 +240,13 @@ function statementsOf(tree: TaskTree, task: string | { id: string }) {
 }
 
 /**
- * Looks up the named positions as a scenario serves them, `{ id: vNAS id, callsign }`, retired
- * ones included: a position vNAS has dropped stays on the scenario that names it.
+ * Looks up the named positions' vNAS ids, as a scenario serves them (0073), retired ones
+ * included: a position vNAS has dropped stays on the scenario that names it.
  */
 async function loadScenarioPositions(
   req: PayloadRequest,
   named: (string | { id: string } | null | undefined)[],
-): Promise<(position: string | { id: string }) => ScenarioPosition> {
+): Promise<(position: string | { id: string }) => string> {
   const ids = [...new Set(named.map(idOf).filter((id): id is string => id !== null))]
   const { docs } =
     ids.length === 0
@@ -255,21 +254,19 @@ async function loadScenarioPositions(
       : await req.payload.find({
           collection: 'positions',
           where: { id: { in: ids } },
-          select: { vnasId: true, callsign: true },
+          select: { vnasId: true },
           pagination: false,
           depth: 0,
           req,
         })
-  const served = new Map(
-    docs.map((position) => [position.id, { id: position.vnasId, callsign: position.callsign }]),
-  )
+  const served = new Map(docs.map((position) => [position.id, position.vnasId]))
   // A scenario's positions are required and never deleted, so every one is found.
   return (position) => served.get(idOf(position)!)!
 }
 
 function scenario(
   record: ScenarioRecord,
-  positionOf: (position: string | { id: string }) => ScenarioPosition,
+  positionOf: (position: string | { id: string }) => string,
 ): Scenario {
   return {
     id: record.id,

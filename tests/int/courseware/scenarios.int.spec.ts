@@ -444,9 +444,9 @@ describe('scenarios offered by a lesson plan', () => {
         id: offered.id,
         name: 'Busy afternoon',
         airport: 'KXYZ',
-        // Each position by its vNAS id and callsign.
-        studentPosition: { id: 'vnas-XYZ_TWR', callsign: 'XYZ_TWR' },
-        teacherPosition: { id: 'vnas-XYZ_83_CTR', callsign: 'XYZ_83_CTR' },
+        // Each position by its vNAS id.
+        studentPosition: 'vnas-XYZ_TWR',
+        teacherPosition: 'vnas-XYZ_83_CTR',
         description: 'Three departures, flight plans filed.',
         // In the scenario's order, an unset callsign or type as an empty string.
         events: [
@@ -492,9 +492,21 @@ describe('scenarios offered by a lesson plan', () => {
 
     const { body } = await callEndpoint(payload, '/courseware/courses/X-TWR/draft')
 
-    expect(body.modules[0].lessonPlans[0].scenarios[0].teacherPosition).toEqual({
-      id: 'vnas-XYZ_83_CTR',
-      callsign: 'XYZ_83_CTR',
-    })
+    expect(body.modules[0].lessonPlans[0].scenarios[0].teacherPosition).toBe('vnas-XYZ_83_CTR')
+    const catalogue = await callEndpoint(payload, '/courseware/catalogue')
+    expect(catalogue.body.positions).toContainEqual(
+      expect.objectContaining({ id: 'vnas-XYZ_83_CTR', retired: true }),
+    )
+  })
+
+  it('serve both positions as vNAS ids, each found in the catalogue’s positions', async () => {
+    const { scenarios } = await served({})
+    const catalogue = await callEndpoint(payload, '/courseware/catalogue')
+    const ids = catalogue.body.positions.map((found: { id: string }) => found.id)
+
+    expect(scenarios[0].studentPosition).toBe('vnas-XYZ_TWR')
+    expect(scenarios[0].teacherPosition).toBe('vnas-XYZ_83_CTR')
+    expect(ids).toContain(scenarios[0].studentPosition)
+    expect(ids).toContain(scenarios[0].teacherPosition)
   })
 })

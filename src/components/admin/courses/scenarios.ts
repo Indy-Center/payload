@@ -1,4 +1,5 @@
 import type { PayloadRequest } from 'payload'
+import { shownShortName } from '@/collections/courseware/Positions'
 import { idOf } from '@/courseware/ids'
 import type { Course, LessonPlan, Position, Scenario } from '@/payload-types'
 import { loadEditions } from './editions'
@@ -7,7 +8,7 @@ import { loadEditions } from './editions'
 export type ScenarioRow = {
   id: string
   name: string
-  /** The student position's callsign. */
+  /** The student position's short name, its callsign where it has none (as its title does). */
   studentPosition: string | null
   description: string | null
   retired: boolean
@@ -36,7 +37,8 @@ const row = (scenario: Scenario): ScenarioRow => {
   return {
     id: scenario.id,
     name: scenario.name,
-    studentPosition: typeof student === 'object' && student ? student.callsign : null,
+    studentPosition:
+      typeof student === 'object' && student ? (shownShortName(student) ?? student.callsign) : null,
     description: scenario.description ?? null,
     retired: scenario.retired === true,
   }

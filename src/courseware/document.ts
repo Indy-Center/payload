@@ -53,18 +53,6 @@ export type LessonPlanTask = {
 /** A chart, video or other link a lesson plan offers (decision 0067). */
 export type LessonPlanResource = { id: string; title: string; url: string; teacherOnly: boolean }
 
-/**
- * One of the catalogue's positions as a scenario names it (decision 0060): its vNAS id, to look
- * it up in the catalogue's `positions`, and its callsign, for VATUSA's record. A position vNAS has
- * since dropped is still named, and is retired in the catalogue.
- */
-export type ScenarioPosition = {
-  /** The vNAS id, the catalogue position's `id`. */
-  id: string
-  /** Such as `IND_83_CTR`. */
-  callsign: string
-}
-
 /** One thing that happens in a scenario, tagged with the difficulty it first appears at (decision 0070). */
 export type ScenarioEvent = {
   id: string
@@ -80,8 +68,14 @@ export type Scenario = {
   id: string
   name: string
   airport: string
-  studentPosition: ScenarioPosition
-  teacherPosition: ScenarioPosition
+  /**
+   * The position's vNAS id, the `id` of one of the catalogue's `positions` (decisions 0060, 0073).
+   * Look it up there: its callsign is what pilots, VATUSA and VATSIM use, its short name what
+   * controllers see. A position vNAS has since dropped is still named, and is retired there.
+   */
+  studentPosition: string
+  /** As `studentPosition`. */
+  teacherPosition: string
   /** For the teacher; empty when unset. */
   description: string
   /** Every event, in the scenario's order. Harder difficulties keep what easier ones have. */
