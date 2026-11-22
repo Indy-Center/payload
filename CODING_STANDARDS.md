@@ -7,6 +7,10 @@ Read at review. The pre-commit hook and CI already enforce formatting, types and
 - **An update rule checks where the record is going, not only where it is.** A `Where` returned from `access.update` limits which stored records match; it says nothing about the incoming `data`. A rule scoped to "my courses" must also refuse `data` that points the record at another course (see `authoredAccess` in `src/courseware/access.ts`).
 - **Courseware is never deleted.** `delete` is `() => false`; records leave use by being retired. A new courseware collection follows the same rule. The one exception is discarding a never-published draft edition with its own lesson plans (0057): `discardDraft` in `src/courseware/edition-actions.ts` makes its own checks and deletes below access, and nothing else may.
 
+## The admin
+
+- **Save only saves (0071).** Save doesn't close, navigate or go back: the user stays where they are, and a list behind a drawer refreshes. A document drawer stays open, an "add" drawer now editing the record it created; its close button is how the user leaves. Only a modal that blocks the page, such as a confirm dialog, closes once its action is done.
+
 ## Tests
 
 - **An access test runs as a user, with `overrideAccess: false`.** The Local API skips access by default, so a test without both proves nothing about permissions.
