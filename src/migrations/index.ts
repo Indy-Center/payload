@@ -32,6 +32,7 @@ import * as migration_20261108_054800_scenario_description_and_atctrainer from '
 import * as migration_20261108_061041_lesson_plan_resources from './20261108_061041_lesson_plan_resources';
 import * as migration_20261108_183706_drop_lesson_plan_grade_boxes from './20261108_183706_drop_lesson_plan_grade_boxes';
 import * as migration_20261122_184941_scenario_events from './20261122_184941_scenario_events';
+import * as migration_20261122_201012_citation_link from './20261122_201012_citation_link';
 
 export const migrations = [
   {
@@ -202,6 +203,11 @@ export const migrations = [
   {
     up: migration_20261122_184941_scenario_events.up,
     down: migration_20261122_184941_scenario_events.down,
-    name: '20261122_184941_scenario_events'
+    name: '20261122_184941_scenario_events',
+  },
+  {
+    up: migration_20261122_201012_citation_link.up,
+    down: migration_20261122_201012_citation_link.down,
+    name: '20261122_201012_citation_link'
   },
 ];

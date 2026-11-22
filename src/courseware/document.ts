@@ -229,7 +229,8 @@ export type CatalogueTask = {
    * `fromTaskId` is the task the mapping is written on: this task's id, or an ancestor's.
    */
   mappings: { competencyId: string; fromTaskId: string }[]
-  citations: { sourceId: string; place: string; title: string | null }[]
+  /** `url` is the citation's own link, used in place of its source's; null when it has none. */
+  citations: { sourceId: string; place: string; title: string | null; url: string | null }[]
 }
 
 export type Catalogue = {

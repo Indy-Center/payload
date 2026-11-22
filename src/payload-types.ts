@@ -408,6 +408,10 @@ export interface Task {
          * The heading at that place.
          */
         title?: string | null;
+        /**
+         * A direct link to this place, such as a page of the CRC docs. Leave empty to use the source's link.
+         */
+        url?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -1253,6 +1257,7 @@ export interface TasksSelect<T extends boolean = true> {
         source?: T;
         place?: T;
         title?: T;
+        url?: T;
         id?: T;
       };
   retired?: T;
