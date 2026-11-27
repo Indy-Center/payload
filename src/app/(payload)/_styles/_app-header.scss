@@ -1,0 +1,9 @@
+// The header's breadcrumbs. Payload sizes their wrapper at full width with no way to shrink, so a
+// long trail (a lesson plan with no code shows its id) pushed the account button past a phone's
+// edge and widened the whole page. This lets the trail shrink and scroll sideways on its own;
+// Payload already hides that scrollbar.
+
+.app-header__step-nav-wrapper {
+  min-width: 0;
+  overflow-x: auto;
+}
