@@ -1,8 +1,9 @@
 // A field's error message at phone and tablet widths. Payload renders it as a tooltip
 // (`.field-error.tooltip`) and hides every tooltip up to its mid-break, so a refused save there
 // marked the field red with no reason given. This shows the message again, in the form's flow just
-// above the input, wrapped to the form's width and right-aligned as on desktop. Other tooltips stay
-// hidden; above the breakpoint nothing changes.
+// above the input, wrapped to the form's width and aligned as on desktop: right, except checkbox and
+// radio errors, which Payload left-aligns with their caret on the left. Other tooltips stay hidden;
+// above the breakpoint nothing changes.
 @use 'breakpoints';
 
 @media (max-width: breakpoints.$payload-mid-break) {
@@ -22,5 +23,10 @@
       overflow: visible;
       text-overflow: clip;
     }
+  }
+
+  // After the rule above: `:where()` adds no specificity, so source order decides.
+  :where(.checkbox, .radio-group) .field-error.tooltip {
+    margin-inline-start: 0;
   }
 }
