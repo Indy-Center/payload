@@ -1,4 +1,10 @@
-// The one breakpoint the admin's own styles use. Phone is below Tailwind 4's `md` (768px), so a
-// 768px-wide tablet keeps the desktop layout: `@media (max-width: breakpoints.$phone)`.
-// `scripts/check-breakpoints.sh` (run by `npm run lint`) refuses a pixel breakpoint anywhere else.
+// The breakpoints the admin's own styles use. `scripts/check-breakpoints.sh` (run by `npm run lint`)
+// refuses a pixel breakpoint anywhere else.
+
+// Phone is below Tailwind 4's `md` (768px), so a 768px-wide tablet keeps the desktop layout:
+// `@media (max-width: breakpoints.$phone)`.
 $phone: 767px;
+
+// Payload's own `mid-break` (`@payloadcms/ui` scss/vars.scss, `$breakpoint-m-width`), up to which it
+// changes its layout for phones and tablets. Only for overriding what Payload does at that width.
+$payload-mid-break: 1024px;

@@ -1,0 +1,26 @@
+// A field's error message at phone and tablet widths. Payload renders it as a tooltip
+// (`.field-error.tooltip`) and hides every tooltip up to its mid-break, so a refused save there
+// marked the field red with no reason given. This shows the message again, in the form's flow just
+// above the input, wrapped to the form's width and right-aligned as on desktop. Other tooltips stay
+// hidden; above the breakpoint nothing changes.
+@use 'breakpoints';
+
+@media (max-width: breakpoints.$payload-mid-break) {
+  .field-error.tooltip {
+    display: block;
+    position: relative;
+    inset: auto;
+    transform: none;
+    width: fit-content;
+    max-width: 100%;
+    margin-block-end: var(--caret-size);
+    margin-inline-start: auto;
+    white-space: normal;
+    overflow-wrap: anywhere;
+
+    .tooltip-content {
+      overflow: visible;
+      text-overflow: clip;
+    }
+  }
+}
