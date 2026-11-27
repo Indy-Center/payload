@@ -8,7 +8,7 @@ found=$(grep -rnE '(max|min)-width: *[0-9]+px' src --include='*.scss' --include=
   | grep -v '_styles/_breakpoints.scss' || true)
 
 if [[ -n $found ]]; then
-  echo "Pixel breakpoints; use breakpoints.\$phone from src/app/(payload)/_styles/_breakpoints.scss instead:" >&2
+  echo "Pixel breakpoints; use one from src/app/(payload)/_styles/_breakpoints.scss instead:" >&2
   echo "$found" >&2
   exit 1
 fi
