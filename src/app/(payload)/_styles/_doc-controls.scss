@@ -1,0 +1,32 @@
+// A document's meta line above its Save bar (Last modified, Created, and Status where drafts are on).
+// On a phone Payload keeps the items in one row that runs past the edge; this stacks them instead.
+//
+// Payload keeps the Save bar stuck to the top by giving the whole block a negative `top` equal to
+// the meta line's height: its padding (0.8 base above and below) plus one 1.2-base line. Stacked,
+// each item adds a line, so the offset grows with the count, or a sliver of dates would stay stuck.
+@use 'breakpoints';
+
+$line: 1.2;
+$padding: 1.6;
+
+@media (max-width: breakpoints.$phone) {
+  .doc-controls__meta {
+    flex-direction: column;
+    gap: 0;
+
+    // Payload's fade at the end of the scrolling row; nothing scrolls now.
+    &::after {
+      display: none;
+    }
+  }
+
+  .doc-controls__list-item {
+    block-size: calc(var(--base) * #{$line});
+  }
+
+  @for $count from 2 through 4 {
+    .doc-controls.gutter:has(.doc-controls__list-item:nth-child(#{$count})) {
+      top: calc(var(--base) * -#{$padding + $line * $count});
+    }
+  }
+}
